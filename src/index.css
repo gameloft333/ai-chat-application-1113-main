@@ -4,20 +4,20 @@
 
 @layer base {
   body {
-    @apply bg-[#2C3E50] text-white font-sans;
+    @apply bg-[#1A1B1E] text-white font-sans;
   }
 
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
-    --primary: 248 90% 66%;
+    --primary: 349 100% 70%;
     --primary-foreground: 210 40% 98%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: 215 28% 17%;
     --foreground: 210 40% 98%;
-    --primary: 248 90% 66%;
+    --primary: 349 100% 70%;
     --primary-foreground: 222.2 84% 4.9%;
   }
 }
