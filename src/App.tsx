@@ -7,7 +7,7 @@ import { CLEAR_MEMORY_ON_RESTART } from './config/app-config';
 import ChatMessage from './ChatMessage';
 import SubscriptionPlans from './components/SubscriptionPlans';
 import { PaymentService } from './services/payment-service';
-import { pricingPlans } from './config/pricing-config';
+import { pricingPlans, currentCurrency } from './config/pricing-config';
 
 const API_KEY = import.meta.env.VITE_API_KEY || '';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -93,7 +93,7 @@ const App: React.FC = () => {
         name: plan.name,
         description: plan.description,
         price: pricing.price,
-        currency: 'CNY',
+        currency: currentCurrency.code,
         duration: duration
       }, 'user123');
       

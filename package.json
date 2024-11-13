@@ -1,13 +1,17 @@
 {
   "name": "ai-chat-tavern",
   "private": true,
-  "version": "0.19.3",
+  "version": "0.21.35.98334",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview --host --port 4173"
+    "preview": "vite preview --host --port 4173",
+    "update-version": "node scripts/update-version.js",
+    "version:major": "node scripts/update-version.js major",
+    "version:minor": "node scripts/update-version.js minor",
+    "version:patch": "node scripts/update-version.js patch"
   },
   "dependencies": {
     "react": "^18.2.0",

@@ -1,4 +1,5 @@
 import { TelegramPayment, SubscriptionPlan } from '../types/payment';
+import { currentCurrency } from '../config/pricing-config';
 
 const TELEGRAM_BOT_TOKEN = import.meta.env.VITE_TELEGRAM_BOT_TOKEN;
 const TELEGRAM_PAYMENT_PROVIDER_TOKEN = import.meta.env.VITE_TELEGRAM_PAYMENT_PROVIDER_TOKEN;
@@ -45,7 +46,7 @@ export class PaymentService {
             subscriptionType: plan.duration,
           }),
           provider_token: TELEGRAM_PAYMENT_PROVIDER_TOKEN,
-          currency: plan.currency,
+          currency: currentCurrency.code,
           prices: [{
             label: plan.name,
             amount: Math.round(plan.price * 100),

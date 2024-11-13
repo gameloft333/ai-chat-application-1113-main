@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Character, characters } from '../types/character';
 
 interface CharacterSelectorProps {
@@ -18,7 +18,19 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
   onSelectCharacter,
   maxCharacters = characters.length
 }) => {
+  const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(null);
+  const [popularityText, setPopularityText] = useState<string>('');
+
   const shuffledCharacters = shuffleArray([...characters]).slice(0, maxCharacters);
+
+  const handleCharacterSelect = (characterId: string) => {
+    setSelectedCharacterId(characterId);
+    
+    const character = characters.find(c => c.id === characterId);
+    if (character) {
+      setPopularityText(`${character.name} 是我们最受欢迎的AI伴侣之一`);
+    }
+  };
 
   return (
     <div className="grid grid-cols-4 gap-4">
@@ -37,6 +49,9 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
           <p className="text-center text-white mt-2 font-serif">{character.name}</p>
         </div>
       ))}
+      <div className="text-center mt-4">
+        {popularityText || "请选择您想要交谈的AI伴侣"}
+      </div>
     </div>
   );
 };

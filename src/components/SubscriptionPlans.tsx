@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { pricingPlans } from '../config/pricing-config';
+import { pricingPlans, currentCurrency } from '../config/pricing-config';
 import { Check } from 'lucide-react';
 
 interface SubscriptionPlansProps {
@@ -15,6 +15,11 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
     if (e.target === e.currentTarget) {
       onClose();
     }
+  };
+
+  const formatPrice = (price: number) => {
+    const { symbol, position } = currentCurrency;
+    return position === 'before' ? `${symbol}${price}` : `${price}${symbol}`;
   };
 
   return (
@@ -61,7 +66,7 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
                     : 'border border-gray-200 dark:border-gray-700 hover:border-indigo-300'
                 }`}
               >
-                {plan.popular && (
+                {isSelected && (
                   <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                     <span className="bg-indigo-500 text-white px-3 py-1 rounded-full text-sm">
                       最受欢迎
@@ -77,7 +82,7 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
                 <div className="mb-6">
                   <div className="flex items-baseline">
                     <span className="text-3xl font-bold text-gray-900 dark:text-white">
-                      ¥{pricing.price}
+                      {formatPrice(pricing.price)}
                     </span>
                     <span className="text-gray-500 dark:text-gray-400 ml-2">
                       /月
