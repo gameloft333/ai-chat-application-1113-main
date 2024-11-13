@@ -8,11 +8,22 @@ import ChatMessage from './ChatMessage';
 import SubscriptionPlans from './components/SubscriptionPlans';
 import { PaymentService } from './services/payment-service';
 import { pricingPlans, currentCurrency } from './config/pricing-config';
+import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
+import LanguageSwitch from './components/LanguageSwitch';
 
 const API_KEY = import.meta.env.VITE_API_KEY || '';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const App: React.FC = () => {
+  return (
+    <LanguageProvider>
+      <AppContent />
+    </LanguageProvider>
+  );
+};
+
+const AppContent: React.FC = () => {
+  const { t } = useLanguage();
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
   const [chatHistory, setChatHistory] = useState<Record<string, Message[]>>({});
   const [randomColor, setRandomColor] = useState<string>('');
@@ -103,7 +114,7 @@ const App: React.FC = () => {
       }, 'user123');
       
       if (invoiceLink) {
-        console.log('支付链接创建成功:', invoiceLink); // 添加调试日志
+        console.log('付链接创建成功:', invoiceLink); // 添加调试日志
         window.open(invoiceLink, '_blank');
       } else {
         throw new Error('生成支付链接失败');
@@ -122,15 +133,18 @@ const App: React.FC = () => {
             <MessageCircle className="w-8 h-8 text-indigo-500" />
             <h1 className="text-xl font-semibold text-gray-900 dark:text-white">AI Chat Companions</h1>
           </div>
-          <button
-            onClick={() => setShowSubscription(true)}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-          >
-            升级会员
-          </button>
+          <div className="flex items-center space-x-4">
+            <LanguageSwitch />
+            <button
+              onClick={() => setShowSubscription(true)}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            >
+              {t('subscription.subscribe')}
+            </button>
+          </div>
         </div>
       </header>
-      
+        
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {selectedCharacter ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -138,7 +152,7 @@ const App: React.FC = () => {
               <button onClick={handleReturn} 
                 className="group mb-4 inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
                 <ArrowLeft className="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1" />
-                返回
+                {t('common.back')}
               </button>
               <div className="aspect-[3/4] rounded-2xl overflow-hidden shadow-xl">
                 <img
@@ -162,11 +176,11 @@ const App: React.FC = () => {
         )}
       </main>
       <footer className="bg-black bg-opacity-50 text-white p-4 text-center">
-        <p style={{ color: randomColor }}>&copy; 2024 AI Chat Companions. All rights reserved.</p>
+        <p style={{ color: randomColor }}>{t('common.copyright')}</p>
       </footer>
       {CLEAR_MEMORY_ON_RESTART && (
         <div className="text-yellow-400 text-sm mt-2">
-          注意: 现在处于测试模式，服务器重启时会清空聊天记录哦。
+          {t('common.testMode')}
         </div>
       )}
       

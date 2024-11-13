@@ -22,53 +22,53 @@ export const currentCurrency = currencyConfig.USD;
 
 export const pricingPlans = {
   durations: [
-    { id: '1week', label: '1周', trialOnly: true },
-    { id: '24months', label: '24个月' },
-    { id: '12months', label: '12个月', popular: true },
-    { id: '1month', label: '1个月' }
+    { id: '1week', label: '1 week', trialOnly: true },
+    { id: '24months', label: '24 months' },
+    { id: '12months', label: '12 months', popular: true },
+    { id: '1month', label: '1 month' }
   ],
   trialPlan: {
     id: 'trial',
-    name: '体验套餐',
-    description: '短期体验AI聊天服务',
+    name: 'subscription.trial',
+    description: 'subscription.trialDesc',
     prices: {
       '1week': { price: 9.90, save: 0, extraMonths: 0 }
     },
     features: [
-      '无限AI对话',
-      '基础角色解锁',
-      '基础语音功能'
+      'subscription.features.unlimitedChat',
+      'subscription.features.basicCharacters',
+      'subscription.features.basicVoice'
     ]
   },
   plans: [
     {
       id: 'basic',
-      name: '基础会员',
-      description: '开启基础AI聊天体验',
+      name: 'subscription.basic',
+      description: 'subscription.basicDesc',
       prices: {
         '24months': { price: 19.00, save: 50, extraMonths: 2 },
         '12months': { price: 29.00, save: 55, extraMonths: 2 },
         '1month': { price: 39.00, save: 0, extraMonths: 0 }
       },
       features: [
-        '无限AI对话',
-        '基础角色解锁',
-        '基础语音功能',
-        '标准客服支持'
+        'subscription.features.unlimitedChat',
+        'subscription.features.basicCharacters',
+        'subscription.features.basicVoice',
+        'subscription.features.standardSupport'
       ]
     },
     {
       id: 'pro',
-      name: '专业会员',
-      description: '解锁全部高级功能',
+      name: 'subscription.pro',
+      description: 'subscription.proDesc',
       popular: true,
       features: [
-        '无限AI对话',
-        '全部角色解锁',
-        '高级语音功能',
-        '优先客服支持',
-        '自定义角色设定',
-        '高级对话记忆'
+        'subscription.features.unlimitedChat',
+        'subscription.features.allCharacters',
+        'subscription.features.advancedVoice',
+        'subscription.features.prioritySupport',
+        'subscription.features.customCharacter',
+        'subscription.features.advancedMemory'
       ],
       prices: {
         '24months': { price: 25.00, save: 70, extraMonths: 4 },
@@ -78,17 +78,17 @@ export const pricingPlans = {
     },
     {
       id: 'ultimate',
-      name: '至尊会员',
-      description: '尊享独家特权功能',
+      name: 'subscription.ultimate',
+      description: 'subscription.ultimateDesc',
       features: [
-        '无限AI对话',
-        '全部角色解锁',
-        '最高级语音功能',
-        '24/7专属客服',
-        '自定义角色设定',
-        '永久对话记忆',
-        '独家角色优先体验',
-        'API接口调用权限'
+        'subscription.features.unlimitedChat',
+        'subscription.features.allCharacters',
+        'subscription.features.premiumVoice',
+        'subscription.features.dedicatedSupport',
+        'subscription.features.customCharacter',
+        'subscription.features.permanentMemory',
+        'subscription.features.exclusiveAccess',
+        'subscription.features.apiAccess'
       ],
       prices: {
         '24months': { price: 35.00, save: 75, extraMonths: 4 },

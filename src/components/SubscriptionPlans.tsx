@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { pricingPlans, currentCurrency } from '../config/pricing-config';
 import { Check, X } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface SubscriptionPlansProps {
   onClose: () => void;
@@ -11,6 +12,8 @@ interface SubscriptionPlansProps {
 const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscribe, isPaidUser = false }) => {
   const [selectedDuration, setSelectedDuration] = useState(isPaidUser ? '12months' : '1week');
   const [selectedPlan, setSelectedPlan] = useState(isPaidUser ? 'pro' : 'trial');
+
+  const { t } = useLanguage();
 
   // 根据用户状态过滤显示的时长选项
   const availableDurations = pricingPlans.durations.filter(duration => 
@@ -24,7 +27,7 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
       // 非付费用户可以看到所有套餐（包括体验套餐）
       return [pricingPlans.trialPlan, ...regularPlans];
     }
-    // 付费用户只能看到常规套餐
+    // 付费用户只能看到常规餐
     return regularPlans;
   };
 
@@ -79,9 +82,9 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
               )}
 
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                {plan.name}
+                {t(plan.name)}
               </h3>
-              <p className="text-gray-500 dark:text-gray-400 mb-4">{plan.description}</p>
+              <p className="text-gray-500 dark:text-gray-400 mb-4">{t(plan.description)}</p>
 
               <div className="mb-6">
                 <div className="flex items-baseline">
@@ -89,17 +92,17 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
                     {formatPrice(pricing.price)}
                   </span>
                   <span className="text-gray-500 dark:text-gray-400 ml-2">
-                    {plan.id === 'trial' ? '/周' : '/月'}
+                    {t(`subscription.${plan.id === 'trial' ? 'perWeek' : 'perMonth'}`)}
                   </span>
                 </div>
                 {pricing.save > 0 && (
                   <div className="text-green-500 text-sm mt-1">
-                    节省 {pricing.save}%
+                    {t('subscription.save')} {pricing.save}%
                   </div>
                 )}
                 {pricing.extraMonths > 0 && (
                   <div className="text-indigo-500 text-sm mt-1">
-                    额外赠送 {pricing.extraMonths} 个月
+                    {t('subscription.extraMonths')} {pricing.extraMonths} {t('subscription.months')}
                   </div>
                 )}
               </div>
@@ -108,7 +111,7 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
                 {plan.features.map((feature, index) => (
                   <li key={index} className="flex items-center">
                     <Check className="w-5 h-5 text-green-500 mr-2" />
-                    <span className="text-gray-600 dark:text-gray-300">{feature}</span>
+                    <span className="text-gray-600 dark:text-gray-300">{t(feature)}</span>
                   </li>
                 ))}
               </ul>
@@ -151,7 +154,9 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
         </button>
 
         <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">选择会员方案</h2>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+            {t('subscription.title')}
+          </h2>
           <p className="text-gray-500 dark:text-gray-400 mt-2">解锁全部高级功能，享受完整AI陪伴体验</p>
         </div>
 
