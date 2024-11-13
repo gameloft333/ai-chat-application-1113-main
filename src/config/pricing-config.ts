@@ -22,10 +22,24 @@ export const currentCurrency = currencyConfig.USD;
 
 export const pricingPlans = {
   durations: [
+    { id: '1week', label: '1周', trialOnly: true },
     { id: '24months', label: '24个月' },
     { id: '12months', label: '12个月', popular: true },
     { id: '1month', label: '1个月' }
   ],
+  trialPlan: {
+    id: 'trial',
+    name: '体验套餐',
+    description: '短期体验AI聊天服务',
+    prices: {
+      '1week': { price: 9.90, save: 0, extraMonths: 0 }
+    },
+    features: [
+      '无限AI对话',
+      '基础角色解锁',
+      '基础语音功能'
+    ]
+  },
   plans: [
     {
       id: 'basic',

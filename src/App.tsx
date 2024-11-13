@@ -17,6 +17,7 @@ const App: React.FC = () => {
   const [chatHistory, setChatHistory] = useState<Record<string, Message[]>>({});
   const [randomColor, setRandomColor] = useState<string>('');
   const [showSubscription, setShowSubscription] = useState<boolean>(false);
+  const [user, setUser] = useState<{ isPaid: boolean } | null>(null);
 
   // 生成随机颜色的函数
   const generateRandomColor = () => {
@@ -72,16 +73,20 @@ const App: React.FC = () => {
 
   const handleSubscribe = async (planId: string, duration: string) => {
     try {
-      console.log('开始处理订阅:', planId, duration); // 添加调试日志
-      
       const paymentService = PaymentService.getInstance();
-      const plan = pricingPlans.plans.find(p => p.id === planId);
+      let plan;
+      
+      if (planId === 'trial') {
+        plan = pricingPlans.trialPlan;
+      } else {
+        plan = pricingPlans.plans.find(p => p.id === planId);
+      }
       
       if (!plan) {
         throw new Error('未找到订阅方案');
       }
       
-      const pricing = plan.prices[duration];
+      const pricing = plan.prices[duration] || plan.prices['1week'];
       if (!pricing) {
         throw new Error('未找到价格方案');
       }
@@ -169,6 +174,7 @@ const App: React.FC = () => {
         <SubscriptionPlans
           onClose={() => setShowSubscription(false)}
           onSubscribe={handleSubscribe}
+          isPaidUser={user?.isPaid}
         />
       )}
     </div>
