@@ -24,6 +24,12 @@ export default {
         save: 'Save',
         extraMonths: 'Extra',
         months: 'months',
+        duration: {
+            '1week': '1 week',
+            '24months': '24 months',
+            '12months': '12 months',
+            '1month': '1 month'
+        },
         features: {
             unlimitedChat: 'Unlimited AI Chat',
             basicCharacters: 'Basic Characters',

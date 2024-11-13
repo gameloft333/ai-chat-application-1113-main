@@ -11,7 +11,8 @@
     "update-version": "node scripts/update-version.js",
     "version:major": "node scripts/update-version.js major",
     "version:minor": "node scripts/update-version.js minor",
-    "version:patch": "node scripts/update-version.js patch"
+    "version:patch": "node scripts/update-version.js patch",
+    "commit": "scripts/run-commit.bat"
   },
   "dependencies": {
     "react": "^18.2.0",

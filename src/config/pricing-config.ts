@@ -22,10 +22,10 @@ export const currentCurrency = currencyConfig.USD;
 
 export const pricingPlans = {
   durations: [
-    { id: '1week', label: '1 week', trialOnly: true },
-    { id: '24months', label: '24 months' },
-    { id: '12months', label: '12 months', popular: true },
-    { id: '1month', label: '1 month' }
+    { id: '1week', trialOnly: true },
+    { id: '24months' },
+    { id: '12months' },
+    { id: '1month' }
   ],
   trialPlan: {
     id: 'trial',

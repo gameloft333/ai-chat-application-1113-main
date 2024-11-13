@@ -10,25 +10,88 @@ interface SubscriptionPlansProps {
 }
 
 const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscribe, isPaidUser = false }) => {
-  const [selectedDuration, setSelectedDuration] = useState(isPaidUser ? '12months' : '1week');
-  const [selectedPlan, setSelectedPlan] = useState(isPaidUser ? 'pro' : 'trial');
-
   const { t } = useLanguage();
-
-  // 根据用户状态过滤显示的时长选项
-  const availableDurations = pricingPlans.durations.filter(duration => 
-    isPaidUser ? !duration.trialOnly : true
-  );
 
   // 获取可显示的套餐列表
   const getAvailablePlans = () => {
     const regularPlans = pricingPlans.plans;
     if (!isPaidUser) {
-      // 非付费用户可以看到所有套餐（包括体验套餐）
       return [pricingPlans.trialPlan, ...regularPlans];
     }
-    // 付费用户只能看到常规餐
     return regularPlans;
+  };
+
+  // 获取最大优惠的套餐和时长
+  const getMaxDiscountPlan = () => {
+    const allPlans = getAvailablePlans();
+    let maxDiscount = 0;
+    let maxDiscountPlan = null;
+    let maxDiscountDuration = '';
+
+    allPlans.forEach(plan => {
+      Object.entries(plan.prices).forEach(([duration, pricing]) => {
+        if (pricing.save > maxDiscount) {
+          maxDiscount = pricing.save;
+          maxDiscountPlan = plan;
+          maxDiscountDuration = duration;
+        }
+      });
+    });
+
+    return {
+      planId: maxDiscountPlan?.id || (isPaidUser ? 'pro' : 'trial'),
+      duration: maxDiscountDuration || (isPaidUser ? '12months' : '1week')
+    };
+  };
+
+  const defaultSelection = getMaxDiscountPlan();
+  const [selectedDuration, setSelectedDuration] = useState(defaultSelection.duration);
+  const [selectedPlan, setSelectedPlan] = useState(defaultSelection.planId);
+
+  // 获取可用的时长选项
+  const getAvailableDurations = () => {
+    return pricingPlans.durations.filter(duration => {
+      if (isPaidUser) {
+        return !duration.trialOnly;
+      }
+      return true;
+    });
+  };
+
+  // 计算最受欢迎的套餐
+  const calculateMostPopularPlan = (plans: any[], duration: string) => {
+    // 首先检查是否有任何套餐在当前时长下有折扣
+    const hasAnyDiscount = plans.some(plan => {
+      const pricing = plan.prices[duration];
+      return pricing && pricing.save > 0;
+    });
+
+    if (hasAnyDiscount) {
+      // 如果有折扣，选择折扣最大的套餐
+      return plans.reduce((popular, current) => {
+        const currentPrice = current.prices[duration]?.price || 0;
+        const currentSave = current.prices[duration]?.save || 0;
+        const popularPrice = popular.prices[duration]?.price || 0;
+        const popularSave = popular.prices[duration]?.save || 0;
+
+        if (currentSave > popularSave) {
+          return current;
+        } else if (currentSave === popularSave && currentPrice > popularPrice) {
+          return current;
+        }
+        return popular;
+      });
+    } else {
+      // 如果没有折扣，选择价格居中的套餐
+      const availablePlans = plans.filter(plan => plan.prices[duration]);
+      const sortedPlans = availablePlans.sort((a, b) => 
+        (a.prices[duration]?.price || 0) - (b.prices[duration]?.price || 0)
+      );
+      
+      // 选择中间的套餐
+      const middleIndex = Math.floor(sortedPlans.length / 2);
+      return sortedPlans[middleIndex];
+    }
   };
 
   const getPlanPricing = (plan: any, duration: string) => {
@@ -53,13 +116,16 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
 
   const renderPlans = () => {
     const plans = getAvailablePlans();
+    const mostPopularPlan = calculateMostPopularPlan(plans, selectedDuration);
+
     return (
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-stretch">
         {plans.map(plan => {
           const pricing = getPlanPricing(plan, selectedDuration);
           if (!pricing) return null; // 如果没有对应的价格方案，不显示该选项
           
-          const isSelected = selectedPlan === plan.id;
+          const isPopular = plan === mostPopularPlan;
+          const isSelected = plan.id === selectedPlan;
           const isDisabled = isPaidUser && plan.id === 'trial';
           
           return (
@@ -73,10 +139,10 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
                   : 'border border-gray-200 dark:border-gray-700 hover:border-indigo-300'
               }`}
             >
-              {isSelected && (
+              {isPopular && (
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                   <span className="bg-indigo-500 text-white px-3 py-1 rounded-full text-sm">
-                    最受欢迎
+                    {t('subscription.popular')}
                   </span>
                 </div>
               )}
@@ -131,7 +197,7 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
                     : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white'
                 }`}
               >
-                {isDisabled ? '不可订阅' : '立即订阅'}
+                {isDisabled ? t('subscription.notAvailable') : t('subscription.subscribe')}
               </button>
             </div>
           );
@@ -157,12 +223,12 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
             {t('subscription.title')}
           </h2>
-          <p className="text-gray-500 dark:text-gray-400 mt-2">解锁全部高级功能，享受完整AI陪伴体验</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-2">{t('subscription.subtitle')}</p>
         </div>
 
         {!isPaidUser && (
           <div className="flex justify-center gap-2 mb-8">
-            {availableDurations.map(duration => (
+            {getAvailableDurations().map(duration => (
               <button
                 key={duration.id}
                 onClick={() => setSelectedDuration(duration.id)}
@@ -172,7 +238,7 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
                 }`}
               >
-                {duration.label}
+                {t(`subscription.duration.${duration.id}`)}
               </button>
             ))}
           </div>
