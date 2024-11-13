@@ -1,0 +1,86 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+@layer base {
+  body {
+    @apply bg-[#2C3E50] text-white font-sans;
+  }
+
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --primary: 248 90% 66%;
+    --primary-foreground: 210 40% 98%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --primary: 248 90% 66%;
+    --primary-foreground: 222.2 84% 4.9%;
+  }
+}
+
+@layer components {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+  
+  .scrollbar-thumb-gray-400 {
+    scrollbar-color: #a0aec0 #2d3748;
+  }
+  
+  .scrollbar-track-gray-700 {
+    scrollbar-track-color: #2d3748;
+  }
+}
+
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+  
+  .scrollbar-thumb-rounded::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+  }
+}
+
+.font-serif {
+  font-family: serif;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+#root {
+  height: 100%;
+}
+
+.fullscreen {
+  height: 100vh; /* 使元素高度为视口高度 */
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-container {
+  flex-grow: 1; /* 使聊天窗口占据剩余空间 */
+  overflow-y: auto; /* 允许滚动 */
+}
+
+.chat-bubble-animation {
+  animation: bubble-in 0.3s ease-out;
+}
+
+@keyframes bubble-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

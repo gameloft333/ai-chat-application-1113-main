@@ -1,0 +1,138 @@
+import React, { useState } from 'react';
+import { pricingPlans } from '../config/pricing-config';
+import { Check } from 'lucide-react';
+
+interface SubscriptionPlansProps {
+  onClose: () => void;
+  onSubscribe: (planId: string, duration: string) => void;
+}
+
+const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscribe }) => {
+  const [selectedDuration, setSelectedDuration] = useState('12months');
+  const [selectedPlan, setSelectedPlan] = useState('pro');
+
+  const handleOutsideClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
+  return (
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      onClick={handleOutsideClick}
+    >
+      <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 max-w-6xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">选择会员方案</h2>
+          <p className="text-gray-500 dark:text-gray-400 mt-2">解锁全部高级功能，享受完整AI陪伴体验</p>
+        </div>
+
+        {/* 时长选择器 */}
+        <div className="flex justify-center gap-2 mb-8">
+          {pricingPlans.durations.map(duration => (
+            <button
+              key={duration.id}
+              onClick={() => setSelectedDuration(duration.id)}
+              className={`px-4 py-2 rounded-full transition-colors ${
+                selectedDuration === duration.id
+                  ? 'bg-indigo-500 text-white'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+              }`}
+            >
+              {duration.label}
+            </button>
+          ))}
+        </div>
+
+        {/* 价格卡片 */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {pricingPlans.plans.map(plan => {
+            const pricing = plan.prices[selectedDuration];
+            const isSelected = selectedPlan === plan.id;
+            
+            return (
+              <div
+                key={plan.id}
+                onClick={() => setSelectedPlan(plan.id)}
+                className={`relative rounded-2xl p-6 cursor-pointer transition-all ${
+                  isSelected
+                    ? 'border-2 border-indigo-500 shadow-lg transform scale-105'
+                    : 'border border-gray-200 dark:border-gray-700 hover:border-indigo-300'
+                }`}
+              >
+                {plan.popular && (
+                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                    <span className="bg-indigo-500 text-white px-3 py-1 rounded-full text-sm">
+                      最受欢迎
+                    </span>
+                  </div>
+                )}
+
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                  {plan.name}
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400 mb-4">{plan.description}</p>
+
+                <div className="mb-6">
+                  <div className="flex items-baseline">
+                    <span className="text-3xl font-bold text-gray-900 dark:text-white">
+                      ¥{pricing.price}
+                    </span>
+                    <span className="text-gray-500 dark:text-gray-400 ml-2">
+                      /月
+                    </span>
+                  </div>
+                  {pricing.save > 0 && (
+                    <div className="text-green-500 text-sm mt-1">
+                      节省 {pricing.save}%
+                    </div>
+                  )}
+                  {pricing.extraMonths > 0 && (
+                    <div className="text-indigo-500 text-sm mt-1">
+                      额外赠送 {pricing.extraMonths} 个月
+                    </div>
+                  )}
+                </div>
+
+                <ul className="space-y-3 mb-6">
+                  {plan.features.map((feature, index) => (
+                    <li key={index} className="flex items-center">
+                      <Check className="w-5 h-5 text-green-500 mr-2" />
+                      <span className="text-gray-600 dark:text-gray-300">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    console.log('订阅计划:', plan.id, '时长:', selectedDuration);
+                    onSubscribe(plan.id, selectedDuration);
+                  }}
+                  className={`w-full py-2 px-4 rounded-lg transition-colors ${
+                    isSelected
+                      ? 'bg-indigo-500 hover:bg-indigo-600 text-white'
+                      : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white'
+                  }`}
+                >
+                  立即订阅
+                </button>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* 关闭按钮 */}
+        <button
+          onClick={onClose}
+          className="mt-8 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+        >
+          关闭
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default SubscriptionPlans;

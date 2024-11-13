@@ -1,0 +1,18 @@
+version: '3'
+services:
+  ai-chat-companions:
+    build: .
+    ports:
+      - "4173:4173"  # 将外部端口设置为 4173，内部端口保持为 4173
+    environment:
+      - NODE_ENV=production
+      - VITE_API_KEY=${VITE_API_KEY}
+      - VITE_API_URL=${VITE_API_URL}
+      - VITE_TELEGRAM_BOT_TOKEN=${VITE_TELEGRAM_BOT_TOKEN}
+      - VITE_TELEGRAM_PAYMENT_PROVIDER_TOKEN=${VITE_TELEGRAM_PAYMENT_PROVIDER_TOKEN}
+    volumes:
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./dist:/app/dist
+    command: sh -c "npm run build && npm run preview"
+    restart: unless-stopped
