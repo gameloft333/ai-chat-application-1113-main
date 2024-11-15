@@ -1,4 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from './contexts/AuthContext';
+import Login from './components/Login';
+import ErrorBoundary from './components/ErrorBoundary';
+// ... 其他导入保持不变
 import ChatInterface from './components/ChatInterface';
 import CharacterSelector from './components/CharacterSelector';
 import { MessageCircle, ArrowLeft } from 'lucide-react';
@@ -10,25 +15,66 @@ import { PaymentService } from './services/payment-service';
 import { pricingPlans, currentCurrency } from './config/pricing-config';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import LanguageSwitch from './components/LanguageSwitch';
+import { AuthProvider } from './contexts/AuthContext';
 
 const API_KEY = import.meta.env.VITE_API_KEY || '';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const App: React.FC = () => {
   return (
-    <LanguageProvider>
-      <AppContent />
-    </LanguageProvider>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <AuthProvider>
+          <LanguageProvider>
+            <AppRoutes />
+          </LanguageProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
+  );
+};
+
+const AppRoutes: React.FC = () => {
+  const { currentUser, loading } = useAuth();
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  return (
+    <Routes>
+      <Route 
+        path="/login" 
+        element={currentUser ? <Navigate to="/" /> : <Login />} 
+      />
+      <Route 
+        path="/" 
+        element={currentUser ? <AppContent /> : <Navigate to="/login" />} 
+      />
+    </Routes>
   );
 };
 
 const AppContent: React.FC = () => {
   const { t } = useLanguage();
+  const { logout, currentUser } = useAuth();
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
   const [chatHistory, setChatHistory] = useState<Record<string, Message[]>>({});
   const [randomColor, setRandomColor] = useState<string>('');
   const [showSubscription, setShowSubscription] = useState<boolean>(false);
   const [user, setUser] = useState<{ isPaid: boolean } | null>(null);
+
+  useEffect(() => {
+    if (!currentUser) {
+      return;
+    }
+    // 可以在这里加载用户数据
+  }, [currentUser]);
+
+  // 错误处理
+  if (!currentUser) {
+    return <Navigate to="/login" />;
+  }
 
   // 生成随机颜色的函数
   const generateRandomColor = () => {
@@ -140,6 +186,12 @@ const AppContent: React.FC = () => {
               className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
             >
               {t('subscription.subscribe')}
+            </button>
+            <button
+              onClick={logout}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            >
+              退出登录
             </button>
           </div>
         </div>
