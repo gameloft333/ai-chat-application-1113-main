@@ -7,9 +7,10 @@ interface SubscriptionPlansProps {
   onClose: () => void;
   onSubscribe: (planId: string, duration: string) => void;
   isPaidUser?: boolean;
+  themeColor: string;
 }
 
-const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscribe, isPaidUser = false }) => {
+const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscribe, isPaidUser = false, themeColor }) => {
   const { t } = useLanguage();
 
   // 获取可用的时长选项
@@ -121,9 +122,12 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
               onClick={() => setSelectedDuration(duration.id)}
               className={`px-8 py-3 rounded-full transition-all ${
                 selectedDuration === duration.id
-                  ? 'bg-[#FF4B91] text-white shadow-lg shadow-pink-500/20'
+                  ? 'text-white shadow-lg'
                   : 'bg-[#27282D] text-gray-400 hover:bg-[#2C2D33] hover:text-gray-200'
               }`}
+              style={{
+                backgroundColor: selectedDuration === duration.id ? themeColor : undefined
+              }}
             >
               {t(`subscription.duration.${duration.id}`)}
             </button>
@@ -141,12 +145,16 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
                 key={plan.id}
                 onClick={() => setSelectedPlan(plan.id)}
                 className={`relative bg-[#27282D] rounded-2xl p-6 cursor-pointer transition-all hover:bg-[#2C2D33] ${
-                  plan.id === selectedPlan ? 'ring-2 ring-[#FF4B91]' : ''
+                  plan.id === selectedPlan ? `ring-2` : ''
                 }`}
+                style={{
+                  ...(plan.id === selectedPlan && { ringColor: themeColor })
+                }}
               >
                 {isPopular && (
                   <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                    <span className="bg-[#FF4B91] text-white px-3 py-1 rounded-full text-sm">
+                    <span className="text-white px-3 py-1 rounded-full text-sm"
+                      style={{ backgroundColor: themeColor }}>
                       {t('subscription.popular')}
                     </span>
                   </div>
@@ -173,7 +181,7 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
                 <ul className="space-y-3 mb-6">
                   {plan.features.map(feature => (
                     <li key={feature} className="flex items-center text-gray-300">
-                      <Check className="w-5 h-5 text-[#FF4B91] mr-2" />
+                      <Check className="w-5 h-5 mr-2" style={{ color: themeColor }} />
                       <span>{t(feature)}</span>
                     </li>
                   ))}
@@ -181,7 +189,8 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
 
                 <button
                   onClick={() => onSubscribe(plan.id, selectedDuration)}
-                  className="w-full py-3 rounded-xl bg-[#FF4B91] text-white font-medium hover:bg-[#FF3381] transition-colors"
+                  className="w-full py-3 rounded-xl text-white font-medium hover:opacity-90 transition-colors"
+                  style={{ backgroundColor: themeColor }}
                 >
                   {t('subscription.subscribe')}
                 </button>

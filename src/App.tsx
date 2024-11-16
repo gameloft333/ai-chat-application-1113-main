@@ -98,7 +98,7 @@ const AppContent: React.FC = () => {
     return color;
   };
 
-  // 在组件加载时设置随机颜色
+  // 在组件���载时设置随机颜色
   useEffect(() => {
     let newColor;
     do {
@@ -323,10 +323,11 @@ const AppContent: React.FC = () => {
       )}
       
       {showSubscription && (
-        <SubscriptionPlans
+        <SubscriptionPlans 
           onClose={() => setShowSubscription(false)}
           onSubscribe={handleSubscribe}
-          isPaidUser={user?.isPaid}
+          isPaidUser={!!currentUser?.subscription}
+          themeColor={randomColor}
         />
       )}
     </div>

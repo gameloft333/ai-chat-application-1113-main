@@ -33,6 +33,7 @@ const PaymentResult: React.FC = () => {
                             status: 'success',
                             message: t('payment.success')
                         };
+                        await currentUser.reload();
                     } else {
                         await PaymentRecordService.updatePaymentStatus(token, 'failed');
                         paymentResult = {
