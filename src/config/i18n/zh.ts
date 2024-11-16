@@ -12,7 +12,17 @@ export default {
     auth: {
         register: '注册',
         login: '登录',
-        logout: '退出登录'
+        logout: '退出登录',
+        loginTitle: '登录账户',
+        registerTitle: '创建账户',
+        email: '邮箱地址',
+        password: '密码',
+        loginButton: '登录',
+        registerButton: '注册',
+        orDivider: '或者',
+        googleLogin: '使用谷歌账号登录',
+        registerPrompt: '没有账号？立即注册',
+        loginPrompt: '已有账号？立即登录'
     },
     subscription: {
         title: '选择会员方案',
@@ -54,6 +64,31 @@ export default {
             permanentMemory: '永久对话记忆',
             exclusiveAccess: '独家角色优先体验',
             apiAccess: 'API接口调用权限'
+        },
+        remaining: '剩余：{{days}}天',
+        changePlan: '更换套餐',
+        defaultPlan: '已订阅'
+    },
+    payment: {
+        processing: '正在处理支付结果...',
+        success: '支付成功！感谢您的订阅',
+        failed: '支付失败，请重试',
+        cancelled: '您已取消支付',
+        error: '处理支付时出现错误，请联系客服',
+        invalidToken: '无效的支付信息'
+    },
+    alerts: {
+        error: {
+            subscriptionNotFound: '未找到订阅方案或用户未登录',
+            priceNotFound: '未找到价格方案',
+            createSubscriptionFailed: '订阅失败，请稍后重试',
+            logoutFailed: '退出失败，请稍后重试',
+            loginFailed: '登录失败，请稍后重试',
+            registerFailed: '注册失败，请稍后重试'
+        },
+        auth: {
+            registerPrompt: '没有账号？立即注册',
+            loginPrompt: '已有账号？立即登录'
         }
     }
 };

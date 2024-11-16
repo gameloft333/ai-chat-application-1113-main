@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import Login from './components/Login';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -22,6 +22,7 @@ import { PayPalService } from './services/paypal-service';
 import { PAYPAL_CONFIG } from './config/paypal-config';
 import PaymentResult from './components/PaymentResult';
 import GenderSelector from './components/GenderSelector';
+import SubscriptionDropdown from './components/SubscriptionDropdown';
 
 const API_KEY = import.meta.env.VITE_API_KEY || '';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -55,12 +56,13 @@ const AppContent: React.FC = () => {
   const { t } = useLanguage();
   const { logout, currentUser } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
   const [chatHistory, setChatHistory] = useState<Record<string, Message[]>>({});
   const [randomColor, setRandomColor] = useState<string>('');
   const [showSubscription, setShowSubscription] = useState<boolean>(false);
   const [user, setUser] = useState<{ isPaid: boolean } | null>(null);
-  const [selectedGender, setSelectedGender] = useState<string>('male');
+  const [selectedGender, setSelectedGender] = useState<string>('female');
   const [themeColor, setThemeColor] = useState<string>('#4F46E5');
   
   const generateThemeColor = () => {
@@ -148,12 +150,12 @@ const AppContent: React.FC = () => {
       }
       
       if (!plan || !currentUser) {
-        throw new Error('未找到订阅方案或用户未登录');
+        throw new Error(t('alerts.error.subscriptionNotFound'));
       }
       
       const pricing = plan.prices[duration] || plan.prices['1week'];
       if (!pricing) {
-        throw new Error('未找到价格方案');
+        throw new Error(t('alerts.error.priceNotFound'));
       }
 
       // 创建支付记录
@@ -189,9 +191,22 @@ const AppContent: React.FC = () => {
       );
     } catch (error) {
       console.error('创建订阅失败:', error);
-      alert(error instanceof Error ? error.message : '订阅失败，请稍后重试');
+      alert(error instanceof Error ? error.message : t('alerts.error.createSubscriptionFailed'));
     }
   };
+
+  useEffect(() => {
+    const paymentStatus = location.state?.paymentStatus;
+    const message = location.state?.message;
+    
+    if (paymentStatus && message) {
+      // 清除状态，防止刷新时重复显示
+      navigate('/', { replace: true });
+      
+      // 显示支付状态提示
+      alert(message);
+    }
+  }, [location, navigate]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
@@ -229,32 +244,37 @@ const AppContent: React.FC = () => {
                   {t('auth.login')}
                 </button>
               </>
+            ) : user?.isPaid ? (
+              <SubscriptionDropdown
+                planName={user.planName || 'subscription.defaultPlan'}
+                daysLeft={user.daysLeft || 0}
+                themeColor={themeColor}
+                onChangeSubscription={() => setShowSubscription(true)}
+              />
             ) : (
-              <>
-                <button
-                  onClick={() => setShowSubscription(true)}
-                  className="px-4 py-2 rounded-lg text-white transition-colors"
-                  style={{ backgroundColor: themeColor }}
-                >
-                  {t('subscription.subscribe')}
-                </button>
-                <button
-                  onClick={async () => {
-                    try {
-                      await logout();
-                      navigate('/login');
-                    } catch (error) {
-                      console.error('退出错误:', error);
-                      alert(error instanceof Error ? error.message : '退出失败，请稍后重试');
-                    }
-                  }}
-                  className="px-4 py-2 rounded-lg text-white transition-colors"
-                  style={{ backgroundColor: themeColor }}
-                >
-                  {t('auth.logout')}
-                </button>
-              </>
+              <button
+                onClick={() => setShowSubscription(true)}
+                className="px-4 py-2 rounded-lg text-white transition-colors"
+                style={{ backgroundColor: themeColor }}
+              >
+                {t('subscription.subscribe')}
+              </button>
             )}
+            <button
+              onClick={async () => {
+                try {
+                  await logout();
+                  navigate('/login');
+                } catch (error) {
+                  console.error('退出错误:', error);
+                  alert(error instanceof Error ? error.message : t('alerts.error.logoutFailed'));
+                }
+              }}
+              className="px-4 py-2 rounded-lg text-white transition-colors"
+              style={{ backgroundColor: themeColor }}
+            >
+              {t('auth.logout')}
+            </button>
             <LanguageSwitch themeColor={themeColor} />
           </div>
         </div>

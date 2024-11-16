@@ -1,7 +1,7 @@
 {
   "name": "ai-chat-tavern",
   "private": true,
-  "version": "0.27.63.36557",
+  "version": "0.28.66.36557",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -15,12 +15,14 @@
     "commit": "scripts/run-commit.bat"
   },
   "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "lucide-react": "^0.344.0",
-    "firebase": "^10.8.0",
     "@firebase/auth": "^1.6.0",
     "@firebase/firestore": "^4.4.2",
+    "firebase": "^10.8.0",
+    "i18next": "^23.7.16",
+    "lucide-react": "^0.344.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-i18next": "^14.0.0",
     "react-router-dom": "^6.22.1"
   },
   "devDependencies": {
