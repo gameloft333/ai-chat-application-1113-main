@@ -18,3 +18,14 @@ export interface SubscriptionPlan {
     duration: 'monthly' | 'yearly';
     features: string[];
 }
+
+export interface PaymentRecord {
+    uid: string;
+    planId: string;
+    amount: number;
+    currency: string;
+    status: 'pending' | 'completed' | 'failed';
+    createdAt: Date;
+    expiredAt: Date;
+    transactionId?: string;
+}

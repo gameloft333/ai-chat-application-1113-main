@@ -16,6 +16,11 @@ import { pricingPlans, currentCurrency } from './config/pricing-config';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import LanguageSwitch from './components/LanguageSwitch';
 import { AuthProvider } from './contexts/AuthContext';
+import { PaymentRecordService } from './services/payment-record-service';
+import { PaymentRecord } from './types/payment';
+import { PayPalService } from './services/paypal-service';
+import { PAYPAL_CONFIG } from './config/paypal-config';
+import PaymentResult from './components/PaymentResult';
 
 const API_KEY = import.meta.env.VITE_API_KEY || '';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -35,22 +40,12 @@ const App: React.FC = () => {
 };
 
 const AppRoutes: React.FC = () => {
-  const { currentUser, loading } = useAuth();
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
   return (
     <Routes>
-      <Route 
-        path="/login" 
-        element={currentUser ? <Navigate to="/" /> : <Login />} 
-      />
-      <Route 
-        path="/" 
-        element={currentUser ? <AppContent /> : <Navigate to="/login" />} 
-      />
+      <Route path="/" element={<AppContent />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/payment-success" element={<PaymentResult />} />
+      <Route path="/payment-cancel" element={<Navigate to="/" />} />
     </Routes>
   );
 };
@@ -130,17 +125,15 @@ const AppContent: React.FC = () => {
 
   const handleSubscribe = async (planId: string, duration: string) => {
     try {
-      const paymentService = PaymentService.getInstance();
       let plan;
-      
       if (planId === 'trial') {
         plan = pricingPlans.trialPlan;
       } else {
         plan = pricingPlans.plans.find(p => p.id === planId);
       }
       
-      if (!plan) {
-        throw new Error('未找到订阅方案');
+      if (!plan || !currentUser) {
+        throw new Error('未找到订阅方案或用户未登录');
       }
       
       const pricing = plan.prices[duration] || plan.prices['1week'];
@@ -148,23 +141,37 @@ const AppContent: React.FC = () => {
         throw new Error('未找到价格方案');
       }
 
-      console.log('创建支付链接...', { plan, pricing }); // 添加调试日志
+      // 创建支付记录
+      const expiredAt = new Date();
+      expiredAt.setDate(expiredAt.getDate() + parseInt(duration) * 7);
 
-      const invoiceLink = await paymentService.createInvoiceLink({
-        id: `${planId}-${duration}`,
-        name: plan.name,
-        description: plan.description,
+      const paymentRecord: PaymentRecord = {
+        uid: currentUser.uid,
+        planId: planId,
+        amount: pricing.price,
+        currency: currentCurrency.code,
+        status: 'pending',
+        createdAt: new Date(),
+        expiredAt: expiredAt,
+      };
+
+      await PaymentRecordService.createPaymentRecord(paymentRecord);
+
+      // 使用 PayPal 创建支付订单
+      const paypalService = PayPalService.getInstance();
+      const orderId = await paypalService.createPaymentOrder({
         price: pricing.price,
         currency: currentCurrency.code,
-        duration: duration
-      }, 'user123');
-      
-      if (invoiceLink) {
-        console.log('付链接创建成功:', invoiceLink); // 添加调试日志
-        window.open(invoiceLink, '_blank');
-      } else {
-        throw new Error('生成支付链接失败');
-      }
+        description: plan.description
+      });
+
+      // 打开 PayPal 支付窗口
+      window.open(
+        `${PAYPAL_CONFIG.SANDBOX_MODE 
+          ? 'https://www.sandbox.paypal.com' 
+          : 'https://www.paypal.com'}/checkoutnow?token=${orderId}`,
+        '_blank'
+      );
     } catch (error) {
       console.error('创建订阅失败:', error);
       alert(error instanceof Error ? error.message : '订阅失败，请稍后重试');
