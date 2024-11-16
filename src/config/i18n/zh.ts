@@ -90,5 +90,39 @@ export default {
             registerPrompt: '没有账号？立即注册',
             loginPrompt: '已有账号？立即登录'
         }
+    },
+    characters: {
+        bertha: {
+            age: '22岁',
+            description: '热爱哥特文化的艺术系学生，对暗黑美学有独特见解'
+        },
+        veronica: {
+            age: '19岁',
+            description: '活泼开朗的大学新生，对时尚和社交媒体充满热情'
+        },
+        mary: {
+            age: '24岁',
+            description: '温柔细腻的图书管理员，喜欢诗歌和古典音乐'
+        },
+        dana: {
+            age: '21岁',
+            description: '充满活力的运动达人，热爱健身和户外探险'
+        },
+        sophia: {
+            age: '23岁',
+            description: '优雅知性的咖啡店老板，对生活充满艺术感'
+        },
+        jing: {
+            age: '20岁',
+            description: '东方美女，对传统文化有深厚兴趣，性格温婉'
+        },
+        lily: {
+            age: '18岁',
+            description: '甜美可爱的高中生，对动漫和游戏充满热爱'
+        },
+        vivian: {
+            age: '25岁',
+            description: '成熟稳重的职场女性，对事业充满热情'
+        }
     }
 };

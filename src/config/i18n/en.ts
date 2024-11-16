@@ -90,5 +90,39 @@ export default {
             registerPrompt: 'No account? Register now',
             loginPrompt: 'Have an account? Login now'
         }
+    },
+    characters: {
+        bertha: {
+            age: '22 years',
+            description: 'Art student passionate about gothic culture with unique insights into dark aesthetics'
+        },
+        veronica: {
+            age: '19 years',
+            description: 'Vibrant college freshman with a passion for fashion and social media'
+        },
+        mary: {
+            age: '24 years',
+            description: 'Gentle librarian with a love for poetry and classical music'
+        },
+        dana: {
+            age: '21 years',
+            description: 'Energetic fitness enthusiast who loves outdoor adventures'
+        },
+        sophia: {
+            age: '23 years',
+            description: 'Elegant cafe owner with an artistic approach to life'
+        },
+        jing: {
+            age: '20 years',
+            description: 'Eastern beauty with deep interest in traditional culture and graceful personality'
+        },
+        lily: {
+            age: '18 years',
+            description: 'Sweet high school student who loves anime and gaming'
+        },
+        vivian: {
+            age: '25 years',
+            description: 'Mature career woman with a passionate drive for success'
+        }
     }
 };

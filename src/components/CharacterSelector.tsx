@@ -21,7 +21,7 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
   maxCharacters = characters.length,
   selectedGender
 }) => {
-  const { t } = useLanguage();
+  const { t, currentLanguage } = useLanguage();
   const [randomColor, setRandomColor] = useState<string>('#FFFFFF');
 
   const generateRandomColor = () => {
@@ -43,6 +43,9 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
     
   const shuffledCharacters = shuffleArray([...filteredCharacters]).slice(0, maxCharacters);
 
+  console.log('Current language:', currentLanguage);
+  console.log('Translation test:', t('characters.bertha.description'));
+
   return (
     <div className="space-y-8">
       <h2 
@@ -55,7 +58,7 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
         {shuffledCharacters.map((character) => (
           <div
             key={character.id}
-            className="cursor-pointer transition-all duration-300 transform hover:scale-105"
+            className="cursor-pointer transition-all duration-300 transform hover:scale-105 relative"
             onClick={() => onSelectCharacter(character)}
           >
             <img
@@ -64,7 +67,15 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
               className="w-full h-auto rounded-lg shadow-lg"
               style={{ aspectRatio: '9 / 16', objectFit: 'cover' }}
             />
-            <p className="text-center text-white mt-2 font-serif">{character.name}</p>
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 rounded-b-lg">
+              <h3 className="text-white text-lg font-bold mb-1">{character.name}</h3>
+              <p className="text-gray-300 text-sm">
+                {t(`characters.${character.id}.age`)}
+              </p>
+              <p className="text-gray-300 text-sm mt-2 line-clamp-2">
+                {t(`characters.${character.id}.description`)}
+              </p>
+            </div>
           </div>
         ))}
       </div>
