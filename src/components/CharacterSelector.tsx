@@ -5,6 +5,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 interface CharacterSelectorProps {
   onSelectCharacter: (character: Character) => void;
   maxCharacters?: number;
+  selectedGender: string;
 }
 
 const shuffleArray = (array: Character[]) => {
@@ -17,7 +18,8 @@ const shuffleArray = (array: Character[]) => {
 
 const CharacterSelector: React.FC<CharacterSelectorProps> = ({
   onSelectCharacter,
-  maxCharacters = characters.length
+  maxCharacters = characters.length,
+  selectedGender
 }) => {
   const { t } = useLanguage();
   const [randomColor, setRandomColor] = useState<string>('#FFFFFF');
@@ -35,7 +37,11 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
     setRandomColor(generateRandomColor());
   }, []);
 
-  const shuffledCharacters = shuffleArray([...characters]).slice(0, maxCharacters);
+  const filteredCharacters = selectedGender 
+    ? characters.filter(char => char.gender === selectedGender)
+    : characters;
+    
+  const shuffledCharacters = shuffleArray([...filteredCharacters]).slice(0, maxCharacters);
 
   return (
     <div className="space-y-8">

@@ -107,7 +107,7 @@ const AppContent: React.FC = () => {
 
   // 检查颜色是否与背景色相似的函数
   const isColorSimilarToBackground = (color: string) => {
-    // 这里���以根据你的背景色进行判断
+    // 这里以根据你的背景色进行判断
     const backgroundColor = '#1a202c'; // 示例背景色
     // 这里可以添加更复杂的颜色相似性判断逻辑
     return color === backgroundColor;
@@ -287,7 +287,10 @@ const AppContent: React.FC = () => {
             </div>
           </div>
         ) : (
-          <CharacterSelector onSelectCharacter={handleSelectCharacter} maxCharacters={8} />
+          <CharacterSelector
+            onSelectCharacter={handleSelectCharacter}
+            selectedGender={selectedGender}
+          />
         )}
       </main>
       <footer className="bg-black bg-opacity-50 text-white p-4 text-center">

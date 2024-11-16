@@ -20,11 +20,18 @@ const GenderSelector: React.FC<GenderSelectorProps> = ({
                 <button
                     key={gender}
                     onClick={() => onGenderChange(gender)}
-                    className={`px-4 py-2 rounded-lg transition-colors ${selectedGender === gender
-                            ? `bg-opacity-100 text-white`
-                            : `bg-opacity-20 hover:bg-opacity-30 text-gray-300`
-                        }`}
-                    style={{ backgroundColor: selectedGender === gender ? themeColor : `${themeColor}40` }}
+                    className={`px-4 py-2 rounded-lg transition-colors ${
+                        selectedGender === gender
+                            ? 'bg-opacity-100 text-white shadow-lg scale-105'
+                            : 'bg-opacity-20 hover:bg-opacity-30 text-gray-600 dark:text-gray-300'
+                    }`}
+                    style={{
+                        backgroundColor: selectedGender === gender 
+                            ? themeColor 
+                            : 'transparent',
+                        border: `2px solid ${themeColor}`,
+                        transform: selectedGender === gender ? 'scale(1.05)' : 'scale(1)'
+                    }}
                 >
                     {t(`gender.${gender}`)}
                 </button>
