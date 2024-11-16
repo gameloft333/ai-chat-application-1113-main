@@ -5,6 +5,15 @@ export default {
         testMode: '注意: 现在处于测试模式，服务器重启时会清空聊天记录哦。',
         back: '返回'
     },
+    gender: {
+        male: '男生',
+        female: '女生'
+    },
+    auth: {
+        register: '注册',
+        login: '登录',
+        logout: '退出登录'
+    },
     subscription: {
         title: '选择会员方案',
         subtitle: '解锁全部高级功能，享受完整AI陪伴体验',

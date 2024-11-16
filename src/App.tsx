@@ -21,6 +21,7 @@ import { PaymentRecord } from './types/payment';
 import { PayPalService } from './services/paypal-service';
 import { PAYPAL_CONFIG } from './config/paypal-config';
 import PaymentResult from './components/PaymentResult';
+import GenderSelector from './components/GenderSelector';
 
 const API_KEY = import.meta.env.VITE_API_KEY || '';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -59,6 +60,21 @@ const AppContent: React.FC = () => {
   const [randomColor, setRandomColor] = useState<string>('');
   const [showSubscription, setShowSubscription] = useState<boolean>(false);
   const [user, setUser] = useState<{ isPaid: boolean } | null>(null);
+  const [selectedGender, setSelectedGender] = useState<string>('male');
+  const [themeColor, setThemeColor] = useState<string>('#4F46E5');
+  
+  const generateThemeColor = () => {
+    const hue = Math.floor(Math.random() * 360);
+    const saturation = 70 + Math.random() * 20;
+    const lightness = 45 + Math.random() * 10;
+    return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+  };
+
+  useEffect(() => {
+    const newColor = generateThemeColor();
+    setThemeColor(newColor);
+    document.documentElement.style.setProperty('--theme-color', newColor);
+  }, []);
 
   useEffect(() => {
     if (!currentUser) {
@@ -91,7 +107,7 @@ const AppContent: React.FC = () => {
 
   // 检查颜色是否与背景色相似的函数
   const isColorSimilarToBackground = (color: string) => {
-    // 这里可以根据你的背景色进行判断
+    // 这里���以根据你的背景色进行判断
     const backgroundColor = '#1a202c'; // 示例背景色
     // 这里可以添加更复杂的颜色相似性判断逻辑
     return color === backgroundColor;
@@ -181,32 +197,65 @@ const AppContent: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       <header className="sticky top-0 z-50 backdrop-blur-lg bg-white/75 dark:bg-gray-900/75 border-b border-gray-200 dark:border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <MessageCircle className="w-8 h-8 text-indigo-500" />
-            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">AI Chat Companions</h1>
+          <div className="flex items-center space-x-6">
+            <div className="flex items-center space-x-3">
+              <MessageCircle className="w-8 h-8" style={{ color: themeColor }} />
+              <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+                AI Chat Companions
+              </h1>
+            </div>
+            <GenderSelector 
+              selectedGender={selectedGender}
+              onGenderChange={setSelectedGender}
+              themeColor={themeColor}
+            />
           </div>
-          <div className="flex items-center space-x-4">
-            <LanguageSwitch />
-            <button
-              onClick={() => setShowSubscription(true)}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-            >
-              {t('subscription.subscribe')}
-            </button>
-            <button
-              onClick={async () => {
-                try {
-                  await logout();
-                  navigate('/login');
-                } catch (error) {
-                  console.error('退出错误:', error);
-                  alert(error instanceof Error ? error.message : '退出失败，请稍后重试');
-                }
-              }}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-            >
-              退出登录
-            </button>
+          
+          <div className="flex items-center space-x-3">
+            {!currentUser ? (
+              <>
+                <button
+                  onClick={() => navigate('/register')}
+                  className="px-4 py-2 rounded-lg transition-colors"
+                  style={{ backgroundColor: `${themeColor}40`, color: themeColor }}
+                >
+                  {t('auth.register')}
+                </button>
+                <button
+                  onClick={() => navigate('/login')}
+                  className="px-4 py-2 rounded-lg text-white transition-colors"
+                  style={{ backgroundColor: themeColor }}
+                >
+                  {t('auth.login')}
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => setShowSubscription(true)}
+                  className="px-4 py-2 rounded-lg text-white transition-colors"
+                  style={{ backgroundColor: themeColor }}
+                >
+                  {t('subscription.subscribe')}
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      await logout();
+                      navigate('/login');
+                    } catch (error) {
+                      console.error('退出错误:', error);
+                      alert(error instanceof Error ? error.message : '退出失败，请稍后重试');
+                    }
+                  }}
+                  className="px-4 py-2 rounded-lg text-white transition-colors"
+                  style={{ backgroundColor: themeColor }}
+                >
+                  {t('auth.logout')}
+                </button>
+              </>
+            )}
+            <LanguageSwitch themeColor={themeColor} />
           </div>
         </div>
       </header>

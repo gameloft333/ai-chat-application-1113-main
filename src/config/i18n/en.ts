@@ -5,6 +5,15 @@ export default {
         testMode: 'Note: In test mode, chat history will be cleared on server restart.',
         back: 'Back'
     },
+    gender: {
+        male: 'Male',
+        female: 'Female'
+    },
+    auth: {
+        register: 'Register',
+        login: 'Login',
+        logout: 'Logout'
+    },
     subscription: {
         title: 'Choose Your Plan',
         subtitle: 'Unlock all premium features and enjoy the complete AI companion experience',
