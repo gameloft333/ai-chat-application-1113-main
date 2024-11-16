@@ -37,12 +37,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const signInWithGoogle = async () => {
         try {
             const provider = new GoogleAuthProvider();
-            await signInWithPopup(auth, provider);
+            provider.setCustomParameters({
+                prompt: 'select_account'
+            });
+            const result = await signInWithPopup(auth, provider);
+            if (!result.user) {
+                throw new Error('登录失败：未能获取用户信息');
+            }
         } catch (error: any) {
             if (error.code === 'auth/unauthorized-domain') {
                 throw new Error('当前域名未授权，请联系管理员添加授权域名');
             }
-            throw error;
+            if (error.code === 'auth/popup-closed-by-user') {
+                throw new Error('登录已取消');
+            }
+            console.error('Google登录错误:', error);
+            throw new Error('登录失败，请稍后重试');
         }
     };
 
@@ -55,7 +65,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const logout = async () => {
-        await signOut(auth);
+        try {
+            await signOut(auth);
+            localStorage.removeItem('chatHistory');
+        } catch (error) {
+            console.error('退出登录错误:', error);
+            throw new Error('退出登录失败，请稍后重试');
+        }
     };
 
     useEffect(() => {

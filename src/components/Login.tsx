@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { MailIcon, LockIcon, Chrome } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const Login: React.FC = () => {
     const [isLogin, setIsLogin] = useState(true);
@@ -8,6 +9,7 @@ const Login: React.FC = () => {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const { signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
+    const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -27,6 +29,7 @@ const Login: React.FC = () => {
     const handleGoogleSignIn = async () => {
         try {
             await signInWithGoogle();
+            navigate('/');
         } catch (err) {
             setError(err instanceof Error ? err.message : '谷歌登录失败');
         }

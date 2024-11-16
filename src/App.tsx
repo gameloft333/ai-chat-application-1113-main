@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import Login from './components/Login';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -53,6 +53,7 @@ const AppRoutes: React.FC = () => {
 const AppContent: React.FC = () => {
   const { t } = useLanguage();
   const { logout, currentUser } = useAuth();
+  const navigate = useNavigate();
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
   const [chatHistory, setChatHistory] = useState<Record<string, Message[]>>({});
   const [randomColor, setRandomColor] = useState<string>('');
@@ -61,14 +62,12 @@ const AppContent: React.FC = () => {
 
   useEffect(() => {
     if (!currentUser) {
-      return;
+      navigate('/login');
     }
-    // 可以在这里加载用户数据
-  }, [currentUser]);
+  }, [currentUser, navigate]);
 
-  // 错误处理
   if (!currentUser) {
-    return <Navigate to="/login" />;
+    return null;
   }
 
   // 生成随机颜色的函数
@@ -195,7 +194,15 @@ const AppContent: React.FC = () => {
               {t('subscription.subscribe')}
             </button>
             <button
-              onClick={logout}
+              onClick={async () => {
+                try {
+                  await logout();
+                  navigate('/login');
+                } catch (error) {
+                  console.error('退出错误:', error);
+                  alert(error instanceof Error ? error.message : '退出失败，请稍后重试');
+                }
+              }}
               className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
             >
               退出登录
