@@ -82,9 +82,12 @@ export default {
             subscriptionNotFound: '未找到订阅方案或用户未登录',
             priceNotFound: '未找到价格方案',
             createSubscriptionFailed: '订阅失败，请稍后重试',
-            logoutFailed: '退出失败，请稍后重试',
+            logoutFailed: '退出登录失败，请稍后重试',
             loginFailed: '登录失败，请稍后重试',
-            registerFailed: '注册失败，请稍后重试'
+            registerFailed: '注册失败，请稍后重试',
+            emailAlreadyInUse: '该邮箱已被注册，请直接登录或使用其他邮箱',
+            invalidEmail: '邮箱格式不正确',
+            weakPassword: '密码强度不够，请至少包含6个字符'
         },
         auth: {
             registerPrompt: '没有账号？立即注册',

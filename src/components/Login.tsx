@@ -24,8 +24,17 @@ const Login: React.FC = () => {
             } else {
                 await signUpWithEmail(email, password);
             }
-        } catch (err) {
-            setError(err instanceof Error ? err.message : t('alerts.error.loginFailed'));
+            navigate('/');
+        } catch (err: any) {
+            if (err.code === 'auth/email-already-in-use') {
+                setError(t('alerts.error.emailAlreadyInUse'));
+            } else if (err.code === 'auth/invalid-email') {
+                setError(t('alerts.error.invalidEmail'));
+            } else if (err.code === 'auth/weak-password') {
+                setError(t('alerts.error.weakPassword'));
+            } else {
+                setError(err instanceof Error ? err.message : t('alerts.error.registerFailed'));
+            }
         }
     };
 
