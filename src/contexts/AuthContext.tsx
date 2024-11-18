@@ -10,6 +10,8 @@ import {
     onAuthStateChanged
 } from 'firebase/auth';
 import { auth } from '../config/firebase-config';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '../config/firebase-config';
 
 interface AuthContextType {
     currentUser: User | null;
@@ -18,6 +20,7 @@ interface AuthContextType {
     signInWithEmail: (email: string, password: string) => Promise<void>;
     signUpWithEmail: (email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
+    updateUser: (uid: string, data: Partial<User>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -74,6 +77,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
+    const updateUser = async (uid: string, data: Partial<User>) => {
+        const userRef = doc(db, 'users', uid);
+        await updateDoc(userRef, data);
+    };
+
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             setCurrentUser(user);
@@ -89,7 +97,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         signInWithGoogle,
         signInWithEmail,
         signUpWithEmail,
-        logout
+        logout,
+        updateUser
     };
 
     return (

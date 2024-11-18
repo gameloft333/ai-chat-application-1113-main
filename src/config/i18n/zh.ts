@@ -68,7 +68,8 @@ export default {
         remaining: '剩余：{{days}}天',
         changePlan: '更换套餐',
         defaultPlan: '已订阅',
-        currentPlan: '当前套餐'
+        currentPlan: '当前套餐',
+        timeLeft: '{{days}}天{{hours}}小时后到期'
     },
     payment: {
         processing: '正在处理支付结果...',

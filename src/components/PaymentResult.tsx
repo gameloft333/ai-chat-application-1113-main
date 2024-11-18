@@ -2,14 +2,40 @@ import React, { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { PayPalService } from '../services/paypal-service';
 import { PaymentRecordService } from '../services/payment-record-service';
+import { UserService } from '../services/user-service';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { db } from '../config/firebase-config';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 const PaymentResult: React.FC = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const { currentUser } = useAuth();
     const { t } = useLanguage();
+
+    const updateUser = async (uid: string, data: any) => {
+        try {
+            const userRef = doc(db, 'users', uid);
+            const userDoc = await getDoc(userRef);
+            
+            if (!userDoc.exists()) {
+                // 如果用户文档不存在，创建新文档
+                await setDoc(userRef, {
+                    uid: uid,
+                    isPaid: false,
+                    createdAt: new Date().toISOString(),
+                    ...data
+                });
+            } else {
+                // 更新现有文档
+                await setDoc(userRef, data, { merge: true });
+            }
+        } catch (error) {
+            console.error('更新用户信息失败:', error);
+            throw error;
+        }
+    };
 
     useEffect(() => {
         const handlePaymentResult = async () => {
@@ -46,6 +72,15 @@ const PaymentResult: React.FC = () => {
                             'paypal',
                             'completed'
                         );
+                        
+                        // 更新用户信息
+                        if (currentUser) {
+                            await updateUser(currentUser.uid, {
+                                isPaid: true,
+                                expiredAt: record.expiredAt,
+                                planId: record.planId
+                            });
+                        }
                     }
                 }
 

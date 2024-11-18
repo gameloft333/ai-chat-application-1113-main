@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { pricingPlans, currentCurrency } from '../config/pricing-config';
 import { Check, X } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { PaymentRecord } from '../types/payment';
+import { PaymentRecordService } from '../services/payment-record-service';
 
 interface SubscriptionPlansProps {
   onClose: () => void;
@@ -10,8 +12,24 @@ interface SubscriptionPlansProps {
   themeColor: string;
 }
 
-const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscribe, currentPlanId, themeColor }) => {
+const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscribe, currentPlanId, themeColor, userEmail }) => {
   const { t } = useLanguage();
+  const [currentSubscription, setCurrentSubscription] = useState<PaymentRecord | null>(null);
+
+  useEffect(() => {
+    const fetchCurrentSubscription = async () => {
+      if (userEmail) {
+        try {
+          const subscription = await PaymentRecordService.getActiveSubscriptionByEmail(userEmail);
+          setCurrentSubscription(subscription);
+        } catch (error) {
+          console.error('获取当前订阅失败:', error);
+        }
+      }
+    };
+
+    fetchCurrentSubscription();
+  }, [userEmail]);
 
   // 获取可用的时长选项
   const getAvailableDurations = () => {
@@ -95,6 +113,11 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
     }
   };
 
+  // 判断是否是当前套餐
+  const isCurrentPlan = (planId: string) => {
+    return currentSubscription?.planId === planId;
+  };
+
   return (
     <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 overflow-y-auto">
       <div className="relative bg-[#1E1F23] rounded-3xl w-full max-w-5xl max-h-[90vh] overflow-y-auto">
@@ -139,20 +162,20 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
           {getAvailablePlans().map(plan => {
             const pricing = getPlanPricing(plan, selectedDuration);
             const isPopular = plan === calculateMostPopularPlan(getAvailablePlans(), selectedDuration);
-            const isCurrentPlan = plan.id === currentPlanId;
+            const isPlanCurrent = isCurrentPlan(plan.id);
             
             return (
               <div 
                 key={plan.id}
-                onClick={() => !isCurrentPlan && setSelectedPlan(plan.id)}
+                onClick={() => !isPlanCurrent && setSelectedPlan(plan.id)}
                 className={`relative bg-[#27282D] rounded-2xl p-6 transition-all 
-                  ${!isCurrentPlan ? 'cursor-pointer hover:bg-[#2C2D33]' : 'cursor-default'} 
+                  ${!isPlanCurrent ? 'cursor-pointer hover:bg-[#2C2D33]' : 'cursor-default'} 
                   ${plan.id === selectedPlan ? 'ring-2' : ''}`}
                 style={{
                   ...(plan.id === selectedPlan && { ringColor: themeColor })
                 }}
               >
-                {isPopular && !isCurrentPlan && (
+                {isPopular && !isPlanCurrent && (
                   <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                     <span className="text-white px-3 py-1 rounded-full text-sm"
                       style={{ backgroundColor: themeColor }}>
@@ -161,7 +184,7 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
                   </div>
                 )}
                 
-                {isCurrentPlan && (
+                {isPlanCurrent && (
                   <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                     <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm">
                       {t('subscription.currentPlan')}
@@ -196,15 +219,22 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
                   ))}
                 </ul>
 
-                <button
-                  onClick={() => !isCurrentPlan && onSubscribe(plan.id, selectedDuration)}
-                  className={`w-full py-3 rounded-xl text-white font-medium transition-colors
-                    ${isCurrentPlan ? 'bg-green-500 cursor-default' : 'hover:opacity-90'}`}
-                  style={{ backgroundColor: isCurrentPlan ? undefined : themeColor }}
-                  disabled={isCurrentPlan}
-                >
-                  {isCurrentPlan ? t('subscription.currentPlan') : t('subscription.subscribe')}
-                </button>
+                {isPlanCurrent ? (
+                  <button
+                    disabled
+                    className="w-full py-3 rounded-xl bg-green-500 text-white cursor-not-allowed"
+                  >
+                    {t('subscription.currentPlan')}
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => onSubscribe(plan.id, selectedDuration)}
+                    className="w-full py-3 rounded-xl text-white font-medium transition-colors hover:opacity-90"
+                    style={{ backgroundColor: themeColor }}
+                  >
+                    {t('subscription.subscribe')}
+                  </button>
+                )}
               </div>
             );
           })}

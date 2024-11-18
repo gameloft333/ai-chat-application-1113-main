@@ -23,6 +23,7 @@ import { PAYPAL_CONFIG } from './config/paypal-config';
 import PaymentResult from './components/PaymentResult';
 import GenderSelector from './components/GenderSelector';
 import SubscriptionDropdown from './components/SubscriptionDropdown';
+import SubscriptionExpiry from './components/SubscriptionExpiry';
 
 const API_KEY = import.meta.env.VITE_API_KEY || '';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -248,12 +249,18 @@ const AppContent: React.FC = () => {
                 </button>
               </>
             ) : user?.isPaid ? (
-              <SubscriptionDropdown
-                planName={user.planName || 'subscription.defaultPlan'}
-                daysLeft={user.daysLeft || 0}
-                themeColor={themeColor}
-                onChangeSubscription={() => setShowSubscription(true)}
-              />
+              <>
+                <SubscriptionExpiry 
+                  expiredAt={new Date(user.expiredAt)} 
+                  themeColor={themeColor}
+                />
+                <SubscriptionDropdown
+                  planName={user.planName || 'subscription.defaultPlan'}
+                  daysLeft={user.daysLeft || 0}
+                  themeColor={themeColor}
+                  onChangeSubscription={() => setShowSubscription(true)}
+                />
+              </>
             ) : (
               <button
                 onClick={() => setShowSubscription(true)}
@@ -331,6 +338,7 @@ const AppContent: React.FC = () => {
           onSubscribe={handleSubscribe}
           currentPlanId={user?.planId}
           themeColor={themeColor}
+          userEmail={currentUser?.email}
         />
       )}
     </div>

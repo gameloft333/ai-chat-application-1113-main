@@ -1,5 +1,5 @@
 import { db } from '../config/firebase-config';
-import { collection, doc, setDoc, getDoc, query, where, getDocs, updateDoc, addDoc, limit } from 'firebase/firestore';
+import { collection, doc, setDoc, getDoc, query, where, getDocs, updateDoc, addDoc, limit, orderBy } from 'firebase/firestore';
 import { PaymentRecord, PaymentChannel } from '../types/payment';
 
 export class PaymentRecordService {
@@ -150,6 +150,36 @@ export class PaymentRecordService {
         } catch (error) {
             console.error('更新支付状态失败:', error);
             throw error;
+        }
+    }
+
+    static async getActiveSubscriptionByEmail(email: string): Promise<PaymentRecord | null> {
+        try {
+            const paymentsRef = collection(db, 'paymentRecords');
+            const q = query(
+                paymentsRef, 
+                where('paymentAccount', '==', email),
+                where('status', '==', 'completed')
+            );
+            
+            const querySnapshot = await getDocs(q);
+            const now = new Date();
+            
+            const validRecords = querySnapshot.docs
+                .map(doc => ({
+                    id: doc.id,
+                    ...doc.data(),
+                    createdAt: new Date(doc.data().createdAt),
+                    expiredAt: new Date(doc.data().expiredAt),
+                    completedAt: doc.data().completedAt ? new Date(doc.data().completedAt) : undefined
+                } as PaymentRecord))
+                .filter(record => record.expiredAt > now)
+                .sort((a, b) => b.expiredAt.getTime() - a.expiredAt.getTime());
+
+            return validRecords[0] || null;
+        } catch (error) {
+            console.error('获取邮箱订阅记录失败:', error);
+            return null;
         }
     }
 }
