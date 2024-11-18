@@ -3,7 +3,9 @@ export default {
         selectCharacter: 'Please select your AI companion',
         copyright: '© 2024 AI Chat Companions. All rights reserved.',
         testMode: 'Note: In test mode, chat history will be cleared on server restart.',
-        back: 'Back'
+        back: 'Back',
+        welcome: 'Welcome to AI Chat Companions',
+        welcomeDescription: 'Login to start chatting with AI companions'
     },
     gender: {
         male: 'Male',

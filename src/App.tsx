@@ -24,6 +24,7 @@ import PaymentResult from './components/PaymentResult';
 import GenderSelector from './components/GenderSelector';
 import SubscriptionDropdown from './components/SubscriptionDropdown';
 import SubscriptionExpiry from './components/SubscriptionExpiry';
+import LoginModal from './components/LoginModal';
 
 const API_KEY = import.meta.env.VITE_API_KEY || '';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -55,7 +56,7 @@ const AppRoutes: React.FC = () => {
 
 const AppContent: React.FC = () => {
   const { t } = useLanguage();
-  const { logout, currentUser } = useAuth();
+  const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
@@ -65,6 +66,7 @@ const AppContent: React.FC = () => {
   const [user, setUser] = useState<{ isPaid: boolean } | null>(null);
   const [selectedGender, setSelectedGender] = useState<string>('female');
   const [themeColor, setThemeColor] = useState<string>('#4F46E5');
+  const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
   
   const generateThemeColor = () => {
     const hue = Math.floor(Math.random() * 360);
@@ -78,16 +80,6 @@ const AppContent: React.FC = () => {
     setThemeColor(newColor);
     document.documentElement.style.setProperty('--theme-color', newColor);
   }, []);
-
-  useEffect(() => {
-    if (!currentUser) {
-      navigate('/login');
-    }
-  }, [currentUser, navigate]);
-
-  if (!currentUser) {
-    return null;
-  }
 
   // 生成随机颜色的函数
   const generateRandomColor = () => {
@@ -232,59 +224,53 @@ const AppContent: React.FC = () => {
           
           <div className="flex items-center space-x-3">
             {!currentUser ? (
-              <>
-                <button
-                  onClick={() => navigate('/register')}
-                  className="px-4 py-2 rounded-lg transition-colors"
-                  style={{ backgroundColor: `${themeColor}40`, color: themeColor }}
-                >
-                  {t('auth.register')}
-                </button>
-                <button
-                  onClick={() => navigate('/login')}
-                  className="px-4 py-2 rounded-lg text-white transition-colors"
-                  style={{ backgroundColor: themeColor }}
-                >
-                  {t('auth.login')}
-                </button>
-              </>
-            ) : user?.isPaid ? (
-              <>
-                <SubscriptionExpiry 
-                  expiredAt={new Date(user.expiredAt)} 
-                  themeColor={themeColor}
-                />
-                <SubscriptionDropdown
-                  planName={user.planName || 'subscription.defaultPlan'}
-                  daysLeft={user.daysLeft || 0}
-                  themeColor={themeColor}
-                  onChangeSubscription={() => setShowSubscription(true)}
-                />
-              </>
-            ) : (
               <button
-                onClick={() => setShowSubscription(true)}
+                onClick={() => setShowLoginModal(true)}
                 className="px-4 py-2 rounded-lg text-white transition-colors"
                 style={{ backgroundColor: themeColor }}
               >
-                {t('subscription.subscribe')}
+                {t('auth.login')}
               </button>
+            ) : (
+              <>
+                {user?.isPaid ? (
+                  <>
+                    <SubscriptionExpiry 
+                      expiredAt={new Date(user.expiredAt)} 
+                      themeColor={themeColor}
+                    />
+                    <SubscriptionDropdown
+                      planName={user.planName || 'subscription.defaultPlan'}
+                      daysLeft={user.daysLeft || 0}
+                      themeColor={themeColor}
+                      onChangeSubscription={() => setShowSubscription(true)}
+                    />
+                  </>
+                ) : (
+                  <button
+                    onClick={() => setShowSubscription(true)}
+                    className="px-4 py-2 rounded-lg text-white transition-colors"
+                    style={{ backgroundColor: themeColor }}
+                  >
+                    {t('subscription.subscribe')}
+                  </button>
+                )}
+                <button
+                  onClick={async () => {
+                    try {
+                      await logout();
+                    } catch (error) {
+                      console.error('退出错误:', error);
+                      alert(error instanceof Error ? error.message : t('alerts.error.logoutFailed'));
+                    }
+                  }}
+                  className="px-4 py-2 rounded-lg text-white transition-colors"
+                  style={{ backgroundColor: themeColor }}
+                >
+                  {t('auth.logout')}
+                </button>
+              </>
             )}
-            <button
-              onClick={async () => {
-                try {
-                  await logout();
-                  navigate('/login');
-                } catch (error) {
-                  console.error('退出错误:', error);
-                  alert(error instanceof Error ? error.message : t('alerts.error.logoutFailed'));
-                }
-              }}
-              className="px-4 py-2 rounded-lg text-white transition-colors"
-              style={{ backgroundColor: themeColor }}
-            >
-              {t('auth.logout')}
-            </button>
             <LanguageSwitch themeColor={themeColor} />
           </div>
         </div>
@@ -308,12 +294,24 @@ const AppContent: React.FC = () => {
               </div>
             </div>
             <div className="lg:col-span-2">
-              <ChatInterface
-                selectedCharacter={selectedCharacter}
-                initialMessages={chatHistory[selectedCharacter.id] || []}
-                onUpdateHistory={(messages) => updateChatHistory(selectedCharacter.id, messages)}
-                className="flex-grow h-full"
-              />
+              {currentUser ? (
+                <ChatInterface
+                  selectedCharacter={selectedCharacter}
+                  initialMessages={chatHistory[selectedCharacter.id] || []}
+                  onUpdateHistory={(messages) => updateChatHistory(selectedCharacter.id, messages)}
+                  className="flex-grow h-full"
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <button
+                    onClick={() => setShowLoginModal(true)}
+                    className="px-6 py-3 rounded-lg text-white transition-colors"
+                    style={{ backgroundColor: themeColor }}
+                  >
+                    {t('auth.loginToChat')}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         ) : (
@@ -339,6 +337,13 @@ const AppContent: React.FC = () => {
           currentPlanId={user?.planId}
           themeColor={themeColor}
           userEmail={currentUser?.email}
+        />
+      )}
+      {showLoginModal && (
+        <LoginModal 
+          isOpen={showLoginModal}
+          onClose={() => setShowLoginModal(false)}
+          themeColor={themeColor}
         />
       )}
     </div>

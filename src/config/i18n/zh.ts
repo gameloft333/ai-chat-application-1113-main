@@ -3,7 +3,9 @@ export default {
         selectCharacter: '请选择您想要交谈的AI伴侣',
         copyright: '© 2024 AI Chat Companions. All rights reserved.',
         testMode: '注意: 现在处于测试模式，服务器重启时会清空聊天记录哦。',
-        back: '返回'
+        back: '返回',
+        welcome: '欢迎使用 AI Chat Companions',
+        welcomeDescription: '登录后开始与 AI 伴侣聊天'
     },
     gender: {
         male: '男生',
@@ -22,7 +24,8 @@ export default {
         orDivider: '或者',
         googleLogin: '使用谷歌账号登录',
         registerPrompt: '没有账号？立即注册',
-        loginPrompt: '已有账号？立即登录'
+        loginPrompt: '已有账号？立即登录',
+        loginToChat: '登录后开始聊天'
     },
     subscription: {
         title: '选择会员方案',
