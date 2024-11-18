@@ -6,11 +6,11 @@ import { useLanguage } from '../contexts/LanguageContext';
 interface SubscriptionPlansProps {
   onClose: () => void;
   onSubscribe: (planId: string, duration: string) => void;
-  isPaidUser?: boolean;
+  currentPlanId?: string;
   themeColor: string;
 }
 
-const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscribe, isPaidUser = false, themeColor }) => {
+const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscribe, currentPlanId, themeColor }) => {
   const { t } = useLanguage();
 
   // 获取可用的时长选项
@@ -21,7 +21,7 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
   // 获取可显示的套餐列表
   const getAvailablePlans = () => {
     const regularPlans = pricingPlans.plans;
-    if (!isPaidUser) {
+    if (!currentPlanId) {
       return [pricingPlans.trialPlan, ...regularPlans];
     }
     return regularPlans;
@@ -45,8 +45,8 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
     });
 
     return {
-      planId: maxDiscountPlan?.id || (isPaidUser ? 'pro' : 'trial'),
-      duration: maxDiscountDuration || (isPaidUser ? '12months' : '1week')
+      planId: maxDiscountPlan?.id || (currentPlanId ? 'pro' : 'trial'),
+      duration: maxDiscountDuration || (currentPlanId ? '12months' : '1week')
     };
   };
 
@@ -139,23 +139,32 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
           {getAvailablePlans().map(plan => {
             const pricing = getPlanPricing(plan, selectedDuration);
             const isPopular = plan === calculateMostPopularPlan(getAvailablePlans(), selectedDuration);
+            const isCurrentPlan = plan.id === currentPlanId;
             
             return (
               <div 
                 key={plan.id}
-                onClick={() => setSelectedPlan(plan.id)}
-                className={`relative bg-[#27282D] rounded-2xl p-6 cursor-pointer transition-all hover:bg-[#2C2D33] ${
-                  plan.id === selectedPlan ? `ring-2` : ''
-                }`}
+                onClick={() => !isCurrentPlan && setSelectedPlan(plan.id)}
+                className={`relative bg-[#27282D] rounded-2xl p-6 transition-all 
+                  ${!isCurrentPlan ? 'cursor-pointer hover:bg-[#2C2D33]' : 'cursor-default'} 
+                  ${plan.id === selectedPlan ? 'ring-2' : ''}`}
                 style={{
                   ...(plan.id === selectedPlan && { ringColor: themeColor })
                 }}
               >
-                {isPopular && (
+                {isPopular && !isCurrentPlan && (
                   <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                     <span className="text-white px-3 py-1 rounded-full text-sm"
                       style={{ backgroundColor: themeColor }}>
                       {t('subscription.popular')}
+                    </span>
+                  </div>
+                )}
+                
+                {isCurrentPlan && (
+                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                    <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm">
+                      {t('subscription.currentPlan')}
                     </span>
                   </div>
                 )}
@@ -188,11 +197,13 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
                 </ul>
 
                 <button
-                  onClick={() => onSubscribe(plan.id, selectedDuration)}
-                  className="w-full py-3 rounded-xl text-white font-medium hover:opacity-90 transition-colors"
-                  style={{ backgroundColor: themeColor }}
+                  onClick={() => !isCurrentPlan && onSubscribe(plan.id, selectedDuration)}
+                  className={`w-full py-3 rounded-xl text-white font-medium transition-colors
+                    ${isCurrentPlan ? 'bg-green-500 cursor-default' : 'hover:opacity-90'}`}
+                  style={{ backgroundColor: isCurrentPlan ? undefined : themeColor }}
+                  disabled={isCurrentPlan}
                 >
-                  {t('subscription.subscribe')}
+                  {isCurrentPlan ? t('subscription.currentPlan') : t('subscription.subscribe')}
                 </button>
               </div>
             );

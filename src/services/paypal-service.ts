@@ -107,4 +107,34 @@ export class PayPalService {
             return false;
         }
     }
+
+    async getPaymentDetails(orderId: string): Promise<{ payerEmail: string } | null> {
+        try {
+            const accessToken = await this.getAccessToken();
+            const response = await fetch(
+                `${PAYPAL_CONFIG.API_URL}/v2/checkout/orders/${orderId}`,
+                {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('获取支付详情失败');
+            }
+
+            const data = await response.json();
+            const payer = data.payer || {};
+            
+            return {
+                payerEmail: payer.email_address || ''
+            };
+        } catch (error) {
+            console.error('获取 PayPal 支付详情失败:', error);
+            return null;
+        }
+    }
 }

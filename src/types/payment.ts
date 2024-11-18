@@ -19,13 +19,19 @@ export interface SubscriptionPlan {
     features: string[];
 }
 
+export type PaymentChannel = 'paypal' | 'telegram' | 'stripe' | 'alipay' | 'wechat';
+
 export interface PaymentRecord {
+    id?: string;
     uid: string;
     planId: string;
+    orderId: string;
     amount: number;
     currency: string;
-    status: 'pending' | 'completed' | 'failed';
+    status: 'pending' | 'completed' | 'cancelled' | 'failed';
     createdAt: Date;
     expiredAt: Date;
-    transactionId?: string;
+    completedAt?: Date;
+    paymentAccount?: string;
+    paymentChannel: PaymentChannel;
 }

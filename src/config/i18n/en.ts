@@ -67,7 +67,8 @@ export default {
         },
         remaining: 'Remaining: {{days}} days',
         changePlan: 'Change Plan',
-        defaultPlan: 'Subscribed'
+        defaultPlan: 'Subscribed',
+        currentPlan: 'Current Plan' // 添加这一行
     },
     payment: {
         processing: 'Processing payment result...',

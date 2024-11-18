@@ -98,7 +98,7 @@ const AppContent: React.FC = () => {
     return color;
   };
 
-  // 在组件���载时设置随机颜色
+  // 在组件载时设置随机颜色
   useEffect(() => {
     let newColor;
     do {
@@ -162,25 +162,28 @@ const AppContent: React.FC = () => {
       const expiredAt = new Date();
       expiredAt.setDate(expiredAt.getDate() + parseInt(duration) * 7);
 
-      const paymentRecord: PaymentRecord = {
-        uid: currentUser.uid,
-        planId: planId,
-        amount: pricing.price,
-        currency: currentCurrency.code,
-        status: 'pending',
-        createdAt: new Date(),
-        expiredAt: expiredAt,
-      };
-
-      await PaymentRecordService.createPaymentRecord(paymentRecord);
-
-      // 使用 PayPal 创建支付订单
+      // 先创建 PayPal 订单
       const paypalService = PayPalService.getInstance();
       const orderId = await paypalService.createPaymentOrder({
         price: pricing.price,
         currency: currentCurrency.code,
         description: plan.description
       });
+
+      // 创建支付记录时包含 orderId
+      const paymentRecord: PaymentRecord = {
+        uid: currentUser.uid,
+        planId: planId,
+        orderId: orderId,
+        amount: pricing.price,
+        currency: currentCurrency.code,
+        status: 'pending',
+        createdAt: new Date(),
+        expiredAt: expiredAt,
+        paymentChannel: 'paypal'
+      };
+
+      await PaymentRecordService.createPaymentRecord(paymentRecord);
 
       // 打开 PayPal 支付窗口
       window.open(
@@ -323,11 +326,11 @@ const AppContent: React.FC = () => {
       )}
       
       {showSubscription && (
-        <SubscriptionPlans 
+        <SubscriptionPlans
           onClose={() => setShowSubscription(false)}
           onSubscribe={handleSubscribe}
-          isPaidUser={!!currentUser?.subscription}
-          themeColor={randomColor}
+          currentPlanId={user?.planId}
+          themeColor={themeColor}
         />
       )}
     </div>

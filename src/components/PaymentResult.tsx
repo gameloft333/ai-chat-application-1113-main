@@ -6,77 +6,74 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const PaymentResult: React.FC = () => {
-    const [searchParams] = useSearchParams();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const { currentUser } = useAuth();
     const { t } = useLanguage();
 
     useEffect(() => {
         const handlePaymentResult = async () => {
-            const token = searchParams.get('token');
-            const payerId = searchParams.get('PayerID');
-            const status = searchParams.get('status');
+            try {
+                if (!currentUser) {
+                    throw new Error('用户未登录');
+                }
 
-            let paymentResult = {
-                status: 'error',
-                message: t('payment.invalidToken')
-            };
+                const token = searchParams.get('token');
+                if (!token) {
+                    throw new Error(t('payment.invalidToken'));
+                }
 
-            if (token && payerId && currentUser) {
-                try {
+                // 获取支付记录
+                const record = await PaymentRecordService.getPaymentRecordByOrderId(token);
+                if (!record) {
+                    throw new Error('支付记录不存在');
+                }
+
+                // 验证用户身份
+                if (record.uid !== currentUser.uid) {
+                    throw new Error('无效的支付记录');
+                }
+
+                // 根据支付渠道获取支付详情
+                if (record.paymentChannel === 'paypal') {
                     const paypalService = PayPalService.getInstance();
-                    const success = await paypalService.capturePayment(token, payerId);
-
-                    if (success) {
-                        await PaymentRecordService.updatePaymentStatus(token, 'completed');
-                        paymentResult = {
-                            status: 'success',
-                            message: t('payment.success')
-                        };
-                        await currentUser.reload();
-                    } else {
-                        await PaymentRecordService.updatePaymentStatus(token, 'failed');
-                        paymentResult = {
-                            status: 'failed',
-                            message: t('payment.failed')
-                        };
+                    const paymentDetails = await paypalService.getPaymentDetails(token);
+                    
+                    if (paymentDetails) {
+                        await PaymentRecordService.updatePaymentWithAccountInfo(
+                            token,
+                            paymentDetails.payerEmail,
+                            'paypal',
+                            'completed'
+                        );
                     }
-                } catch (error) {
-                    console.error('处理支付结果时出错:', error);
-                    await PaymentRecordService.updatePaymentStatus(token, 'error');
-                    paymentResult = {
-                        status: 'error',
+                }
+
+                navigate('/', {
+                    replace: true,
+                    state: { 
+                        paymentStatus: 'success',
+                        message: t('payment.success')
+                    }
+                });
+            } catch (error) {
+                console.error('支付处理错误:', error);
+                navigate('/', {
+                    replace: true,
+                    state: { 
+                        paymentStatus: 'error',
                         message: t('payment.error')
-                    };
-                }
-            } else if (status === 'CANCEL') {
-                if (token) {
-                    await PaymentRecordService.updatePaymentStatus(token, 'cancelled');
-                }
-                paymentResult = {
-                    status: 'cancelled',
-                    message: t('payment.cancelled')
-                };
+                    }
+                });
             }
-
-            // 显示支付结果提示
-            alert(paymentResult.message);
-
-            // 导航到主页并清除状态
-            navigate('/', { replace: true });
         };
 
         handlePaymentResult();
-    }, [searchParams, navigate, currentUser, t]);
+    }, [currentUser, searchParams, navigate, t]);
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-900">
-            <div className="text-center">
-                <h1 className="text-2xl font-bold text-white mb-4">
-                    {t('payment.processing')}
-                </h1>
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto"></div>
-            </div>
+        <div className="flex items-center justify-center min-h-screen">
+            <p className="text-lg">{t('payment.processing')}</p>
         </div>
     );
 };
