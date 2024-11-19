@@ -120,6 +120,10 @@ const AppContent: React.FC = () => {
   }, []);
 
   const handleSelectCharacter = (character: Character) => {
+    if (!currentUser) {
+      setShowLoginModal(true);
+      return;
+    }
     setSelectedCharacter(character);
   };
 
