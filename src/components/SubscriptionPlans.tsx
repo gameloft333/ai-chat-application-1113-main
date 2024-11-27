@@ -118,6 +118,32 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
     return currentSubscription?.planId === planId;
   };
 
+  const getPlanName = (plan: any, duration: string) => {
+    if (plan.id === 'trial') {
+      return t('memberLevel.trial');
+    }
+    
+    const levelMap = {
+      '1month': {
+        'basic': 'memberLevel.basic',
+        'pro': 'memberLevel.pro',
+        'premium': 'memberLevel.premium'
+      },
+      '12months': {
+        'basic': 'memberLevel.excellent',
+        'pro': 'memberLevel.flagship',
+        'premium': 'memberLevel.legendary'
+      },
+      '24months': {
+        'basic': 'memberLevel.noble',
+        'pro': 'memberLevel.peak',
+        'premium': 'memberLevel.invincible'
+      }
+    };
+
+    return t(levelMap[duration]?.[plan.id] || plan.name);
+  };
+
   return (
     <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 overflow-y-auto">
       <div className="relative bg-[#1E1F23] rounded-3xl w-full max-w-5xl max-h-[90vh] overflow-y-auto">
@@ -193,7 +219,7 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
                 )}
                 
                 <h3 className="text-xl font-bold text-white mb-2">
-                  {t(plan.name)}
+                  {getPlanName(plan, selectedDuration)}
                 </h3>
                 <p className="text-gray-400 text-sm mb-4">
                   {t(plan.description)}

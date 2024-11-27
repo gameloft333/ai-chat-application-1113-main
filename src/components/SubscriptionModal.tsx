@@ -42,8 +42,30 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ themeColor
         throw new Error(t('alerts.error.priceNotFound'));
       }
 
-      const expiredAt = new Date();
-      expiredAt.setDate(expiredAt.getDate() + parseInt(duration) * 7);
+      const calculateExpiryDate = (duration: string): Date => {
+        const expiredAt = new Date();
+        
+        switch (duration) {
+          case '1week':
+            expiredAt.setDate(expiredAt.getDate() + 7);
+            break;
+          case '1month':
+            expiredAt.setMonth(expiredAt.getMonth() + 1);
+            break;
+          case '12months':
+            expiredAt.setMonth(expiredAt.getMonth() + 12);
+            break;
+          case '24months':
+            expiredAt.setMonth(expiredAt.getMonth() + 24);
+            break;
+          default:
+            throw new Error(`无效的订阅时长: ${duration}`);
+        }
+        
+        return expiredAt;
+      };
+
+      const expiredAt = calculateExpiryDate(duration);
 
       const paypalService = PayPalService.getInstance();
       console.log('Creating PayPal order with config:', {
@@ -61,6 +83,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ themeColor
 
       await PaymentRecordService.createPaymentRecord({
         uid: currentUser.uid,
+        userEmail: currentUser.email || '',
         planId: planId,
         orderId: orderId,
         amount: pricing.price,

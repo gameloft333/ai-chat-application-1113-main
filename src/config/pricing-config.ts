@@ -43,7 +43,7 @@ export const pricingPlans = {
   plans: [
     {
       id: 'basic',
-      name: 'subscription.basic',
+      name: 'memberLevel.basic',
       description: 'subscription.basicDesc',
       prices: {
         '24months': { price: 19.00, save: 50, extraMonths: 2 },
@@ -59,7 +59,7 @@ export const pricingPlans = {
     },
     {
       id: 'pro',
-      name: 'subscription.pro',
+      name: 'memberLevel.pro',
       description: 'subscription.proDesc',
       popular: true,
       features: [
@@ -77,9 +77,9 @@ export const pricingPlans = {
       }
     },
     {
-      id: 'ultimate',
-      name: 'subscription.ultimate',
-      description: 'subscription.ultimateDesc',
+      id: 'premium',
+      name: 'memberLevel.premium',
+      description: 'subscription.premiumDesc',
       features: [
         'subscription.features.unlimitedChat',
         'subscription.features.allCharacters',

@@ -68,8 +68,8 @@ export const PaymentResult: React.FC = () => {
               
               您现在可以享受所有会员特权了！`);
 
-            // 触发支付成功事件
-            window.dispatchEvent(new CustomEvent('payment-success'));
+            // 触发支付成功事件，传递完整的支付信息
+            await PaymentRecordService.handlePaymentSuccess(token, paymentDetails?.payerEmail || '');
 
             // 3秒后返回首页
             setTimeout(() => {

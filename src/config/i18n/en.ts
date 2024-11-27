@@ -71,7 +71,8 @@ export default {
         changePlan: 'Change Plan',
         defaultPlan: 'Subscribed',
         currentPlan: 'Current Plan',
-        timeLeft: 'Expires in {{days}} days {{hours}} hours'
+        timeLeft: 'Expires in {{days}} days {{hours}} hours',
+        premiumDesc: 'Exclusive premium features'
     },
     payment: {
         processing: 'Processing payment result...',
@@ -128,5 +129,21 @@ export default {
             age: '25 years',
             description: 'Mature career woman with a passionate drive for success'
         }
+    },
+    memberLevel: {
+        normal: 'Normal User',
+        trial: 'Trial Member',
+        // 1-month membership
+        basic: 'Basic Member',
+        pro: 'Pro Member',
+        premium: 'Premium Member',
+        // 12-month membership
+        excellent: 'Excellent Member',
+        flagship: 'Flagship Member',
+        legendary: 'Legendary Member',
+        // 24-month membership
+        noble: 'Noble Member',
+        peak: 'Peak Member',
+        invincible: 'Invincible Member'
     }
 };

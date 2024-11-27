@@ -72,7 +72,8 @@ export default {
         changePlan: '更换套餐',
         defaultPlan: '已订阅',
         currentPlan: '当前套餐',
-        timeLeft: '{{days}}天{{hours}}小时后到期'
+        timeLeft: '{{days}}天{{hours}}小时后到期',
+        premiumDesc: '尊享独家特权功能'
     },
     payment: {
         processing: '正在处理支付结果...',
@@ -132,5 +133,21 @@ export default {
             age: '25岁',
             description: '成熟稳重的职场女性，对事业充满热情'
         }
+    },
+    memberLevel: {
+        normal: '普通用户',
+        trial: '体验会员',
+        // 1个月会员
+        basic: '基础会员',
+        pro: '专业会员',
+        premium: '至尊会员',
+        // 12个月会员
+        excellent: '卓越会员',
+        flagship: '旗舰会员',
+        legendary: '传奇会员',
+        // 24个月会员
+        noble: '尊贵会员',
+        peak: '巅峰会员',
+        invincible: '无敌会员'
     }
 };

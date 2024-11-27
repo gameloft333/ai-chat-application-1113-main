@@ -192,4 +192,15 @@ export class PayPalService {
             return false;
         }
     }
+
+    async handlePaymentSuccess(orderId: string, payerEmail: string): Promise<void> {
+        try {
+            await PaymentRecordService.handlePaymentSuccess(orderId, payerEmail);
+            // 支付成功后立即刷新订阅状态
+            window.dispatchEvent(new CustomEvent('subscription-updated'));
+        } catch (error) {
+            console.error('处理 PayPal 支付成功失败:', error);
+            throw error;
+        }
+    }
 }

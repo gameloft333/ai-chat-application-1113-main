@@ -158,9 +158,32 @@ const AppContent: React.FC = () => {
         throw new Error(t('alerts.error.priceNotFound'));
       }
 
-      // 创建支付记录
-      const expiredAt = new Date();
-      expiredAt.setDate(expiredAt.getDate() + parseInt(duration) * 7);
+      // 计算到期时间
+      const calculateExpiryDate = (duration: string): Date => {
+        const expiredAt = new Date();
+        
+        // 使用更精确的月份计算
+        switch (duration) {
+          case '1week':
+            expiredAt.setDate(expiredAt.getDate() + 7);
+            break;
+          case '1month':
+            expiredAt.setMonth(expiredAt.getMonth() + 1);
+            break;
+          case '12months':
+            expiredAt.setMonth(expiredAt.getMonth() + 12);
+            break;
+          case '24months':
+            expiredAt.setMonth(expiredAt.getMonth() + 24);
+            break;
+          default:
+            throw new Error(`无效的订阅时长: ${duration}`);
+        }
+        
+        return expiredAt;
+      };
+
+      const expiredAt = calculateExpiryDate(duration);
 
       // 先创建 PayPal 订单
       const paypalService = PayPalService.getInstance();
@@ -173,7 +196,9 @@ const AppContent: React.FC = () => {
       // 创建支付记录时包含 orderId
       const paymentRecord: PaymentRecord = {
         uid: currentUser.uid,
+        userEmail: currentUser.email || '',
         planId: planId,
+        duration: duration,
         orderId: orderId,
         amount: pricing.price,
         currency: currentCurrency.code,
@@ -191,7 +216,7 @@ const AppContent: React.FC = () => {
       密码：请使用开发者平台提供的密码
       
       注意事项：
-      1. 请确保已退出所有 PayPal 账户
+      1. 请确保已退出所有 PayPal 户
       2. 建议使用无痕模式
       3. 如果遇到错误，请清除浏览器缓存后重试`);
       
