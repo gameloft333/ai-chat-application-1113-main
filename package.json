@@ -1,7 +1,7 @@
 {
-  "name": "ai-chat-tavern",
+  "name": "ai-chat-companion",
   "private": true,
-  "version": "0.30.75.30669",
+  "version": "0.31.81.30017",
   "type": "module",
   "scripts": {
     "dev": "vite",

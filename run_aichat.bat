@@ -16,20 +16,6 @@ if %errorlevel% == 0 (
 :admin
 echo Running as administrator...
 
-:: Change drive to D:
-d:
-
-:: Change directory
-rem cd /d "D:\Software\ai_tools\AI_Webbuilder\sb1-lr7zbg-abs0717-main"
-cd /d "d:\Software\ai_tools\AI_Webbuilder\ai-chat-application-1013"
-
-:: Check if the directory exists
-if not exist "%cd%" (
-  echo Error: Directory not found.
-  pause
-  exit /b 1
-)
-
 :: Set npm path
 set "PATH=C:\Users\Administrator\AppData\Roaming\fnm\node-versions\v20.18.0\installation;%PATH%"
 

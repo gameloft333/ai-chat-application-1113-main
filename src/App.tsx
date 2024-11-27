@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation, createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import Login from './components/Login';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -25,34 +25,37 @@ import GenderSelector from './components/GenderSelector';
 import SubscriptionDropdown from './components/SubscriptionDropdown';
 import SubscriptionExpiry from './components/SubscriptionExpiry';
 import LoginModal from './components/LoginModal';
+import UserProfileDropdown from './components/UserProfileDropdown';
+import { SubscriptionProvider, useSubscription } from './contexts/SubscriptionContext';
+import { SubscriptionModal } from './components/SubscriptionModal';
+import { PaymentCallback } from './components/PaymentCallback';
 
 const API_KEY = import.meta.env.VITE_API_KEY || '';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-const App: React.FC = () => {
-  return (
-    <ErrorBoundary>
-      <BrowserRouter>
-        <AuthProvider>
-          <LanguageProvider>
-            <AppRoutes />
-          </LanguageProvider>
-        </AuthProvider>
-      </BrowserRouter>
-    </ErrorBoundary>
-  );
-};
+interface AppRoutesProps {
+  themeColor: string;
+}
 
-const AppRoutes: React.FC = () => {
+const AppRoutes: React.FC<AppRoutesProps> = ({ themeColor }) => {
   return (
     <Routes>
-      <Route path="/" element={<AppContent />} />
+      <Route path="/" element={<AppContent themeColor={themeColor} />} />
       <Route path="/login" element={<Login />} />
       <Route path="/payment-success" element={<PaymentResult />} />
+      <Route path="/payment-callback" element={<PaymentCallback />} />
       <Route path="/payment-cancel" element={<Navigate to="/" />} />
     </Routes>
   );
 };
+
+interface UserState {
+  isPaid: boolean;
+  expiredAt?: string;
+  planName?: string;
+  daysLeft?: number;
+  planId?: string;
+}
 
 const AppContent: React.FC = () => {
   const { t } = useLanguage();
@@ -62,11 +65,11 @@ const AppContent: React.FC = () => {
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
   const [chatHistory, setChatHistory] = useState<Record<string, Message[]>>({});
   const [randomColor, setRandomColor] = useState<string>('');
-  const [showSubscription, setShowSubscription] = useState<boolean>(false);
-  const [user, setUser] = useState<{ isPaid: boolean } | null>(null);
+  const [user, setUser] = useState<UserState | null>(null);
   const [selectedGender, setSelectedGender] = useState<string>('female');
   const [themeColor, setThemeColor] = useState<string>('#4F46E5');
   const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
+  const { openSubscriptionModal } = useSubscription();
   
   const generateThemeColor = () => {
     const hue = Math.floor(Math.random() * 360);
@@ -182,7 +185,16 @@ const AppContent: React.FC = () => {
 
       await PaymentRecordService.createPaymentRecord(paymentRecord);
 
-      // 打开 PayPal 支付窗口
+      // 添加提示信息
+      alert(`请使用以下测试买家账户登录：
+      邮箱：sb-6vbqu34102045@personal.example.com
+      密码：请使用开发者平台提供的密码
+      
+      注意事项：
+      1. 请确保已退出所有 PayPal 账户
+      2. 建议使用无痕模式
+      3. 如果遇到错误，请清除浏览器缓存后重试`);
+      
       window.open(
         `${PAYPAL_CONFIG.SANDBOX_MODE 
           ? 'https://www.sandbox.paypal.com' 
@@ -247,32 +259,21 @@ const AppContent: React.FC = () => {
                       planName={user.planName || 'subscription.defaultPlan'}
                       daysLeft={user.daysLeft || 0}
                       themeColor={themeColor}
-                      onChangeSubscription={() => setShowSubscription(true)}
+                      onChangeSubscription={openSubscriptionModal}
                     />
                   </>
                 ) : (
                   <button
-                    onClick={() => setShowSubscription(true)}
+                    onClick={openSubscriptionModal}
                     className="px-4 py-2 rounded-lg text-white transition-colors"
                     style={{ backgroundColor: themeColor }}
                   >
-                    {t('subscription.subscribe')}
+                    {t('立即订阅')}
                   </button>
                 )}
-                <button
-                  onClick={async () => {
-                    try {
-                      await logout();
-                    } catch (error) {
-                      console.error('退出错误:', error);
-                      alert(error instanceof Error ? error.message : t('alerts.error.logoutFailed'));
-                    }
-                  }}
-                  className="px-4 py-2 rounded-lg text-white transition-colors"
-                  style={{ backgroundColor: themeColor }}
-                >
-                  {t('auth.logout')}
-                </button>
+                <UserProfileDropdown 
+                  themeColor={themeColor}
+                />
               </>
             )}
             <LanguageSwitch themeColor={themeColor} />
@@ -334,15 +335,6 @@ const AppContent: React.FC = () => {
         </div>
       )}
       
-      {showSubscription && (
-        <SubscriptionPlans
-          onClose={() => setShowSubscription(false)}
-          onSubscribe={handleSubscribe}
-          currentPlanId={user?.planId}
-          themeColor={themeColor}
-          userEmail={currentUser?.email}
-        />
-      )}
       {showLoginModal && (
         <LoginModal 
           isOpen={showLoginModal}
@@ -351,6 +343,38 @@ const AppContent: React.FC = () => {
         />
       )}
     </div>
+  );
+};
+
+const App: React.FC = () => {
+  const [themeColor, setThemeColor] = useState<string>('#4F46E5');
+
+  const generateThemeColor = () => {
+    const hue = Math.floor(Math.random() * 360);
+    const saturation = 70 + Math.random() * 20;
+    const lightness = 45 + Math.random() * 10;
+    return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+  };
+
+  useEffect(() => {
+    const newColor = generateThemeColor();
+    setThemeColor(newColor);
+    document.documentElement.style.setProperty('--theme-color', newColor);
+  }, []);
+
+  return (
+    <ErrorBoundary>
+      <BrowserRouter>
+        <AuthProvider>
+          <LanguageProvider>
+            <SubscriptionProvider>
+              <AppRoutes themeColor={themeColor} />
+              <SubscriptionModal themeColor={themeColor} />
+            </SubscriptionProvider>
+          </LanguageProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 };
 

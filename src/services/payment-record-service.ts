@@ -3,7 +3,7 @@ import { collection, doc, setDoc, getDoc, query, where, getDocs, updateDoc, addD
 import { PaymentRecord, PaymentChannel } from '../types/payment';
 
 export class PaymentRecordService {
-    private static COLLECTION = 'payments';
+    private static COLLECTION = 'paymentRecords';
 
     static async createPaymentRecord(record: PaymentRecord): Promise<void> {
         try {
@@ -26,7 +26,7 @@ export class PaymentRecordService {
     static async updatePaymentRecord(recordId: string, data: Partial<PaymentRecord>) {
         try {
             const docRef = doc(db, 'paymentRecords', recordId);
-            const updateData = { ...data };
+            const updateData: any = { ...data };
             
             if (data.completedAt) {
                 updateData.completedAt = data.completedAt.toISOString();
@@ -102,11 +102,15 @@ export class PaymentRecordService {
         const q = query(paymentsRef, where('uid', '==', uid));
         const querySnapshot = await getDocs(q);
 
-        return querySnapshot.docs.map(doc => ({
-            ...doc.data(),
-            createdAt: doc.data().createdAt.toDate(),
-            expiredAt: doc.data().expiredAt.toDate()
-        } as PaymentRecord));
+        return querySnapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                ...data,
+                createdAt: new Date(data.createdAt),
+                expiredAt: new Date(data.expiredAt),
+                completedAt: data.completedAt ? new Date(data.completedAt) : undefined
+            } as PaymentRecord;
+        });
     }
 
     static async getActiveSubscription(uid: string): Promise<PaymentRecord | null> {
@@ -180,6 +184,91 @@ export class PaymentRecordService {
         } catch (error) {
             console.error('获取邮箱订阅记录失败:', error);
             return null;
+        }
+    }
+
+    static async getExpiryDate(userId: string): Promise<Date | null> {
+        try {
+            const activeSubscription = await this.getActiveSubscription(userId);
+            if (activeSubscription && activeSubscription.expiredAt) {
+                return new Date(activeSubscription.expiredAt);
+            }
+            return null;
+        } catch (error) {
+            console.error('获取到期时间失败:', error);
+            return null;
+        }
+    }
+
+    static async handlePaymentSuccess(userId: string, days: number): Promise<void> {
+        try {
+            const currentSubscription = await this.getActiveSubscription(userId);
+            const now = new Date();
+            let expiryDate: Date;
+
+            if (currentSubscription && currentSubscription.expiredAt > now) {
+                expiryDate = new Date(currentSubscription.expiredAt);
+                expiryDate.setDate(expiryDate.getDate() + days);
+            } else {
+                expiryDate = new Date();
+                expiryDate.setDate(expiryDate.getDate() + days);
+            }
+
+            const paymentRecord = {
+                uid: userId,
+                createdAt: new Date(),
+                expiredAt: expiryDate,
+                status: 'completed',
+                amount: days * 10,
+                orderId: `order_${Date.now()}`,
+                paymentChannel: 'paypal' as const
+            };
+
+            await this.createPaymentRecord(paymentRecord);
+
+            const remainingDays = Math.ceil((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+            
+            window.dispatchEvent(new CustomEvent('payment-success'));
+            
+            alert(`订阅成功！
+            到期日期：${expiryDate.toLocaleDateString('zh-CN')}
+            剩余天数：${remainingDays} 天
+            
+            您现在可以享受所有会员特权了！`);
+        } catch (error) {
+            console.error('处理支付成功失败:', error);
+            throw error;
+        }
+    }
+
+    static async getSubscriptionStatus(uid: string): Promise<{
+        isSubscribed: boolean;
+        expiredAt?: Date;
+        remainingDays?: number;
+    }> {
+        try {
+            const activeSubscription = await this.getActiveSubscription(uid);
+            
+            if (activeSubscription && activeSubscription.expiredAt) {
+                const now = new Date();
+                const expiredAt = new Date(activeSubscription.expiredAt);
+                const remainingDays = Math.ceil((expiredAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                
+                return {
+                    isSubscribed: true,
+                    expiredAt,
+                    remainingDays: remainingDays > 0 ? remainingDays : 0
+                };
+            }
+            
+            return {
+                isSubscribed: false
+            };
+        } catch (error) {
+            console.error('获取订阅状态失败:', error);
+            return {
+                isSubscribed: false
+            };
         }
     }
 }

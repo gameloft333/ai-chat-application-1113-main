@@ -13,6 +13,14 @@ import { auth } from '../config/firebase-config';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../config/firebase-config';
 
+interface User {
+    uid: string;
+    email: string;
+    isPaid?: boolean;
+    expiredAt?: string | Date;
+    planId?: string;
+}
+
 interface AuthContextType {
     currentUser: User | null;
     loading: boolean;

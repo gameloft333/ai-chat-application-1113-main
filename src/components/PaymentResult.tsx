@@ -1,116 +1,122 @@
-import React, { useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { PayPalService } from '../services/paypal-service';
-import { PaymentRecordService } from '../services/payment-record-service';
-import { UserService } from '../services/user-service';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useLanguage } from '../contexts/LanguageContext';
-import { db } from '../config/firebase-config';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { PaymentRecordService } from '../services/payment-record-service';
+import { PayPalService } from '../services/paypal-service';
 
-const PaymentResult: React.FC = () => {
-    const navigate = useNavigate();
-    const [searchParams] = useSearchParams();
-    const { currentUser } = useAuth();
-    const { t } = useLanguage();
+export const PaymentResult: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { currentUser } = useAuth();
+  const [message, setMessage] = useState<string>('正在处理支付结果...');
 
-    const updateUser = async (uid: string, data: any) => {
-        try {
-            const userRef = doc(db, 'users', uid);
-            const userDoc = await getDoc(userRef);
-            
-            if (!userDoc.exists()) {
-                // 如果用户文档不存在，创建新文档
-                await setDoc(userRef, {
-                    uid: uid,
-                    isPaid: false,
-                    createdAt: new Date().toISOString(),
-                    ...data
-                });
-            } else {
-                // 更新现有文档
-                await setDoc(userRef, data, { merge: true });
-            }
-        } catch (error) {
-            console.error('更新用户信息失败:', error);
-            throw error;
+  useEffect(() => {
+    const handlePaymentResult = async () => {
+      try {
+        // 从 URL 获取支付相关参数
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        const payerId = urlParams.get('PayerID');
+
+        console.log('Payment callback params:', { token, payerId, currentUser });
+
+        if (!token || !payerId) {
+          // 如果没有支付参数，检查是否是从状态传递的消息
+          const state = location.state as { paymentStatus?: string; message?: string };
+          if (state?.message) {
+            setMessage(state.message);
+            setTimeout(() => {
+              navigate('/', { replace: true });
+            }, 3000);
+            return;
+          }
+          throw new Error('支付信息不完整');
         }
+
+        if (!currentUser) {
+          throw new Error('请先登录');
+        }
+
+        // 验证支付状态
+        const paypalService = PayPalService.getInstance();
+        console.log('Capturing payment...');
+        const success = await paypalService.capturePayment(token, payerId);
+
+        if (success) {
+          console.log('Payment captured successfully');
+          // 获取支付详情
+          const paymentDetails = await paypalService.getPaymentDetails(token);
+          
+          // 更新支付记录
+          await PaymentRecordService.updatePaymentWithAccountInfo(
+            token,
+            paymentDetails?.payerEmail || '',
+            'paypal',
+            'completed'
+          );
+
+          // 获取订阅信息
+          const subscription = await PaymentRecordService.getPaymentRecordByOrderId(token);
+          if (subscription) {
+            const now = new Date();
+            const expiredAt = new Date(subscription.expiredAt);
+            const remainingDays = Math.ceil((expiredAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+            setMessage(`支付成功！
+              到期日期：${expiredAt.toLocaleDateString('zh-CN')}
+              剩余天数：${remainingDays} 天
+              
+              您现在可以享受所有会员特权了！`);
+
+            // 触发支付成功事件
+            window.dispatchEvent(new CustomEvent('payment-success'));
+
+            // 3秒后返回首页
+            setTimeout(() => {
+              navigate('/', { 
+                replace: true,
+                state: { 
+                  paymentStatus: 'success',
+                  message: '支付成功！'
+                }
+              });
+            }, 3000);
+          } else {
+            throw new Error('未找到订阅信息');
+          }
+        } else {
+          throw new Error('支付验证失败');
+        }
+      } catch (error) {
+        console.error('支付处理错误:', error);
+        setMessage(error instanceof Error ? error.message : '处理支付时出现错误，请联系客服');
+        
+        // 3秒后返回首页
+        setTimeout(() => {
+          navigate('/', { 
+            replace: true,
+            state: { 
+              paymentStatus: 'error',
+              message: '支付失败，请重试'
+            }
+          });
+        }, 3000);
+      }
     };
 
-    useEffect(() => {
-        const handlePaymentResult = async () => {
-            try {
-                if (!currentUser) {
-                    throw new Error('用户未登录');
-                }
+    handlePaymentResult();
+  }, [navigate, currentUser, location]);
 
-                const token = searchParams.get('token');
-                if (!token) {
-                    throw new Error(t('payment.invalidToken'));
-                }
-
-                // 获取支付记录
-                const record = await PaymentRecordService.getPaymentRecordByOrderId(token);
-                if (!record) {
-                    throw new Error('支付记录不存在');
-                }
-
-                // 验证用户身份
-                if (record.uid !== currentUser.uid) {
-                    throw new Error('无效的支付记录');
-                }
-
-                // 根据支付渠道获取支付详情
-                if (record.paymentChannel === 'paypal') {
-                    const paypalService = PayPalService.getInstance();
-                    const paymentDetails = await paypalService.getPaymentDetails(token);
-                    
-                    if (paymentDetails) {
-                        await PaymentRecordService.updatePaymentWithAccountInfo(
-                            token,
-                            paymentDetails.payerEmail,
-                            'paypal',
-                            'completed'
-                        );
-                        
-                        // 更新用户信息
-                        if (currentUser) {
-                            await updateUser(currentUser.uid, {
-                                isPaid: true,
-                                expiredAt: record.expiredAt,
-                                planId: record.planId
-                            });
-                        }
-                    }
-                }
-
-                navigate('/', {
-                    replace: true,
-                    state: { 
-                        paymentStatus: 'success',
-                        message: t('payment.success')
-                    }
-                });
-            } catch (error) {
-                console.error('支付处理错误:', error);
-                navigate('/', {
-                    replace: true,
-                    state: { 
-                        paymentStatus: 'error',
-                        message: t('payment.error')
-                    }
-                });
-            }
-        };
-
-        handlePaymentResult();
-    }, [currentUser, searchParams, navigate, t]);
-
-    return (
-        <div className="flex items-center justify-center min-h-screen">
-            <p className="text-lg">{t('payment.processing')}</p>
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-lg">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">支付结果</h2>
+          <p className="text-gray-600 whitespace-pre-line">{message}</p>
         </div>
-    );
+      </div>
+    </div>
+  );
 };
 
 export default PaymentResult;
