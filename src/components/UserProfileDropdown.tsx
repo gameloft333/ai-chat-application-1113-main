@@ -27,7 +27,7 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({ themeColor })
   const [showUid, setShowUid] = useState(false);
   const [copied, setCopied] = useState(false);
   const { currentUser, logout } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { openSubscriptionModal } = useSubscription();
   const { t: tTranslation } = useTranslation();
 
@@ -86,10 +86,10 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({ themeColor })
       return (
         <>
           <span className="text-sm">
-            剩余时间：{subscriptionStatus.remainingDays} 天
+            {t('subscription.remainingTime')}：{subscriptionStatus.remainingDays} {t('subscription.days')}
           </span>
           <span className="text-xs text-gray-500">
-            到期日期：{subscriptionStatus.expiredAt.toLocaleDateString('zh-CN')}
+            {t('subscription.expiryDate')}：{subscriptionStatus.expiredAt.toLocaleDateString(language === 'zh' ? 'zh-CN' : 'en-US')}
           </span>
         </>
       );
@@ -99,7 +99,7 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({ themeColor })
         className="text-sm text-blue-500 cursor-pointer hover:text-blue-600"
         onClick={handleSubscriptionClick}
       >
-        {t('立即订阅')}
+        {t('subscription.subscribe')}
       </span>
     );
   };
@@ -242,10 +242,10 @@ const getPlanLevelName = (planLevel?: string, duration?: string) => {
                 {subscriptionStatus.isSubscribed ? (
                   <>
                     <span className="text-sm">
-                      剩余时间：{subscriptionStatus.remainingDays} 天
+                      {t('subscription.remainingTime')}：{subscriptionStatus.remainingDays} {t('subscription.days')}
                     </span>
                     <span className="text-xs text-gray-500">
-                      到期日期：{subscriptionStatus.expiredAt?.toLocaleDateString('zh-CN')}
+                      {t('subscription.expiryDate')}：{subscriptionStatus.expiredAt?.toLocaleDateString(language === 'zh' ? 'zh-CN' : 'en-US')}
                     </span>
                   </>
                 ) : (
@@ -253,7 +253,7 @@ const getPlanLevelName = (planLevel?: string, duration?: string) => {
                     className="text-sm text-blue-500 cursor-pointer hover:text-blue-600"
                     onClick={handleSubscriptionClick}
                   >
-                    立即订阅
+                    {t('subscription.subscribe')}
                   </span>
                 )}
               </div>

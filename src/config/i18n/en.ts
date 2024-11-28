@@ -72,7 +72,10 @@ export default {
         defaultPlan: 'Subscribed',
         currentPlan: 'Current Plan',
         timeLeft: 'Expires in {{days}} days {{hours}} hours',
-        premiumDesc: 'Exclusive premium features'
+        premiumDesc: 'Exclusive premium features',
+        remainingTime: 'Remaining Time',
+        days: 'days',
+        expiryDate: 'Expiry Date'
     },
     payment: {
         processing: 'Processing payment result...',

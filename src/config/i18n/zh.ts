@@ -73,7 +73,10 @@ export default {
         defaultPlan: '已订阅',
         currentPlan: '当前套餐',
         timeLeft: '{{days}}天{{hours}}小时后到期',
-        premiumDesc: '尊享独家特权功能'
+        premiumDesc: '尊享独家特权功能',
+        remainingTime: '剩余时间',
+        days: '天',
+        expiryDate: '到期日期'
     },
     payment: {
         processing: '正在处理支付结果...',
