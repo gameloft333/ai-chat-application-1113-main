@@ -32,6 +32,8 @@ import { StripeService } from './services/stripe-service';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { StripePaymentForm } from './components/StripePaymentForm';
+import { CharacterStatsService } from './services/character-stats-service';
+import { characters } from './types/character';
 
 const API_KEY = import.meta.env.VITE_API_KEY || '';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -88,6 +90,8 @@ const AppContent: React.FC = () => {
     price: number;
     expiredAt: Date;
   } | null>(null);
+  const [characterStats, setCharacterStats] = useState<Record<string, number>>({});
+  const [popularCharacters, setPopularCharacters] = useState<string[]>([]);
   
   const generateThemeColor = () => {
     const hue = Math.floor(Math.random() * 360);
@@ -328,6 +332,36 @@ const AppContent: React.FC = () => {
     setShowSubscriptionModal(true);
   };
 
+  const handleGenderChange = (gender: string | null) => {
+    setSelectedGender(gender);
+    if (gender === 'popular') {
+      // 获取所有角色的统计数据
+      const stats = CharacterStatsService.getCharacterCounts();
+      const sortedCharacters = characters
+        .map(char => ({
+          id: char.id,
+          count: stats[char.id] || 0
+        }))
+        .sort((a, b) => b.count - a.count)
+        .map(item => item.id);
+      setPopularCharacters(sortedCharacters);
+    }
+  };
+
+  const getFilteredCharacters = () => {
+    if (selectedGender === 'popular') {
+      if (popularCharacters.length === 0) {
+        // 如果热门列表为空，返回所有角色
+        return characters;
+      }
+      // 按照 popularCharacters 的顺序返回所有角色
+      return popularCharacters
+        .map(id => characters.find(char => char.id === id))
+        .filter((char): char is Character => char !== undefined);
+    }
+    return characters.filter(char => char.gender === selectedGender);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       <header className="sticky top-0 z-50 backdrop-blur-lg bg-white/75 dark:bg-gray-900/75 border-b border-gray-200 dark:border-gray-800">
@@ -339,10 +373,11 @@ const AppContent: React.FC = () => {
                 AI Chat Companions
               </h1>
             </div>
-            <GenderSelector 
+            <GenderSelector
               selectedGender={selectedGender}
-              onGenderChange={setSelectedGender}
+              onGenderChange={handleGenderChange}
               themeColor={themeColor}
+              onPopularCharactersChange={setPopularCharacters}
             />
           </div>
           

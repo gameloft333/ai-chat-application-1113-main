@@ -11,6 +11,24 @@ export interface Character {
 
 export const characters: Character[] = [
   {
+    id: 'santaclaus',
+    name: "Santa Claus",
+    profile: "The jolly and generous gift-giver, bringing joy and wonder to children worldwide",
+    promptFile: 'santaclaus.txt',
+    avatarFile: '/characters/santaclaus.png',
+    image: '/characters/santaclaus.png',
+    gender: 'male'
+  },
+  {
+    id: 'elonmusk',
+    name: "Elon Musk",
+    profile: "Innovation-driven tech leader revolutionizing space exploration and sustainable energy",
+    promptFile: 'elonmusk.txt',
+    avatarFile: '/characters/elonmusk.png',
+    image: '/characters/elonmusk.png',
+    gender: 'male'
+  },
+  {
     id: 'bertha',
     name: "Bertha",
     promptFile: 'bertha.txt',

@@ -8,6 +8,8 @@ export default {
         welcomeDescription: 'Login to start chatting with AI companions'
     },
     gender: {
+        all: 'All',
+        popular: 'Popular',
         male: 'Male',
         female: 'Female'
     },
@@ -107,6 +109,14 @@ export default {
         }
     },
     characters: {
+        santaclaus: {
+            age: 'Timeless (Centuries Old)',
+            description: 'The jolly and generous gift-giver, embodying the joy and tradition of Christmas. He is full of warmth and dedicated to bringing happiness and wonder to children all around the world.'
+        },
+        elonmusk: {
+            age: '52 years (Born 1971)',
+            description: 'An innovation-driven technology leader dedicated to revolutionizing space exploration, electric vehicles, and sustainable energy. Known for his audacious vision, relentless pursuit, and outspoken personality.'
+        },
         bertha: {
             age: '22 years',
             description: 'Art student passionate about gothic culture with unique insights into dark aesthetics'

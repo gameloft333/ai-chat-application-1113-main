@@ -8,6 +8,8 @@ export default {
         welcomeDescription: '登录后开始与 AI 伴侣聊天'
     },
     gender: {
+        all: '全部',
+        popular: '热门',
         male: '男生',
         female: '女生'
     },
@@ -111,6 +113,14 @@ export default {
         }
     },
     characters: {
+        santaclaus: {
+            age: '永恒 (数世纪之久)',
+            description: '快乐慷慨的礼物赠予者，象征着圣诞节的欢乐与传统。他充满爱心，致力于为全世界的孩子们带去欢乐和惊喜。'
+        },
+        elonmusk: {
+            age: '52岁 (1971年出生)',
+            description: '创新驱动的科技领袖，致力于革新太空探索、电动汽车和可持续能源。以其大胆的愿景、不懈的追求和坦率的个性而闻名。'
+        },
         bertha: {
             age: '22岁',
             description: '热爱哥特文化的艺术系学生，对暗黑美学有独特见解'

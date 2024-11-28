@@ -37,11 +37,13 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
     setRandomColor(generateRandomColor());
   }, []);
 
-  const filteredCharacters = selectedGender 
-    ? characters.filter(char => char.gender === selectedGender)
-    : characters;
-    
-  const shuffledCharacters = shuffleArray([...filteredCharacters]).slice(0, maxCharacters);
+  const filteredCharacters = selectedGender === 'popular' 
+    ? characters // 热门标签显示所有角色
+    : selectedGender 
+      ? characters.filter(char => char.gender === selectedGender)
+      : characters;
+
+  const displayCharacters = filteredCharacters.slice(0, maxCharacters);
 
   console.log('Current language:', currentLanguage);
   console.log('Translation test:', t('characters.bertha.description'));
@@ -55,7 +57,7 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
         {t('common.selectCharacter')}
       </h2>
       <div className="grid grid-cols-4 gap-4">
-        {shuffledCharacters.map((character) => (
+        {displayCharacters.map((character) => (
           <div
             key={character.id}
             className="cursor-pointer transition-all duration-300 transform hover:scale-105 relative"

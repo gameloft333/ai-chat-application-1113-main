@@ -6,6 +6,7 @@ import { Message } from '../types/message';
 import { MAX_CHAT_HISTORY, USE_TYPEWRITER_MODE, AI_RESPONSE_MODE } from '../config/app-config';
 import { speak } from '../services/voice-service';
 import ChatMessage from './ChatMessage'; // 导入 ChatMessage 组件
+import { CharacterStatsService } from '../services/character-stats-service';
 
 interface ChatInterfaceProps {
   selectedCharacter: Character;
@@ -36,26 +37,25 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
+    
     const userMessage = { text: inputMessage, isUser: true };
-    const newMessages = [...messages, userMessage];
-    setMessages(newMessages);
+    setMessages(prev => [...prev, userMessage]);
     setInputMessage('');
     setIsLoading(true);
-    setThinkingMessage(`${selectedCharacter.name} 正在思考和输入消息...`); // 设置思考提示
-
+    
     try {
+      await CharacterStatsService.incrementCharacterChat(selectedCharacter.id);
       const response = await getLLMResponse(selectedCharacter.id, inputMessage);
-      setMessages(prevMessages => [...prevMessages, { text: response.text, isUser: false }]);
+      setMessages(prev => [...prev, { text: response.text, isUser: false }]);
     } catch (error) {
       console.error('Error in handleSendMessage:', error);
-      const errorMessage = { 
-        text: error instanceof Error ? error.message : '对不起，我现在遇到了一些技术问题。让我们稍后再聊吧。', 
-        isUser: false 
-      };
-      setMessages(prevMessages => [...prevMessages, errorMessage]);
+      setMessages(prev => [...prev, {
+        text: '对不起，我现在遇到了一些技术问题。让我们稍后再聊吧。',
+        isUser: false
+      }]);
     } finally {
       setIsLoading(false);
-      setThinkingMessage(null); // 清除思考提示
+      setThinkingMessage(null);
     }
   };
 

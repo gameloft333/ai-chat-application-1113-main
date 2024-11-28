@@ -218,7 +218,20 @@ async function getCharacterPrompt(characterId: string): Promise<{ prompt: string
   }
 }
 
+async function updateCharacterStats(characterId: string) {
+  try {
+    const stats = JSON.parse(localStorage.getItem('characterStats') || '{}');
+    stats[characterId] = (stats[characterId] || 0) + 1;
+    localStorage.setItem('characterStats', JSON.stringify(stats));
+    return stats;
+  } catch (error) {
+    console.error('Error updating character stats:', error);
+    return {};
+  }
+}
+
 export async function getLLMResponse(characterId: string, prompt: string): Promise<LLMResponse> {
+  const stats = await updateCharacterStats(characterId);
   const config: LLMConfig = characterLLMConfig[characterId] || defaultLLMConfig;
 
   try {
