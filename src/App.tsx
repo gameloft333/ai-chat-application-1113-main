@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation, createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import Login from './components/Login';
 import ErrorBoundary from './components/ErrorBoundary';
-// ... 其他导入保持不变
 import ChatInterface from './components/ChatInterface';
 import CharacterSelector from './components/CharacterSelector';
 import { MessageCircle, ArrowLeft } from 'lucide-react';
@@ -29,6 +28,10 @@ import UserProfileDropdown from './components/UserProfileDropdown';
 import { SubscriptionProvider, useSubscription } from './contexts/SubscriptionContext';
 import { SubscriptionModal } from './components/SubscriptionModal';
 import { PaymentCallback } from './components/PaymentCallback';
+import { StripeService } from './services/stripe-service';
+import { Elements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
+import { StripePaymentForm } from './components/StripePaymentForm';
 
 const API_KEY = import.meta.env.VITE_API_KEY || '';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -69,7 +72,22 @@ const AppContent: React.FC = () => {
   const [selectedGender, setSelectedGender] = useState<string>('female');
   const [themeColor, setThemeColor] = useState<string>('#4F46E5');
   const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const { openSubscriptionModal } = useSubscription();
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedPlanInfo, setSelectedPlanInfo] = useState<{planId: string, duration: string} | null>(null);
+  const [showStripePaymentModal, setShowStripePaymentModal] = useState(false);
+  const [stripePaymentData, setStripePaymentData] = useState<{
+    clientSecret: string;
+    amount: number;
+    currency: string;
+    planId: string;
+    duration: string;
+    userId: string;
+    userEmail: string;
+    price: number;
+    expiredAt: Date;
+  } | null>(null);
   
   const generateThemeColor = () => {
     const hue = Math.floor(Math.random() * 360);
@@ -140,95 +158,152 @@ const AppContent: React.FC = () => {
     localStorage.setItem('chatHistory', JSON.stringify(updatedHistory));
   };
 
-  const handleSubscribe = async (planId: string, duration: string) => {
+  // 添加计算过期时间的函数
+  const calculateExpiredAt = (duration: string) => {
+    const now = new Date();
+    switch (duration) {
+      case '1week':
+        return new Date(now.setDate(now.getDate() + 7));
+      case '1month':
+        return new Date(now.setMonth(now.getMonth() + 1));
+      case '12months':
+        return new Date(now.setFullYear(now.getFullYear() + 1));
+      case '24months':
+        return new Date(now.setFullYear(now.getFullYear() + 2));
+      default:
+        return new Date(now.setDate(now.getDate() + 7)); // 默认一周
+    }
+  };
+
+  // 在组件顶部初始化 Stripe
+  const stripePromise = useMemo(() => loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY), []);
+  
+  // 添加支付成功处理函数
+  const handlePaymentSuccess = useCallback(() => {
+    setShowStripePaymentModal(false);
+    navigate('/payment-success', {
+      state: { 
+        paymentStatus: 'success',
+        message: t('payment.success')
+      }
+    });
+  }, [navigate, t]);
+
+  // 修改支付错误处理函数
+  const handlePaymentError = useCallback((error: string) => {
+    setShowStripePaymentModal(false);
+    navigate('/', {
+      state: { 
+        paymentStatus: 'error',
+        message: error || t('payment.error')
+      }
+    });
+  }, [navigate, t]);
+
+  const handleSubscribe = async (planId: string, duration: string, paymentMethod: 'paypal' | 'stripe') => {
     try {
-      let plan;
-      if (planId === 'trial') {
-        plan = pricingPlans.trialPlan;
-      } else {
-        plan = pricingPlans.plans.find(p => p.id === planId);
+      if (!currentUser) {
+        throw new Error(t('alerts.error.loginRequired'));
       }
-      
-      if (!plan || !currentUser) {
-        throw new Error(t('alerts.error.subscriptionNotFound'));
+
+      // 获取计划和定价信息
+      const plan = pricingPlans.plans.find(p => p.id === planId) || pricingPlans.trialPlan;
+      if (!plan) {
+        throw new Error(t('alerts.error.invalidPlan'));
       }
-      
-      const pricing = plan.prices[duration] || plan.prices['1week'];
+
+      const pricing = plan.prices[duration];
       if (!pricing) {
-        throw new Error(t('alerts.error.priceNotFound'));
+        throw new Error(t('alerts.error.invalidDuration'));
       }
 
-      // 计算到期时间
-      const calculateExpiryDate = (duration: string): Date => {
-        const expiredAt = new Date();
+      const expiredAt = calculateExpiredAt(duration);
+
+      if (paymentMethod === 'paypal') {
+        // PayPal 支付逻辑
+        const paypalService = PayPalService.getInstance();
+        const orderId = await paypalService.createPaymentOrder({
+          price: pricing.price,
+          currency: currentCurrency.code,
+          description: plan.description
+        });
+
+        // 创建支付记录
+        const paymentRecord = {
+          uid: currentUser.uid,
+          userEmail: currentUser.email || '',
+          planId: planId,
+          duration: duration,
+          orderId: orderId,
+          amount: pricing.price,
+          currency: currentCurrency.code,
+          status: 'pending',
+          createdAt: new Date(),
+          expiredAt: expiredAt,
+          paymentChannel: 'paypal'
+        };
+
+        await PaymentRecordService.createPaymentRecord(paymentRecord);
         
-        // 使用更精确的月份计算
-        switch (duration) {
-          case '1week':
-            expiredAt.setDate(expiredAt.getDate() + 7);
-            break;
-          case '1month':
-            expiredAt.setMonth(expiredAt.getMonth() + 1);
-            break;
-          case '12months':
-            expiredAt.setMonth(expiredAt.getMonth() + 12);
-            break;
-          case '24months':
-            expiredAt.setMonth(expiredAt.getMonth() + 24);
-            break;
-          default:
-            throw new Error(`无效的订阅时长: ${duration}`);
-        }
+        // 添加测试账户提示
+        alert(`请使用以下测试买家账户登录：
+        邮箱：sb-6vbqu34102045@personal.example.com
+        密码：请使用开发者平台提供的密码
         
-        return expiredAt;
-      };
+        注意事项：
+        1. 请确保已退出所有 PayPal 账户
+        2. 建议使用无痕模式
+        3. 如果遇到错误，请清除浏览器缓存后重试`);
 
-      const expiredAt = calculateExpiryDate(duration);
-
-      // 先创建 PayPal 订单
-      const paypalService = PayPalService.getInstance();
-      const orderId = await paypalService.createPaymentOrder({
-        price: pricing.price,
-        currency: currentCurrency.code,
-        description: plan.description
-      });
-
-      // 创建支付记录时包含 orderId
-      const paymentRecord: PaymentRecord = {
-        uid: currentUser.uid,
-        userEmail: currentUser.email || '',
-        planId: planId,
-        duration: duration,
-        orderId: orderId,
-        amount: pricing.price,
-        currency: currentCurrency.code,
-        status: 'pending',
-        createdAt: new Date(),
-        expiredAt: expiredAt,
-        paymentChannel: 'paypal'
-      };
-
-      await PaymentRecordService.createPaymentRecord(paymentRecord);
-
-      // 添加提示信息
-      alert(`请使用以下测试买家账户登录：
-      邮箱：sb-6vbqu34102045@personal.example.com
-      密码：请使用开发者平台提供的密码
-      
-      注意事项：
-      1. 请确保已退出所有 PayPal 户
-      2. 建议使用无痕模式
-      3. 如果遇到错误，请清除浏览器缓存后重试`);
-      
-      window.open(
-        `${PAYPAL_CONFIG.SANDBOX_MODE 
+        // 跳转到 PayPal 支付
+        const returnUrl = `${window.location.origin}/payment-callback`;
+        const cancelUrl = `${window.location.origin}/payment-cancel`;
+        
+        window.location.href = `${PAYPAL_CONFIG.SANDBOX_MODE 
           ? 'https://www.sandbox.paypal.com' 
-          : 'https://www.paypal.com'}/checkoutnow?token=${orderId}`,
-        '_blank'
-      );
+          : 'https://www.paypal.com'}/checkoutnow?token=${orderId}&returnUrl=${encodeURIComponent(returnUrl)}&cancelUrl=${encodeURIComponent(cancelUrl)}`;
+      } else if (paymentMethod === 'stripe') {
+        try {
+          console.log('开始 Stripe 支付流程...');
+          const stripeService = StripeService.getInstance();
+          
+          console.log('创建支付意向，参数:', {
+            price: pricing.price,
+            currency: currentCurrency.code
+          });
+          
+          const clientSecret = await stripeService.createPaymentIntent(
+            pricing.price,
+            currentCurrency.code
+          );
+          
+          console.log('支付意向创建成功，准备打开支付表单...');
+          setShowStripePaymentModal(true);
+          setStripePaymentData({
+            clientSecret,
+            amount: pricing.price,
+            currency: currentCurrency.code,
+            planId,
+            duration,
+            userId: currentUser.uid,
+            userEmail: currentUser.email || '',
+            price: pricing.price,
+            expiredAt: expiredAt
+          });
+        } catch (error) {
+          console.error('Stripe 支付初始化失败:', {
+            error,
+            stack: error.stack,
+            type: typeof error
+          });
+          throw error;
+        }
+      } else {
+        throw new Error(t('alerts.error.invalidPaymentMethod'));
+      }
     } catch (error) {
       console.error('创建订阅失败:', error);
-      alert(error instanceof Error ? error.message : t('alerts.error.createSubscriptionFailed'));
+      alert(error instanceof Error ? error.message : '创建订阅失败');
     }
   };
 
@@ -244,6 +319,14 @@ const AppContent: React.FC = () => {
       alert(message);
     }
   }, [location, navigate]);
+
+  const handleOpenSubscriptionModal = () => {
+    if (!currentUser) {
+      setShowLoginModal(true);
+      return;
+    }
+    setShowSubscriptionModal(true);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
@@ -289,11 +372,11 @@ const AppContent: React.FC = () => {
                   </>
                 ) : (
                   <button
-                    onClick={openSubscriptionModal}
+                    onClick={handleOpenSubscriptionModal}
                     className="px-4 py-2 rounded-lg text-white transition-colors"
                     style={{ backgroundColor: themeColor }}
                   >
-                    {t('立即订阅')}
+                    {t('subscription.choosePlan')}
                   </button>
                 )}
                 <UserProfileDropdown 
@@ -367,6 +450,41 @@ const AppContent: React.FC = () => {
           themeColor={themeColor}
         />
       )}
+
+      {showSubscriptionModal && (
+        <SubscriptionPlans
+          onClose={() => setShowSubscriptionModal(false)}
+          onSubscribe={handleSubscribe}
+          currentPlanId={currentUser?.planId}
+          themeColor={themeColor}
+          userEmail={currentUser?.email}
+        />
+      )}
+      
+      {showPaymentModal && selectedPlanInfo && (
+        <SubscriptionModal 
+          themeColor={themeColor}
+          planId={selectedPlanInfo.planId}
+          duration={selectedPlanInfo.duration}
+          onClose={() => setShowPaymentModal(false)}
+        />
+      )}
+
+      {showStripePaymentModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg w-full max-w-md">
+            <h2 className="text-xl font-semibold mb-4">支付确认</h2>
+            <Elements stripe={stripePromise}>
+              <StripePaymentForm
+                {...stripePaymentData}
+                onSuccess={handlePaymentSuccess}
+                onError={handlePaymentError}
+                themeColor={themeColor}
+              />
+            </Elements>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -394,7 +512,6 @@ const App: React.FC = () => {
           <LanguageProvider>
             <SubscriptionProvider>
               <AppRoutes themeColor={themeColor} />
-              <SubscriptionModal themeColor={themeColor} />
             </SubscriptionProvider>
           </LanguageProvider>
         </AuthProvider>

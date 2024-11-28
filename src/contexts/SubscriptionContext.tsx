@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 
 interface SubscriptionContextType {
   isSubscriptionModalOpen: boolean;
@@ -11,13 +11,23 @@ const SubscriptionContext = createContext<SubscriptionContextType | undefined>(u
 export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
 
-  const openSubscriptionModal = () => {
-    setIsSubscriptionModalOpen(true);
-  };
+  const openSubscriptionModal = useCallback(() => {
+    try {
+      setIsSubscriptionModalOpen(true);
+    } catch (error) {
+      console.error('打开订阅模态框失败:', error);
+      throw error;
+    }
+  }, []);
 
-  const closeSubscriptionModal = () => {
-    setIsSubscriptionModalOpen(false);
-  };
+  const closeSubscriptionModal = useCallback(() => {
+    try {
+      setIsSubscriptionModalOpen(false);
+    } catch (error) {
+      console.error('关闭订阅模态框失败:', error);
+      throw error;
+    }
+  }, []);
 
   return (
     <SubscriptionContext.Provider 

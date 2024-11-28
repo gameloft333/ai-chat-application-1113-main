@@ -4,50 +4,24 @@ import { Check, X } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { PaymentRecord } from '../types/payment';
 import { PaymentRecordService } from '../services/payment-record-service';
+import { SubscriptionModal } from './SubscriptionModal';
 
 interface SubscriptionPlansProps {
   onClose: () => void;
-  onSubscribe: (planId: string, duration: string) => void;
+  onSubscribe: (planId: string, duration: string, method: 'paypal' | 'stripe') => void;
   currentPlanId?: string;
   themeColor: string;
+  userEmail?: string;
 }
 
 const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscribe, currentPlanId, themeColor, userEmail }) => {
   const { t } = useLanguage();
   const [currentSubscription, setCurrentSubscription] = useState<PaymentRecord | null>(null);
-
-  useEffect(() => {
-    const fetchCurrentSubscription = async () => {
-      if (userEmail) {
-        try {
-          const subscription = await PaymentRecordService.getActiveSubscriptionByEmail(userEmail);
-          setCurrentSubscription(subscription);
-        } catch (error) {
-          console.error('获取当前订阅失败:', error);
-        }
-      }
-    };
-
-    fetchCurrentSubscription();
-  }, [userEmail]);
-
-  // 获取可用的时长选项
-  const getAvailableDurations = () => {
-    return pricingPlans.durations;
-  };
-
-  // 获取可显示的套餐列表
-  const getAvailablePlans = () => {
-    const regularPlans = pricingPlans.plans;
-    if (!currentPlanId) {
-      return [pricingPlans.trialPlan, ...regularPlans];
-    }
-    return regularPlans;
-  };
-
+  const [paymentMethods, setPaymentMethods] = useState<Array<'paypal' | 'stripe'>>([]);
+  
   // 获取最大优惠的套餐和时长
   const getMaxDiscountPlan = () => {
-    const allPlans = getAvailablePlans();
+    const allPlans = pricingPlans.plans;
     let maxDiscount = 0;
     let maxDiscountPlan = null;
     let maxDiscountDuration = '';
@@ -71,6 +45,46 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
   const defaultSelection = getMaxDiscountPlan();
   const [selectedDuration, setSelectedDuration] = useState(defaultSelection.duration);
   const [selectedPlan, setSelectedPlan] = useState(defaultSelection.planId);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedPlanInfo, setSelectedPlanInfo] = useState<{planId: string, duration: string} | null>(null);
+
+  useEffect(() => {
+    const fetchCurrentSubscription = async () => {
+      if (userEmail) {
+        try {
+          const subscription = await PaymentRecordService.getActiveSubscriptionByEmail(userEmail);
+          setCurrentSubscription(subscription);
+        } catch (error) {
+          console.error('获取当前订阅失败:', error);
+        }
+      }
+    };
+
+    fetchCurrentSubscription();
+  }, [userEmail]);
+
+  // 在显示支付模态框时随机排序支付方式
+  useEffect(() => {
+    if (showPaymentModal) {
+      const methods: Array<'paypal' | 'stripe'> = ['paypal', 'stripe'];
+      setPaymentMethods(methods.sort(() => Math.random() - 0.5));
+    }
+  }, [showPaymentModal]);
+
+  // 获取可用的时长选项
+  const getAvailableDurations = () => {
+    return pricingPlans.durations;
+  };
+
+  // 获取可显示的套餐列表
+  const getAvailablePlans = () => {
+    const regularPlans = pricingPlans.plans;
+    if (!currentPlanId) {
+      return [pricingPlans.trialPlan, ...regularPlans];
+    }
+    return regularPlans;
+  };
 
   // 获取套餐价格显示
   const getPlanPricing = (plan: any, duration: string) => {
@@ -144,9 +158,55 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
     return t(levelMap[duration]?.[plan.id] || plan.name);
   };
 
+  const handlePlanSelect = async (planId: string) => {
+    if (isProcessing) return;
+    setIsProcessing(true);
+    
+    try {
+      if (!selectedDuration) {
+        throw new Error(t('alerts.error.selectDuration'));
+      }
+
+      setSelectedPlan(planId);
+      // 不关闭套餐选择界面，而是显示支付方式选择模态框
+      setSelectedPlanInfo({ planId, duration: selectedDuration });
+      setShowPaymentModal(true);
+      
+    } catch (error) {
+      console.error('选择套餐失败:', error);
+      alert(error instanceof Error ? error.message : t('alerts.error.unknownError'));
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handlePaymentSelect = async (method: 'paypal' | 'stripe') => {
+    if (!selectedPlanInfo) return;
+    
+    try {
+      // 调用父组件传入的订阅处理函数，传入支付方式
+      await onSubscribe(selectedPlanInfo.planId, selectedPlanInfo.duration, method);
+      setShowPaymentModal(false);
+    } catch (error) {
+      console.error('支付失败:', error);
+      alert(error instanceof Error ? error.message : '支付失败，请重试');
+    }
+  };
+
+  // 添加防止冒泡
+  const handleModalClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
   return (
-    <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="relative bg-[#1E1F23] rounded-3xl w-full max-w-5xl max-h-[90vh] overflow-y-auto">
+    <div 
+      className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 overflow-y-auto"
+      onClick={onClose}
+    >
+      <div 
+        className="relative bg-[#1E1F23] rounded-3xl w-full max-w-5xl max-h-[90vh] overflow-y-auto"
+        onClick={handleModalClick}
+      >
         {/* 关闭按钮 */}
         <button 
           onClick={onClose}
@@ -254,7 +314,8 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
                   </button>
                 ) : (
                   <button
-                    onClick={() => onSubscribe(plan.id, selectedDuration)}
+                    onClick={() => handlePlanSelect(plan.id)}
+                    disabled={isProcessing}
                     className="w-full py-3 rounded-xl text-white font-medium transition-colors hover:opacity-90"
                     style={{ backgroundColor: themeColor }}
                   >
@@ -265,6 +326,34 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
             );
           })}
         </div>
+
+        {/* 支付方式选择模态框 */}
+        {showPaymentModal && selectedPlanInfo && (
+          <div className="fixed inset-0 flex items-center justify-center z-[60]">
+            <div className="bg-[#1E1F23] rounded-2xl p-6 w-full max-w-md relative">
+              <button 
+                onClick={() => setShowPaymentModal(false)}
+                className="absolute right-4 top-4 text-gray-400 hover:text-white"
+              >
+                <X className="w-6 h-6" />
+              </button>
+              
+              <h3 className="text-xl font-bold text-white mb-6">选择支付方式</h3>
+              
+              <div className="space-y-4">
+                {paymentMethods.map(method => (
+                  <button
+                    key={method}
+                    onClick={() => handlePaymentSelect(method)}
+                    className="w-full py-3 px-4 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                  >
+                    {method === 'paypal' ? 'PayPal 支付' : 'Stripe 支付'}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

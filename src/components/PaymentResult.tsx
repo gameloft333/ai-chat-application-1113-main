@@ -18,8 +18,6 @@ export const PaymentResult: React.FC = () => {
         const token = urlParams.get('token');
         const payerId = urlParams.get('PayerID');
 
-        console.log('Payment callback params:', { token, payerId, currentUser });
-
         if (!token || !payerId) {
           // 如果没有支付参数，检查是否是从状态传递的消息
           const state = location.state as { paymentStatus?: string; message?: string };
@@ -37,58 +35,62 @@ export const PaymentResult: React.FC = () => {
           throw new Error('请先登录');
         }
 
+        // 获取支付记录状态
+        const paymentRecord = await PaymentRecordService.getPaymentRecordByOrderId(token);
+        
+        if (!paymentRecord) {
+          throw new Error('未找到支付记录');
+        }
+
         // 验证支付状态
         const paypalService = PayPalService.getInstance();
         console.log('Capturing payment...');
-        const success = await paypalService.capturePayment(token, payerId);
+        const paymentSuccess = await paypalService.capturePayment(token, payerId);
 
-        if (success) {
-          console.log('Payment captured successfully');
-          // 获取支付详情
-          const paymentDetails = await paypalService.getPaymentDetails(token);
-          
-          // 更新支付记录
-          await PaymentRecordService.updatePaymentWithAccountInfo(
-            token,
-            paymentDetails?.payerEmail || '',
-            'paypal',
-            'completed'
-          );
+        if (!paymentSuccess) {
+          throw new Error('支付未完成，请重试');
+        }
 
-          // 获取订阅信息
-          const subscription = await PaymentRecordService.getPaymentRecordByOrderId(token);
-          if (subscription) {
-            const now = new Date();
-            const expiredAt = new Date(subscription.expiredAt);
-            const remainingDays = Math.ceil((expiredAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        // 获取支付详情
+        const paymentDetails = await paypalService.getPaymentDetails(token);
+        
+        // 更新支付记录
+        await PaymentRecordService.updatePaymentWithAccountInfo(
+          token,
+          paymentDetails?.payerEmail || '',
+          'paypal',
+          'completed'
+        );
 
-            setMessage(`支付成功！
-              到期日期：${expiredAt.toLocaleDateString('zh-CN')}
-              剩余天数：${remainingDays} 天
-              
-              您现在可以享受所有会员特权了！`);
+        // 获取订阅信息
+        const subscription = await PaymentRecordService.getPaymentRecordByOrderId(token);
+        if (subscription) {
+          const now = new Date();
+          const expiredAt = new Date(subscription.expiredAt);
+          const remainingDays = Math.ceil((expiredAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
-            // 触发支付成功事件，传递完整的支付信息
-            await PaymentRecordService.handlePaymentSuccess(token, paymentDetails?.payerEmail || '');
+          setMessage(`支付成功！
+            到期日期：${expiredAt.toLocaleDateString('zh-CN')}
+            剩余天数：${remainingDays} 天
+            
+            您现在可以享受所有会员特权了！`);
 
-            // 3秒后返回首页
-            setTimeout(() => {
-              navigate('/', { 
-                replace: true,
-                state: { 
-                  paymentStatus: 'success',
-                  message: '支付成功！'
-                }
-              });
-            }, 3000);
-          } else {
-            throw new Error('未找到订阅信息');
-          }
-        } else {
-          throw new Error('支付验证失败');
+          // 触发支付成功事件
+          await PaymentRecordService.handlePaymentSuccess(token, paymentDetails?.payerEmail || '');
+
+          // 3秒后返回首页
+          setTimeout(() => {
+            navigate('/', { 
+              replace: true,
+              state: { 
+                paymentStatus: 'success',
+                message: '支付成功！'
+              }
+            });
+          }, 3000);
         }
       } catch (error) {
-        console.error('支付处理错误:', error);
+        console.error('处理支付结果失败:', error);
         setMessage(error instanceof Error ? error.message : '处理支付时出现错误，请联系客服');
         
         // 3秒后返回首页

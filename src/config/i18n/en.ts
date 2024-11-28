@@ -75,7 +75,8 @@ export default {
         premiumDesc: 'Exclusive premium features',
         remainingTime: 'Remaining Time',
         days: 'days',
-        expiryDate: 'Expiry Date'
+        expiryDate: 'Expiry Date',
+        choosePlan: 'Choose Plan'
     },
     payment: {
         processing: 'Processing payment result...',
@@ -83,7 +84,13 @@ export default {
         failed: 'Payment failed, please try again',
         cancelled: 'Payment has been cancelled',
         error: 'Error processing payment, please contact customer service',
-        invalidToken: 'Invalid payment information'
+        invalidToken: 'Invalid payment information',
+        selectMethod: 'Select Payment Method',
+        stripe: 'Pay with Stripe',
+        paypal: 'Pay with PayPal',
+        stripeProcessing: 'Processing Stripe payment...',
+        stripeSuccess: 'Stripe payment successful!',
+        stripeFailed: 'Stripe payment failed, please try again'
     },
     alerts: {
         error: {

@@ -117,7 +117,7 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({ themeColor })
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       } catch (error) {
-        console.error('复制失:', error);
+        console.error('复制失败:', error);
       }
     }
   };

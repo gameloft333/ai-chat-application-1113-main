@@ -76,7 +76,8 @@ export default {
         premiumDesc: '尊享独家特权功能',
         remainingTime: '剩余时间',
         days: '天',
-        expiryDate: '到期日期'
+        expiryDate: '到期日期',
+        choosePlan: '选择套餐'
     },
     payment: {
         processing: '正在处理支付结果...',
@@ -84,7 +85,13 @@ export default {
         failed: '支付失败，请重试',
         cancelled: '您已取消支付',
         error: '处理支付时出现错误，请联系客服',
-        invalidToken: '无效的支付信息'
+        invalidToken: '无效的支付信息',
+        selectMethod: '请选择支付方式',
+        stripe: '使用 Stripe 支付',
+        paypal: '使用 PayPal 支付',
+        stripeProcessing: '正在处理 Stripe 支付...',
+        stripeSuccess: 'Stripe 支付成功！',
+        stripeFailed: 'Stripe 支付失败，请重试'
     },
     alerts: {
         error: {

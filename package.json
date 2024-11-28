@@ -12,7 +12,9 @@
     "version:major": "node scripts/update-version.js major",
     "version:minor": "node scripts/update-version.js minor",
     "version:patch": "node scripts/update-version.js patch",
-    "commit": "scripts/run-commit.bat"
+    "commit": "scripts/run-commit.bat",
+    "server": "node server/index.js",
+    "dev:server": "nodemon server/index.js"
   },
   "dependencies": {
     "@firebase/auth": "^1.6.0",
@@ -23,7 +25,14 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-i18next": "^14.0.0",
-    "react-router-dom": "^6.22.1"
+    "react-router-dom": "^6.22.1",
+    "@stripe/stripe-js": "^2.2.0",
+    "@stripe/react-stripe-js": "^2.4.0",
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "stripe": "^14.10.0",
+    "nodemon": "^3.0.2",
+    "dotenv": "^16.3.1"
   },
   "devDependencies": {
     "@types/react": "^18.2.15",
