@@ -5,7 +5,10 @@ export default {
         testMode: 'Note: In test mode, chat history will be cleared on server restart.',
         back: 'Back',
         welcome: 'Welcome to AI Chat Companions',
-        welcomeDescription: 'Login to start chatting with AI companions'
+        welcomeDescription: 'Login to start chatting with AI companions',
+        cancel: 'Cancel',
+        submit: 'Submit',
+        submitting: 'Submitting...'
     },
     gender: {
         all: 'All',
@@ -165,5 +168,13 @@ export default {
         noble: 'Noble Member',
         peak: 'Peak Member',
         invincible: 'Invincible Member'
+    },
+    feedback: {
+        title: 'Feedback',
+        email: 'Email',
+        uid: 'User ID',
+        placeholder: 'Please enter your suggestions or feedback...',
+        submitSuccess: 'Thank you for your feedback!',
+        submitError: 'Submission failed, please try again later'
     }
 };

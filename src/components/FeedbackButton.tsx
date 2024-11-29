@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MessageCircle, HelpCircle } from 'lucide-react';
+import { MessageCircle, X, Star } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { addFeedback } from '../services/feedback-service';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -16,6 +16,7 @@ const FeedbackButton: React.FC<FeedbackButtonProps> = ({ themeColor }) => {
   const { currentUser } = useAuth();
   const { t } = useLanguage();
 
+  {/* 提交反馈处理函数 */}
   const handleSubmit = async () => {
     if (!currentUser) return;
     
@@ -42,27 +43,37 @@ const FeedbackButton: React.FC<FeedbackButtonProps> = ({ themeColor }) => {
 
   return (
     <>
+      {/* 悬浮反馈按钮 */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 p-3 rounded-full shadow-lg hover:opacity-90 transition-opacity"
+        className="fixed bottom-6 right-6 h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center"
         style={{ backgroundColor: themeColor }}
       >
-        <div className="relative w-6 h-6">
-          <MessageCircle className="w-6 h-6 text-white absolute inset-0" />
-          <HelpCircle className="w-3 h-3 text-white absolute -top-1 -right-1" />
-        </div>
+        <MessageCircle className="h-6 w-6 text-white" />
       </button>
 
+      {/* 反馈弹窗遮罩层 */}
       {isOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          {/* 反馈弹窗主体 */}
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg w-full max-w-md">
-            <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
-              {t('feedback.title')}
-            </h2>
-            
-            <div className="space-y-4">
-              {/* 用户信息显示 */}
-              <div className="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg">
+            {/* 弹窗标题栏 */}
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                {t('feedback.title')}
+              </h2>
+              <button 
+                onClick={() => setIsOpen(false)}
+                className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* 反馈表单内容区 */}
+            <div className="space-y-6">
+              {/* 用户信息展示 */}
+              <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg space-y-2">
                 <p className="text-sm text-gray-600 dark:text-gray-300">
                   {t('feedback.email')}: {currentUser?.email}
                 </p>
@@ -71,41 +82,49 @@ const FeedbackButton: React.FC<FeedbackButtonProps> = ({ themeColor }) => {
                 </p>
               </div>
 
-              {/* 星级评分 */}
-              <div className="flex items-center space-x-1">
+              {/* 星级评分区域 */}
+              <div className="flex items-center justify-center space-x-2">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
                     key={star}
                     onClick={() => setRating(star)}
-                    className="text-2xl focus:outline-none"
-                    style={{ color: themeColor }}
+                    className={`h-12 w-12 transition-all duration-200 ${
+                      star <= rating 
+                        ? 'text-yellow-400 scale-110' 
+                        : 'text-gray-400 hover:text-yellow-400'
+                    }`}
                   >
-                    {star <= rating ? '★' : '☆'}
+                    <Star className={`h-8 w-8 ${star <= rating ? 'fill-current' : ''}`} />
                   </button>
                 ))}
               </div>
 
-              {/* 反馈文本框 */}
+              {/* 反馈文本输入框 */}
               <textarea
                 value={feedback}
                 onChange={(e) => setFeedback(e.target.value)}
                 placeholder={t('feedback.placeholder')}
-                className="w-full h-32 p-3 border rounded-lg resize-none focus:ring-2 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                style={{ focusRing: themeColor }}
+                className="w-full min-h-[120px] rounded-lg border border-gray-200 dark:border-gray-700 bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:text-white"
+                style={{ 
+                  focusRing: themeColor,
+                  resize: 'vertical'
+                }}
               />
 
-              {/* 按钮组 */}
-              <div className="flex justify-end space-x-3">
+              {/* 操作按钮区域 */}
+              <div className="flex justify-end space-x-2">
+                {/* 取消按钮 */}
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="px-4 py-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  className="px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50"
                 >
                   {t('common.cancel')}
                 </button>
+                {/* 提交按钮 */}
                 <button
                   onClick={handleSubmit}
                   disabled={isSubmitting || !rating || !feedback.trim()}
-                  className="px-4 py-2 rounded-lg text-white disabled:opacity-50"
+                  className="px-4 py-2 rounded-lg text-white disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ backgroundColor: themeColor }}
                 >
                   {isSubmitting ? t('common.submitting') : t('common.submit')}
