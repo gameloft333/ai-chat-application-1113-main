@@ -71,7 +71,7 @@ const AppContent: React.FC = () => {
   const [chatHistory, setChatHistory] = useState<Record<string, Message[]>>({});
   const [randomColor, setRandomColor] = useState<string>('');
   const [user, setUser] = useState<UserState | null>(null);
-  const [selectedGender, setSelectedGender] = useState<string>('female');
+  const [selectedGender, setSelectedGender] = useState<string | null>('popular');
   const [themeColor, setThemeColor] = useState<string>('#4F46E5');
   const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
@@ -361,6 +361,21 @@ const AppContent: React.FC = () => {
     }
     return characters.filter(char => char.gender === selectedGender);
   };
+
+  useEffect(() => {
+    if (selectedGender === 'popular') {
+      // 获取所有角色的统计数据
+      const stats = CharacterStatsService.getCharacterCounts();
+      const sortedCharacters = characters
+        .map(char => ({
+          id: char.id,
+          count: stats[char.id] || 0
+        }))
+        .sort((a, b) => b.count - a.count)
+        .map(item => item.id);
+      setPopularCharacters(sortedCharacters);
+    }
+  }, [selectedGender]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
