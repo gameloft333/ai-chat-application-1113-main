@@ -34,6 +34,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import { StripePaymentForm } from './components/StripePaymentForm';
 import { CharacterStatsService } from './services/character-stats-service';
 import { characters } from './types/character';
+import FeedbackButton from './components/FeedbackButton';
 
 const API_KEY = import.meta.env.VITE_API_KEY || '';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -535,6 +536,9 @@ const AppContent: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* 添加反馈按钮 */}
+      {currentUser && <FeedbackButton themeColor={themeColor} />}
     </div>
   );
 };

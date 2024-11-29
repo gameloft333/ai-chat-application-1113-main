@@ -5,7 +5,10 @@ export default {
         testMode: '注意: 现在处于测试模式，服务器重启时会清空聊天记录哦。',
         back: '返回',
         welcome: '欢迎使用 AI Chat Companions',
-        welcomeDescription: '登录后开始与 AI 伴侣聊天'
+        welcomeDescription: '登录后开始与 AI 伴侣聊天',
+        cancel: '取消',
+        submit: '提交',
+        submitting: '提交中...'
     },
     gender: {
         all: '全部',
@@ -169,5 +172,13 @@ export default {
         noble: '尊贵会员',
         peak: '巅峰会员',
         invincible: '无敌会员'
+    },
+    feedback: {
+        title: '意见反馈',
+        email: '邮箱',
+        uid: '用户ID',
+        placeholder: '请输入您的建议或反馈...',
+        submitSuccess: '感谢您的反馈！',
+        submitError: '提交失败，请稍后重试'
     }
 };
