@@ -201,7 +201,7 @@ const getPlanLevelName = (planLevel?: string, duration?: string) => {
   return durationMap[currentDuration]?.[planLevel] || tTranslation('memberLevel.normal');
 };
 
-  console.log('当前订阅状态:', subscriptionStatus);
+  // console.log('当前订阅状态:', subscriptionStatus);
 
   return (
     <div className="relative" ref={dropdownRef}>

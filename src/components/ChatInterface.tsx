@@ -32,8 +32,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   }, [messages]);
 
   useEffect(() => {
-    onUpdateHistory(messages);
-  }, [messages, onUpdateHistory]);
+    const messagesChanged = JSON.stringify(messages) !== JSON.stringify(initialMessages);
+    if (messagesChanged) {
+      onUpdateHistory(messages);
+    }
+  }, [messages, onUpdateHistory, initialMessages]);
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;

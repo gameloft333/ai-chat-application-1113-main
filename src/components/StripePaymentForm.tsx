@@ -53,57 +53,75 @@ export const StripePaymentForm: React.FC<StripePaymentFormProps> = ({
     setIsProcessing(true);
     setErrorMessage('');
 
-    try {
-      const cardElement = elements.getElement(CardElement);
-      if (!cardElement) {
-        throw new Error('支付表单未加载完成');
-      }
+    let retryCount = 0;
+    const maxRetries = 3;
 
-      console.log('开始处理支付...');
-      const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
-        payment_method: {
-          card: cardElement,
-          billing_details: {
-            email: userEmail,
+    while (retryCount < maxRetries) {
+      try {
+        const cardElement = elements.getElement(CardElement);
+        if (!cardElement) {
+          throw new Error('支付表单未加载完成');
+        }
+
+        console.log(`尝试处理支付... (第 ${retryCount + 1} 次)`);
+        const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+          payment_method: {
+            card: cardElement,
+            billing_details: {
+              email: userEmail,
+            },
           },
-        },
-      });
-
-      if (error) {
-        console.error('支付确认错误:', error);
-        throw error;
-      }
-
-      if (paymentIntent.status === 'succeeded') {
-        console.log('支付成功，创建支付记录...');
-        await PaymentRecordService.createPaymentRecord({
-          uid: userId,
-          userEmail,
-          planId,
-          duration,
-          orderId: paymentIntent.id,
-          amount,
-          currency,
-          status: 'completed',
-          createdAt: new Date(),
-          expiredAt: calculateExpiryDate(duration),
-          paymentChannel: 'stripe',
-          paymentAccount: userEmail
         });
-        
-        console.log('支付记录创建成功，调用成功回调...');
-        onSuccess();
-      } else {
-        throw new Error('支付未完成');
+
+        if (error) {
+          if (error.type === 'api_connection_error') {
+            retryCount++;
+            if (retryCount < maxRetries) {
+              console.log(`连接失败，${retryCount}秒后重试...`);
+              await new Promise(resolve => setTimeout(resolve, retryCount * 1000));
+              continue;
+            }
+          }
+          console.error('支付确认错误:', error);
+          throw error;
+        }
+
+        if (paymentIntent.status === 'succeeded') {
+          console.log('支付成功，创建支付记录...');
+          await PaymentRecordService.createPaymentRecord({
+            uid: userId,
+            userEmail,
+            planId,
+            duration,
+            orderId: paymentIntent.id,
+            amount,
+            currency,
+            status: 'completed',
+            createdAt: new Date(),
+            expiredAt: calculateExpiryDate(duration),
+            paymentChannel: 'stripe',
+            paymentAccount: userEmail
+          });
+          
+          console.log('支付记录创建成功，调用成功回调...');
+          onSuccess();
+          break;
+        } else {
+          throw new Error('支付未完成');
+        }
+      } catch (error) {
+        if (retryCount === maxRetries - 1) {
+          console.error('支付处理错误:', error);
+          const errorMessage = error.type === 'api_connection_error' 
+            ? '支付服务连接失败，请检查网络连接后重试'
+            : (error instanceof Error ? error.message : '支付处理失败');
+          setErrorMessage(errorMessage);
+          onError(errorMessage);
+        }
       }
-    } catch (error) {
-      console.error('支付处理错误:', error);
-      const errorMessage = error instanceof Error ? error.message : '支付处理失败';
-      setErrorMessage(errorMessage);
-      onError(errorMessage);
-    } finally {
-      setIsProcessing(false);
     }
+
+    setIsProcessing(false);
   };
 
   return (
