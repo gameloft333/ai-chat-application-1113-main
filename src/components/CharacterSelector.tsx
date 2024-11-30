@@ -1,63 +1,76 @@
-import React, { useState, useEffect } from 'react';
-import { Character, characters } from '../types/character';
+import React, { useEffect, useState } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { Character, characters } from '../types/character';
+import { CharacterStatsService } from '../services/character-stats-service';
 
 interface CharacterSelectorProps {
   onSelectCharacter: (character: Character) => void;
   maxCharacters?: number;
-  selectedGender: string;
+  selectedGender: string | null;
 }
-
-const shuffleArray = (array: Character[]) => {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
-  return array;
-};
 
 const CharacterSelector: React.FC<CharacterSelectorProps> = ({
   onSelectCharacter,
   maxCharacters = characters.length,
   selectedGender
 }) => {
-  const { t, currentLanguage } = useLanguage();
-  const [randomColor, setRandomColor] = useState<string>('#FFFFFF');
-
-  const generateRandomColor = () => {
-    const letters = '0123456789ABCDEF';
-    let color = '#';
-    for (let i = 0; i < 6; i++) {
-      color += letters[Math.floor(Math.random() * 16)];
-    }
-    return color;
-  };
+  const { t } = useLanguage();
+  const [sortedCharacters, setSortedCharacters] = useState<Character[]>([]);
 
   useEffect(() => {
-    setRandomColor(generateRandomColor());
-  }, []);
+    const sortCharactersByPopularity = () => {
+      // 获取所有角色的统计数据
+      const stats = CharacterStatsService.getCharacterCounts();
+      
+      // 根据性别过滤角色
+      let filteredChars = selectedGender === 'popular' 
+        ? characters 
+        : characters.filter(char => char.gender === selectedGender);
 
-  const filteredCharacters = selectedGender === 'popular' 
-    ? characters // 热门标签显示所有角色
-    : selectedGender 
-      ? characters.filter(char => char.gender === selectedGender)
-      : characters;
+      // 根据统计数据对角色进行排序，相同对话人数的角色随机排序
+      const sorted = filteredChars.sort((a, b) => {
+        const countA = stats[a.id] || 0;
+        const countB = stats[b.id] || 0;
+        if (countA === countB) {
+          // 如果对话人数相同，随机排序
+          return Math.random() - 0.5;
+        }
+        return countB - countA; // 降序排列
+      });
 
-  const displayCharacters = filteredCharacters.slice(0, maxCharacters);
+      setSortedCharacters(sorted.slice(0, maxCharacters));
+    };
 
-  console.log('Current language:', currentLanguage);
-  console.log('Translation test:', t('characters.bertha.description'));
+    sortCharactersByPopularity();
+  }, [selectedGender, maxCharacters]);
+
+  // 每次渲染时重新随机排序相同对话人数的角色
+  useEffect(() => {
+    const reorderSameCountCharacters = () => {
+      const stats = CharacterStatsService.getCharacterCounts();
+      setSortedCharacters(prev => {
+        const newOrder = [...prev].sort((a, b) => {
+          const countA = stats[a.id] || 0;
+          const countB = stats[b.id] || 0;
+          if (countA === countB) {
+            return Math.random() - 0.5;
+          }
+          return countB - countA;
+        });
+        return newOrder;
+      });
+    };
+
+    reorderSameCountCharacters();
+  }, []); // 空依赖数组确保只在组件挂载时执行一次
 
   return (
     <div className="space-y-8">
-      <h2 
-        className="text-2xl font-bold text-center mb-8 transition-colors"
-        style={{ color: randomColor }}
-      >
+      <h2 className="text-2xl font-bold text-center mb-8">
         {t('common.selectCharacter')}
       </h2>
       <div className="grid grid-cols-4 gap-4">
-        {displayCharacters.map((character) => (
+        {sortedCharacters.map((character) => (
           <div
             key={character.id}
             className="cursor-pointer transition-all duration-300 transform hover:scale-105 relative"
