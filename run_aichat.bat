@@ -95,7 +95,7 @@ if errorlevel 1 (
 
 :: Build and preview
 echo Building project...
-npm run build
+npm run clean && npm run build
 if errorlevel 1 (
   echo Error: npm run build failed.
   pause
@@ -149,7 +149,7 @@ if not exist "node_modules" (
 
 :: Build and preview
 echo Building project...
-npm run build
+npm run clean && npm run build
 if errorlevel 1 (
   echo Error: npm run build failed.
   pause
@@ -180,7 +180,7 @@ if not exist "node_modules" (
 
 :: Build and start server
 echo Building project...
-npm run build
+npm run clean && npm run build
 if errorlevel 1 (
   echo Error: npm run build failed.
   pause
