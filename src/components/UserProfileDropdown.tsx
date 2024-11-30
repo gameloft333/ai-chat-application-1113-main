@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { User, LogOut, Clock, Eye, EyeOff, Copy, Check, Mail, Key, Crown } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -30,6 +30,7 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({ themeColor })
   const { t, language } = useLanguage();
   const { openSubscriptionModal } = useSubscription();
   const { t: tTranslation } = useTranslation();
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const updateSubscriptionStatus = async () => {
@@ -65,6 +66,22 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({ themeColor })
       window.removeEventListener('subscription-updated', handlePaymentUpdate);
     };
   }, [currentUser]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    // 添加全局点击事件监听
+    document.addEventListener('mousedown', handleClickOutside);
+    
+    // 清理函数
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -187,7 +204,7 @@ const getPlanLevelName = (planLevel?: string, duration?: string) => {
   console.log('当前订阅状态:', subscriptionStatus);
 
   return (
-    <div className="relative">
+    <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center hover:opacity-80 transition-opacity"
