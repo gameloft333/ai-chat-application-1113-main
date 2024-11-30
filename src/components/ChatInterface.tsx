@@ -7,6 +7,7 @@ import { MAX_CHAT_HISTORY, USE_TYPEWRITER_MODE, AI_RESPONSE_MODE } from '../conf
 import { speak } from '../services/voice-service';
 import ChatMessage from './ChatMessage'; // 导入 ChatMessage 组件
 import { CharacterStatsService } from '../services/character-stats-service';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface ChatInterfaceProps {
   selectedCharacter: Character;
@@ -19,6 +20,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   initialMessages,
   onUpdateHistory
 }) => {
+  const { t } = useLanguage();
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -103,7 +105,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-            placeholder="输入消息..."
+            placeholder={t('chat.inputPlaceholder')}
             className="flex-1 px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent"
             disabled={isLoading}
           />

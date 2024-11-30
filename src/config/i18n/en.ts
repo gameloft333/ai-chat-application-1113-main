@@ -176,5 +176,19 @@ export default {
         placeholder: 'Please enter your suggestions or feedback...',
         submitSuccess: 'Thank you for your feedback!',
         submitError: 'Submission failed, please try again later'
+    },
+    chat: {
+        inputPlaceholder: 'Type a message...',
+        send: 'Send',
+        thinking: 'Thinking...',
+        errorMessage: 'Sorry, I am experiencing some technical issues. Let\'s chat later.',
+        retry: 'Retry',
+        speaking: 'Playing voice...',
+        stopSpeaking: 'Stop playing',
+        loadingHistory: 'Loading chat history...',
+        clearHistory: 'Clear history',
+        confirmClear: 'Are you sure you want to clear all chat history?',
+        historySaved: 'Chat history saved',
+        historyCleared: 'Chat history cleared'
     }
 };

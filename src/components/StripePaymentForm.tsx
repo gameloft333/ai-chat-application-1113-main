@@ -153,6 +153,8 @@ export const StripePaymentForm: React.FC<StripePaymentFormProps> = ({
       )}
       
       <div className="text-sm text-gray-500">
+        如果遇到支付问题，请使用稳定IP的网络连接，并使用以下测试卡号进行支付：
+        <br />
         测试卡号：4242 4242 4242 4242
         <br />
         有效期：任意未来日期（如：12/25）

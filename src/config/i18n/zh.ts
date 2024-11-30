@@ -180,5 +180,19 @@ export default {
         placeholder: '请输入您的建议或反馈...',
         submitSuccess: '感谢您的反馈！',
         submitError: '提交失败，请稍后重试'
+    },
+    chat: {
+        inputPlaceholder: '输入消息...',
+        send: '发送',
+        thinking: '正在思考...',
+        errorMessage: '对不起，我现在遇到了一些技术问题。让我们稍后再聊吧。',
+        retry: '重试',
+        speaking: '正在播放语音...',
+        stopSpeaking: '停止播放',
+        loadingHistory: '加载聊天记录中...',
+        clearHistory: '清空聊天记录',
+        confirmClear: '确定要清空所有聊天记录吗？',
+        historySaved: '聊天记录已保存',
+        historyCleared: '聊天记录已清空'
     }
 };
