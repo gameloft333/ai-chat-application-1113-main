@@ -35,6 +35,7 @@ import { StripePaymentForm } from './components/StripePaymentForm';
 import { CharacterStatsService } from './services/character-stats-service';
 import { characters } from './types/character';
 import FeedbackButton from './components/FeedbackButton';
+import DynamicFavicon from './components/DynamicFavicon';
 
 const API_KEY = import.meta.env.VITE_API_KEY || '';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -63,7 +64,7 @@ interface UserState {
   planId?: string;
 }
 
-const AppContent: React.FC = () => {
+const AppContent: React.FC<AppRoutesProps> = ({ themeColor }) => {
   const { t } = useLanguage();
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
@@ -73,7 +74,6 @@ const AppContent: React.FC = () => {
   const [randomColor, setRandomColor] = useState<string>('');
   const [user, setUser] = useState<UserState | null>(null);
   const [selectedGender, setSelectedGender] = useState<string | null>('popular');
-  const [themeColor, setThemeColor] = useState<string>('#4F46E5');
   const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const { openSubscriptionModal } = useSubscription();
@@ -103,7 +103,6 @@ const AppContent: React.FC = () => {
 
   useEffect(() => {
     const newColor = generateThemeColor();
-    setThemeColor(newColor);
     document.documentElement.style.setProperty('--theme-color', newColor);
   }, []);
 
@@ -379,167 +378,170 @@ const AppContent: React.FC = () => {
   }, [selectedGender]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      <header className="sticky top-0 z-50 backdrop-blur-lg bg-white/75 dark:bg-gray-900/75 border-b border-gray-200 dark:border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-6">
-            <div className="flex items-center space-x-3">
-              <MessageCircle className="w-8 h-8" style={{ color: themeColor }} />
-              <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
-                Companions
-              </h1>
+    <>
+      <DynamicFavicon selectedCharacter={selectedCharacter} />
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+        <header className="sticky top-0 z-50 backdrop-blur-lg bg-white/75 dark:bg-gray-900/75 border-b border-gray-200 dark:border-gray-800">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div className="flex items-center space-x-6">
+              <div className="flex items-center space-x-3">
+                <MessageCircle className="w-8 h-8" style={{ color: themeColor }} />
+                <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  Companions
+                </h1>
+              </div>
+              <GenderSelector
+                selectedGender={selectedGender}
+                onGenderChange={handleGenderChange}
+                themeColor={themeColor}
+                onPopularCharactersChange={setPopularCharacters}
+              />
             </div>
-            <GenderSelector
-              selectedGender={selectedGender}
-              onGenderChange={handleGenderChange}
-              themeColor={themeColor}
-              onPopularCharactersChange={setPopularCharacters}
-            />
+            
+            <div className="flex items-center space-x-3">
+              {!currentUser ? (
+                <button
+                  onClick={() => setShowLoginModal(true)}
+                  className="px-4 py-2 rounded-lg text-white transition-colors"
+                  style={{ backgroundColor: themeColor }}
+                >
+                  {t('auth.login')}
+                </button>
+              ) : (
+                <>
+                  {user?.isPaid ? (
+                    <>
+                      <SubscriptionExpiry 
+                        expiredAt={new Date(user.expiredAt)} 
+                        themeColor={themeColor}
+                      />
+                      <SubscriptionDropdown
+                        planName={user.planName || 'subscription.defaultPlan'}
+                        daysLeft={user.daysLeft || 0}
+                        themeColor={themeColor}
+                        onChangeSubscription={openSubscriptionModal}
+                      />
+                    </>
+                  ) : (
+                    <button
+                      onClick={handleOpenSubscriptionModal}
+                      className="px-4 py-2 rounded-lg text-white transition-colors"
+                      style={{ backgroundColor: themeColor }}
+                    >
+                      {t('subscription.choosePlan')}
+                    </button>
+                  )}
+                  <UserProfileDropdown 
+                    themeColor={themeColor}
+                  />
+                </>
+              )}
+              <LanguageSwitch themeColor={themeColor} />
+            </div>
           </div>
+        </header>
           
-          <div className="flex items-center space-x-3">
-            {!currentUser ? (
-              <button
-                onClick={() => setShowLoginModal(true)}
-                className="px-4 py-2 rounded-lg text-white transition-colors"
-                style={{ backgroundColor: themeColor }}
-              >
-                {t('auth.login')}
-              </button>
-            ) : (
-              <>
-                {user?.isPaid ? (
-                  <>
-                    <SubscriptionExpiry 
-                      expiredAt={new Date(user.expiredAt)} 
-                      themeColor={themeColor}
-                    />
-                    <SubscriptionDropdown
-                      planName={user.planName || 'subscription.defaultPlan'}
-                      daysLeft={user.daysLeft || 0}
-                      themeColor={themeColor}
-                      onChangeSubscription={openSubscriptionModal}
-                    />
-                  </>
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {selectedCharacter ? (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-1">
+                <button onClick={handleReturn} 
+                  className="group mb-4 inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
+                  <ArrowLeft className="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1" />
+                  {t('common.back')}
+                </button>
+                <div className="aspect-[3/4] rounded-2xl overflow-hidden shadow-xl">
+                  <img
+                    src={selectedCharacter.image}
+                    alt={selectedCharacter.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              </div>
+              <div className="lg:col-span-2">
+                {currentUser ? (
+                  <ChatInterface
+                    selectedCharacter={selectedCharacter}
+                    initialMessages={chatHistory[selectedCharacter.id] || []}
+                    onUpdateHistory={(messages) => updateChatHistory(selectedCharacter.id, messages)}
+                    className="flex-grow h-full"
+                  />
                 ) : (
-                  <button
-                    onClick={handleOpenSubscriptionModal}
-                    className="px-4 py-2 rounded-lg text-white transition-colors"
-                    style={{ backgroundColor: themeColor }}
-                  >
-                    {t('subscription.choosePlan')}
-                  </button>
+                  <div className="flex items-center justify-center h-full">
+                    <button
+                      onClick={() => setShowLoginModal(true)}
+                      className="px-6 py-3 rounded-lg text-white transition-colors"
+                      style={{ backgroundColor: themeColor }}
+                    >
+                      {t('auth.loginToChat')}
+                    </button>
+                  </div>
                 )}
-                <UserProfileDropdown 
-                  themeColor={themeColor}
-                />
-              </>
-            )}
-            <LanguageSwitch themeColor={themeColor} />
-          </div>
-        </div>
-      </header>
-        
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {selectedCharacter ? (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-1">
-              <button onClick={handleReturn} 
-                className="group mb-4 inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
-                <ArrowLeft className="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1" />
-                {t('common.back')}
-              </button>
-              <div className="aspect-[3/4] rounded-2xl overflow-hidden shadow-xl">
-                <img
-                  src={selectedCharacter.image}
-                  alt={selectedCharacter.name}
-                  className="w-full h-full object-cover"
-                />
               </div>
             </div>
-            <div className="lg:col-span-2">
-              {currentUser ? (
-                <ChatInterface
-                  selectedCharacter={selectedCharacter}
-                  initialMessages={chatHistory[selectedCharacter.id] || []}
-                  onUpdateHistory={(messages) => updateChatHistory(selectedCharacter.id, messages)}
-                  className="flex-grow h-full"
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full">
-                  <button
-                    onClick={() => setShowLoginModal(true)}
-                    className="px-6 py-3 rounded-lg text-white transition-colors"
-                    style={{ backgroundColor: themeColor }}
-                  >
-                    {t('auth.loginToChat')}
-                  </button>
-                </div>
-              )}
-            </div>
+          ) : (
+            <CharacterSelector
+              onSelectCharacter={handleSelectCharacter}
+              selectedGender={selectedGender}
+            />
+          )}
+        </main>
+        <footer className="bg-black bg-opacity-50 text-white p-4 text-center">
+          <p style={{ color: randomColor }}>{t('common.copyright')}</p>
+        </footer>
+        {CLEAR_MEMORY_ON_RESTART && (
+          <div className="text-yellow-400 text-sm mt-2">
+            {t('common.testMode')}
           </div>
-        ) : (
-          <CharacterSelector
-            onSelectCharacter={handleSelectCharacter}
-            selectedGender={selectedGender}
+        )}
+        
+        {showLoginModal && (
+          <LoginModal 
+            isOpen={showLoginModal}
+            onClose={() => setShowLoginModal(false)}
+            themeColor={themeColor}
           />
         )}
-      </main>
-      <footer className="bg-black bg-opacity-50 text-white p-4 text-center">
-        <p style={{ color: randomColor }}>{t('common.copyright')}</p>
-      </footer>
-      {CLEAR_MEMORY_ON_RESTART && (
-        <div className="text-yellow-400 text-sm mt-2">
-          {t('common.testMode')}
-        </div>
-      )}
-      
-      {showLoginModal && (
-        <LoginModal 
-          isOpen={showLoginModal}
-          onClose={() => setShowLoginModal(false)}
-          themeColor={themeColor}
-        />
-      )}
 
-      {showSubscriptionModal && (
-        <SubscriptionPlans
-          onClose={() => setShowSubscriptionModal(false)}
-          onSubscribe={handleSubscribe}
-          currentPlanId={currentUser?.planId}
-          themeColor={themeColor}
-          userEmail={currentUser?.email}
-        />
-      )}
-      
-      {showPaymentModal && selectedPlanInfo && (
-        <SubscriptionModal 
-          themeColor={themeColor}
-          planId={selectedPlanInfo.planId}
-          duration={selectedPlanInfo.duration}
-          onClose={() => setShowPaymentModal(false)}
-        />
-      )}
+        {showSubscriptionModal && (
+          <SubscriptionPlans
+            onClose={() => setShowSubscriptionModal(false)}
+            onSubscribe={handleSubscribe}
+            currentPlanId={currentUser?.planId}
+            themeColor={themeColor}
+            userEmail={currentUser?.email}
+          />
+        )}
+        
+        {showPaymentModal && selectedPlanInfo && (
+          <SubscriptionModal 
+            themeColor={themeColor}
+            planId={selectedPlanInfo.planId}
+            duration={selectedPlanInfo.duration}
+            onClose={() => setShowPaymentModal(false)}
+          />
+        )}
 
-      {showStripePaymentModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg w-full max-w-md">
-            <h2 className="text-xl font-semibold mb-4">支付确认</h2>
-            <Elements stripe={stripePromise}>
-              <StripePaymentForm
-                {...stripePaymentData}
-                onSuccess={handlePaymentSuccess}
-                onError={handlePaymentError}
-                themeColor={themeColor}
-              />
-            </Elements>
+        {showStripePaymentModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg w-full max-w-md">
+              <h2 className="text-xl font-semibold mb-4">支付确认</h2>
+              <Elements stripe={stripePromise}>
+                <StripePaymentForm
+                  {...stripePaymentData}
+                  onSuccess={handlePaymentSuccess}
+                  onError={handlePaymentError}
+                  themeColor={themeColor}
+                />
+              </Elements>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* 添加反馈按钮 */}
-      {currentUser && <FeedbackButton themeColor={themeColor} />}
-    </div>
+        {/* 添加反馈按钮 */}
+        {currentUser && <FeedbackButton themeColor={themeColor} />}
+      </div>
+    </>
   );
 };
 

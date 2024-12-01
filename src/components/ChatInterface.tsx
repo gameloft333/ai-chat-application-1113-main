@@ -5,7 +5,7 @@ import { Character } from '../types/character';
 import { Message } from '../types/message';
 import { MAX_CHAT_HISTORY, USE_TYPEWRITER_MODE, AI_RESPONSE_MODE } from '../config/app-config';
 import { speak } from '../services/voice-service';
-import ChatMessage from './ChatMessage'; // 导入 ChatMessage 组件
+import ChatMessage from './ChatMessage';
 import { CharacterStatsService } from '../services/character-stats-service';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -16,7 +16,7 @@ interface ChatInterfaceProps {
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
-  selectedCharacter, 
+  selectedCharacter,
   initialMessages,
   onUpdateHistory
 }) => {
@@ -26,11 +26,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [thinkingMessage, setThinkingMessage] = useState<string | null>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   useEffect(() => {
-    if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-    }
+    scrollToBottom();
   }, [messages]);
 
   useEffect(() => {
@@ -78,40 +81,43 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-gray-900 rounded-2xl shadow-xl overflow-hidden">
-      <div ref={chatContainerRef} 
-        className="flex-1 p-4 space-y-4 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
+    <div className="flex flex-col h-full">
+      <div className="flex items-center space-x-4 p-4 border-b dark:border-gray-700">
+        <div className="relative">
+          <img
+            src={selectedCharacter.avatarFile}
+            alt={selectedCharacter.name}
+            className="w-12 h-12 rounded-full object-cover border-2 border-white dark:border-gray-800 shadow-lg"
+          />
+          <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-green-500 border-2 border-white dark:border-gray-800"></div>
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold dark:text-white">{selectedCharacter.name}</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{t(`characters.${selectedCharacter.id}.description`)}</p>
+        </div>
+      </div>
+
+      <div 
+        ref={chatContainerRef}
+        className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-700"
+      >
         {messages.map((message, index) => (
-          <div key={index} 
-            className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[80%] flex items-end space-x-2 ${message.isUser ? 'flex-row-reverse space-x-reverse' : 'flex-row'}`}>
-              {!message.isUser && (
-                <button onClick={() => speak(message.text, selectedCharacter.voice)} 
-                  className="flex-shrink-0 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-                  <img src="/ui_icons/speaker-icon.png" alt="播放语音" 
-                    className="w-5 h-5 opacity-75 hover:opacity-100" />
-                </button>
-              )}
-              <div className={`px-4 py-2 rounded-2xl ${
-                message.isUser 
-                  ? 'bg-indigo-500 text-white' 
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'
-              }`}>
-                {message.text}
-              </div>
-            </div>
-          </div>
+          <ChatMessage
+            key={index}
+            message={message}
+            character={selectedCharacter}
+            isTyping={isLoading && index === messages.length - 1}
+          />
         ))}
-        {thinkingMessage && (
-          <div className="flex justify-start">
-            <div className="bg-gray-100 dark:bg-gray-800 px-4 py-2 rounded-2xl text-gray-500 dark:text-gray-400 animate-pulse">
-              {thinkingMessage}
-            </div>
+        {isLoading && thinkingMessage && (
+          <div className="thinking-status">
+            {thinkingMessage}
           </div>
         )}
+        <div ref={messagesEndRef} />
       </div>
-      
-      <div className="border-t border-gray-200 dark:border-gray-700 p-4">
+
+      <div className="p-4 border-t dark:border-gray-700">
         <div className="flex space-x-2">
           <input
             type="text"
