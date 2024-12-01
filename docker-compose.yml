@@ -26,6 +26,7 @@ services:
       - HOST=0.0.0.0
     volumes:
       - ./src:/app/src:ro
+      - ./dist:/app/dist
       - ./public:/app/public:ro
     command: >
       sh -c "

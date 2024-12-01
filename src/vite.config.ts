@@ -4,8 +4,9 @@ import path from 'path'
 
 export default defineConfig({
   plugins: [react()],
+  base: '/',
   server: {
-    host: true,
+    host: '0.0.0.0',
     port: 4173,
     strictPort: true,
     headers: {
@@ -24,4 +25,8 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  preview: {
+    host: '0.0.0.0',
+    port: 4173,
+  }
 }) 
