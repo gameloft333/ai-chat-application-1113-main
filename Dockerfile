@@ -10,5 +10,8 @@ COPY . .
 EXPOSE 4173
 
 ENV HOST=0.0.0.0
+ENV PORT=4173
 
-CMD ["sh", "-c", "npm run build && npm run preview --host 0.0.0.0 --port 4173 --base /"] 
+USER node
+
+CMD ["sh", "-c", "npm run build && npm run preview"] 
