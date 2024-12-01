@@ -268,33 +268,60 @@ manage_services() {
 
     # 9. 启动所有服务
     log "正在启动所有服务..."
-    docker-compose up -d
-    if [ $? -eq 0 ]; then
+    if docker-compose up -d; then
         success "所有服务已启动"
-    else
-        error "服务启动失败"
-        exit 1
-    fi
-
-    # 10. 检查服务状态
-    log "检查服务状态..."
-    sleep 5
-    docker-compose ps
-
-    # 11. 最终检查
-    FINAL_CHECK=$(docker ps | grep "${PROJECT_NAME}")
-    if [ ! -z "$FINAL_CHECK" ]; then
-        success "服务已成功启动！"
+        
+        # 等待服务完全启动
+        log "等待服务启动..."
+        sleep 10
+        
+        # 检查各个服务的状态
+        log "检查各个服务状态..."
+        docker-compose ps
+        
+        # 检查前端服务是否正常
+        FRONTEND_STATUS=$(docker-compose ps frontend | grep "Up")
+        if [ -z "$FRONTEND_STATUS" ]; then
+            error "前端服务未正常启动，查看日志..."
+            docker-compose logs frontend
+            exit 1
+        fi
+        
+        # 检查支付服务是否正常
+        PAYMENT_STATUS=$(docker-compose ps payment | grep "Up")
+        if [ -z "$PAYMENT_STATUS" ]; then
+            error "支付服务未正常启动，查看日志..."
+            docker-compose logs payment
+            exit 1
+        fi
+        
+        # 检查 Telegram 支付服务是否正常
+        TELEGRAM_STATUS=$(docker-compose ps telegram-payment | grep "Up")
+        if [ -z "$TELEGRAM_STATUS" ]; then
+            error "Telegram 支付服务未正常启动，查看日志..."
+            docker-compose logs telegram-payment
+            exit 1
+        fi
+        
+        success "所有服务已成功启动！"
+        
+        # 显示所有容器状态
         echo -e "\n当前运行的容器："
         docker ps
         
-        # 12. 显示前端服务日志
-        log "正在获取前端服务日志..."
+        # 显示服务访问信息
+        echo -e "\n服务访问信息："
+        echo "前端服务: http://localhost:4173"
+        echo "支付服务: http://localhost:4242"
+        echo "Telegram支付服务: http://localhost:3000"
+        
+        # 持续显示日志
+        log "显示服务日志（按 Ctrl+C 退出）..."
         echo "----------------------------------------"
-        docker-compose logs -f frontend
+        docker-compose logs -f
     else
-        error "服务可能未正常启动，请检查日志"
-        docker-compose logs
+        error "服务启动失败"
+        exit 1
     fi
 }
 
