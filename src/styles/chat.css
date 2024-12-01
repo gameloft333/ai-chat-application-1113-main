@@ -1,14 +1,68 @@
 /* Chat component styles */
-// ... 现有样式代码 ...
 
 .thinking-status {
-  padding: 8px 12px;
+  padding: 12px 16px;
   color: #666;
   font-size: 14px;
   font-style: italic;
-  background: rgba(0, 0, 0, 0.03);
-  border-radius: 4px;
-  margin: 8px 0;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  margin: 12px 0;
+  display: flex;
+  align-items: center;
+  animation: pulse 2s infinite;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
 }
 
-// ... 现有样式代码 ...
+@keyframes pulse {
+  0% {
+    opacity: 0.5;
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0.5;
+    transform: scale(0.98);
+  }
+}
+
+.typing-indicator {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 8px;
+}
+
+.typing-indicator .dot {
+    width: 4px;
+    height: 4px;
+    margin: 0 2px;
+    background: currentColor;
+    border-radius: 50%;
+    animation: bounce 1.4s infinite;
+    opacity: 0.3;
+}
+
+.typing-indicator .dot:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.typing-indicator .dot:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes bounce {
+    0%, 60%, 100% {
+        transform: translateY(0);
+        opacity: 0.3;
+    }
+    30% {
+        transform: translateY(-4px);
+        opacity: 1;
+    }
+}
+
+/* 现有样式代码 */

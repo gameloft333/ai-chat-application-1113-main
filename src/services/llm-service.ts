@@ -240,26 +240,25 @@ export function getThinkingStatus(characterId: string): boolean {
 
 export async function getThinkingMessage(characterId: string, language: string): Promise<string> {
   try {
-    console.log('=== Thinking Message Debug ===');
-    // 添加参数验证
-    if (!language) {
-      console.warn('Language parameter is missing, defaulting to "en"');
-      language = 'en';
-    }
+    console.log('=== Thinking Message Debug ===', { characterId, language });
+    
+    // 使用传入的语言参数，如果没有则从上下文获取
+    const currentLanguage = language || i18n.language;
     
     const character = await getCharacterPrompt(characterId);
     const name = character.prompt.match(/Name:\s*(\S+)/)?.[1] || characterId;
     
-    // 确保使用正确的语言参数
+    // 使用正确的语言参数和翻译键
     const message = i18n.t('chat.thinkingMessage', { 
-      name, 
-      lng: language // 确保语言参数存在
+      name,
+      lng: currentLanguage,
+      ns: 'translation'
     });
     
-    console.log('Thinking message generated:', {
+    console.log('Generated thinking message:', {
       characterId,
       name,
-      language,
+      language: currentLanguage,
       message
     });
     
@@ -268,7 +267,7 @@ export async function getThinkingMessage(characterId: string, language: string):
     console.error('Error in getThinkingMessage:', error);
     // 错误情况下也要确保使用正确的语言
     return i18n.t('chat.thinking', { 
-      lng: language || 'en'
+      lng: currentLanguage
     });
   }
 }

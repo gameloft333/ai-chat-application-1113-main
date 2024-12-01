@@ -8,7 +8,7 @@ import '../styles/chat.css';
 const [isThinking, setIsThinking] = useState(false);
 const [thinkingMessage, setThinkingMessage] = useState('');
 
-const { currentLanguage } = useLanguage();
+const { currentLanguage, t } = useLanguage();
 
 useEffect(() => {
   const checkThinkingStatus = async () => {
@@ -24,9 +24,27 @@ useEffect(() => {
   return () => clearInterval(interval);
 }, [characterId, currentLanguage]);
 
-// 在渲染部分添加
-{isThinking && (
-  <div className="thinking-status">
-    {thinkingMessage}
+// 在渲染部分修改
+return (
+  <div className="chat-container">
+    {messages.map((message, index) => (
+      <ChatMessage
+        key={index}
+        message={message}
+        character={character}
+      />
+    ))}
+    
+    {/* 将思考状态移到消息列表后面 */}
+    {isThinking && (
+      <div className="thinking-status">
+        <span>{t('chat.thinkingMessage').replace('{{name}}', character.name)}</span>
+        <span className="typing-indicator">
+          <span className="dot">.</span>
+          <span className="dot">.</span>
+          <span className="dot">.</span>
+        </span>
+      </div>
+    )}
   </div>
-)}
+);
