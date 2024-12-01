@@ -9,6 +9,37 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+# 检查并安装 Node.js 和 npm
+check_and_install_node() {
+    echo -e "${YELLOW}[信息] 检查 Node.js 和 npm 安装状态...${NC}"
+    
+    if ! command -v node &> /dev/null; then
+        echo -e "${YELLOW}[信息] 正在安装 Node.js...${NC}"
+        # 对于 Amazon Linux 2
+        if [ -f /etc/system-release ] && grep -q "Amazon Linux" /etc/system-release; then
+            curl -sL https://rpm.nodesource.com/setup_18.x | sudo bash -
+            sudo yum install -y nodejs
+        # 对于 Ubuntu/Debian
+        elif [ -f /etc/debian_version ]; then
+            curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+            sudo apt-get install -y nodejs
+        else
+            echo -e "${RED}[错误] 不支持的操作系统${NC}"
+            exit 1
+        fi
+    fi
+    
+    if ! command -v npm &> /dev/null; then
+        echo -e "${RED}[错误] npm 安装失败${NC}"
+        exit 1
+    fi
+    
+    echo -e "${GREEN}[成功] Node.js $(node -v) 和 npm $(npm -v) 已安装${NC}"
+}
+
+# 在创建目录之前先检查并安装依赖
+check_and_install_node
+
 echo -e "${YELLOW}[信息] 正在创建支付服务器目录结构...${NC}"
 
 # 1. 创建目录
