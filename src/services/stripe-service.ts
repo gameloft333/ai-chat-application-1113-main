@@ -38,7 +38,7 @@ export class StripeService {
             await this.ensureInitialized();
             console.log('Stripe 初始化完成');
             
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4242';
             console.log('请求支付服务:', apiUrl);
             
             const response = await fetch(`${apiUrl}/api/stripe/create-payment-intent`, {

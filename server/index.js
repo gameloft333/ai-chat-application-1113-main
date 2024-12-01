@@ -6,7 +6,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 4242;
 
 if (!process.env.STRIPE_SECRET_KEY) {
   console.error('错误: 未设置 STRIPE_SECRET_KEY 环境变量');
@@ -18,12 +18,14 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 });
 
 app.use(cors({
-    origin: ['http://localhost:5173', 'http://localhost:4173'],
-    methods: ['GET', 'POST'],
+    origin: ['http://localhost:5173', 'http://localhost:4173', 'http://localhost:4242'],
+    methods: ['GET', 'POST', 'OPTIONS'],
     credentials: true,
-    allowedHeaders: ['Content-Type', 'Accept']
+    allowedHeaders: ['Content-Type', 'Accept', 'Origin']
 }));
 app.use(express.json());
+
+app.options('*', cors());
 
 app.post('/api/stripe/create-payment-intent', async (req, res) => {
   try {

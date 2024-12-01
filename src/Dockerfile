@@ -9,8 +9,9 @@ RUN npm install
 COPY . .
 
 RUN npm run build
+ENV PORT=4242
 
-EXPOSE 3000
+EXPOSE 4242
 
-CMD ["npm", "run", "preview"]
+CMD ["node", "index.js"]
 
