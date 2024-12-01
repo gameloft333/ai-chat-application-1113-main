@@ -386,7 +386,7 @@ const AppContent: React.FC = () => {
             <div className="flex items-center space-x-3">
               <MessageCircle className="w-8 h-8" style={{ color: themeColor }} />
               <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
-                AI Chat Companions
+                Companions
               </h1>
             </div>
             <GenderSelector

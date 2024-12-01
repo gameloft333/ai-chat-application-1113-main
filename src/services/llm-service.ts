@@ -4,6 +4,8 @@ import { LLM_MODULES } from '../config/llm-mapping';
 import { speak } from '../services/voice-service';
 import { AI_RESPONSE_MODE } from '../config/app-config'; // 确保导入配置
 import { AI_IDENTITY_FILTERS, CHARACTER_BASED_REPLACEMENTS } from '../config/ai-filter-config';
+import { useLanguage } from '../contexts/LanguageContext';
+import i18n from '../config/i18n-config';
 
 async function callLLMAPI(type: LLMType, prompt: string, apiKey: string, modelName: string): Promise<LLMResponse> {
   const maxRetries = 3;
@@ -252,9 +254,56 @@ function filterAIResponse(text: string, characterId: string): string {
   return filteredText;
 }
 
+// 添加思考状态管理
+let thinkingStatus = new Map<string, boolean>();
+
+export function setThinkingStatus(characterId: string, status: boolean) {
+  thinkingStatus.set(characterId, status);
+}
+
+export function getThinkingStatus(characterId: string): boolean {
+  return thinkingStatus.get(characterId) || false;
+}
+
+export async function getThinkingMessage(characterId: string, language: string): Promise<string> {
+  try {
+    console.log('=== Thinking Message Debug ===');
+    // 添加参数验证
+    if (!language) {
+      console.warn('Language parameter is missing, defaulting to "en"');
+      language = 'en';
+    }
+    
+    const character = await getCharacterPrompt(characterId);
+    const name = character.prompt.match(/Name:\s*(\S+)/)?.[1] || characterId;
+    
+    // 确保使用正确的语言参数
+    const message = i18n.t('chat.thinkingMessage', { 
+      name, 
+      lng: language // 确保语言参数存在
+    });
+    
+    console.log('Thinking message generated:', {
+      characterId,
+      name,
+      language,
+      message
+    });
+    
+    return message;
+  } catch (error) {
+    console.error('Error in getThinkingMessage:', error);
+    // 错误情况下也要确保使用正确的语言
+    return i18n.t('chat.thinking', { 
+      lng: language || 'en'
+    });
+  }
+}
+
 export async function getLLMResponse(characterId: string, prompt: string): Promise<LLMResponse> {
   try {
     console.log('=== Start getLLMResponse ===');
+    setThinkingStatus(characterId, true); // 设置思考状态
     console.log('Character ID:', characterId);
     console.log('User prompt:', prompt);
 
@@ -334,16 +383,16 @@ export async function getLLMResponse(characterId: string, prompt: string): Promi
       stack: error instanceof Error ? error.stack : undefined
     });
     
-    let errorMessage = '对不起，我现在遇到了一些技术问题。';
+    let errorMessage = i18n.t('chat.errorMessage');
     if (error instanceof Error) {
       if (error.message.includes('Invalid LLM configuration')) {
-        errorMessage = '系统配置出现问题，请联系管理员。';
+        errorMessage = i18n.t('chat.configError');
       } else if (error.message.includes('Network Error')) {
-        errorMessage = '网络连接出现问题，请检查您的网络连接。';
+        errorMessage = i18n.t('chat.networkError');
       } else if (error.message.includes('API key')) {
-        errorMessage = 'API密钥无效，请联系管理员。';
+        errorMessage = i18n.t('chat.apiKeyError');
       } else if (error.message.includes('Empty response')) {
-        errorMessage = 'AI 响应为空，请重试。';
+        errorMessage = i18n.t('chat.emptyResponseError');
       }
     }
     
@@ -351,5 +400,7 @@ export async function getLLMResponse(characterId: string, prompt: string): Promi
       text: errorMessage,
       error: error instanceof Error ? error.message : String(error)
     };
+  } finally {
+    setThinkingStatus(characterId, false); // 清除思考状态
   }
 }

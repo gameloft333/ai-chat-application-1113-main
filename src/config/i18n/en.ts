@@ -1,11 +1,11 @@
 export default {
     common: {
-        selectCharacter: 'Please select your AI companion',
-        copyright: '© 2024 AI Chat Companions. All rights reserved.',
+        selectCharacter: 'Please select your companion',
+        copyright: '© 2024 Companions. All rights reserved.',
         testMode: 'Note: In test mode, chat history will be cleared on server restart.',
         back: 'Back',
-        welcome: 'Welcome to AI Chat Companions',
-        welcomeDescription: 'Login to start chatting with AI companions',
+        welcome: 'Welcome to Companions',
+        welcomeDescription: 'Login to start chatting with companions',
         cancel: 'Cancel',
         submit: 'Submit',
         submitting: 'Submitting...'
@@ -189,6 +189,11 @@ export default {
         clearHistory: 'Clear history',
         confirmClear: 'Are you sure you want to clear all chat history?',
         historySaved: 'Chat history saved',
-        historyCleared: 'Chat history cleared'
+        historyCleared: 'Chat history cleared',
+        thinkingMessage: '{{name}} is thinking...',
+        configError: 'System configuration error, please contact administrator.',
+        networkError: 'Network connection issue, please check your internet connection.',
+        apiKeyError: 'Invalid API key, please contact administrator.',
+        emptyResponseError: 'AI response is empty, please try again.'
     }
 };

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send } from 'lucide-react';
-import { getLLMResponse } from '../services/llm-service';
+import { getLLMResponse, getThinkingMessage } from '../services/llm-service';
 import { Character } from '../types/character';
 import { Message } from '../types/message';
 import { MAX_CHAT_HISTORY, USE_TYPEWRITER_MODE, AI_RESPONSE_MODE } from '../config/app-config';
@@ -20,7 +20,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   initialMessages,
   onUpdateHistory
 }) => {
-  const { t } = useLanguage();
+  const { t, currentLanguage } = useLanguage();
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -40,6 +40,19 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   }, [messages, onUpdateHistory, initialMessages]);
 
+  useEffect(() => {
+    const updateThinkingMessage = async () => {
+      if (isLoading && selectedCharacter) {
+        const message = await getThinkingMessage(selectedCharacter.id, currentLanguage);
+        setThinkingMessage(message);
+      } else {
+        setThinkingMessage(null);
+      }
+    };
+    
+    updateThinkingMessage();
+  }, [isLoading, selectedCharacter, currentLanguage]);
+
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
     
@@ -55,7 +68,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     } catch (error) {
       console.error('Error in handleSendMessage:', error);
       setMessages(prev => [...prev, {
-        text: '对不起，我现在遇到了一些技术问题。让我们稍后再聊吧。',
+        text: t('chat.errorMessage'),
         isUser: false
       }]);
     } finally {

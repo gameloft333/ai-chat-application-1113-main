@@ -1,0 +1,14 @@
+/* Chat component styles */
+// ... 现有样式代码 ...
+
+.thinking-status {
+  padding: 8px 12px;
+  color: #666;
+  font-size: 14px;
+  font-style: italic;
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 4px;
+  margin: 8px 0;
+}
+
+// ... 现有样式代码 ...

@@ -1,10 +1,10 @@
 export default {
     common: {
         selectCharacter: '请选择您想要交谈的AI伴侣',
-        copyright: '© 2024 AI Chat Companions. All rights reserved.',
+        copyright: '© 2024 Companions. All rights reserved.',
         testMode: '注意: 现在处于测试模式，服务器重启时会清空聊天记录哦。',
         back: '返回',
-        welcome: '欢迎使用 AI Chat Companions',
+        welcome: '欢迎使用 Companions',
         welcomeDescription: '登录后开始与 AI 伴侣聊天',
         cancel: '取消',
         submit: '提交',
@@ -193,6 +193,11 @@ export default {
         clearHistory: '清空聊天记录',
         confirmClear: '确定要清空所有聊天记录吗？',
         historySaved: '聊天记录已保存',
-        historyCleared: '聊天记录已清空'
+        historyCleared: '聊天记录已清空',
+        thinkingMessage: '{{name}}正在思考回复...',
+        configError: '系统配置出现问题，请联系管理员。',
+        networkError: '网络连接出现问题，请检查您的网络连接。',
+        apiKeyError: 'API密钥无效，请联系管理员。',
+        emptyResponseError: 'AI 响应为空，请重试。'
     }
 };
