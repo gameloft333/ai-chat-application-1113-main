@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run clean && tsc && vite build",
+    "build": "tsc && vite build",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview --host --port 4173",
     "update-version": "node scripts/update-version.js",
@@ -15,7 +15,7 @@
     "commit": "scripts/run-commit.bat",
     "server": "node server/index.js",
     "dev:server": "nodemon server/index.js",
-    "clean": "rimraf dist"
+    "clean": "rm -rf dist/*"
   },
   "dependencies": {
     "@firebase/auth": "^1.6.0",
