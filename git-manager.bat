@@ -170,7 +170,31 @@ goto :menu
 :commit_all_branches
 echo %RED%警告：此操作将会提交代码到所有分支！%NC%
 echo %RED%请确保你了解这样做的影响！%NC%
-set /p confirm="确认要继续吗? (yes/no): "
+
+rem 先显示所有变动文件
+git status -s > status.txt
+echo %YELLOW%当前变动的文件列表：%NC%
+set "has_changes=false"
+set "DEFAULT_MSG="
+for /f "tokens=1,2*" %%a in (status.txt) do (
+    set "STATUS=%%a"
+    set "FILE=%%b"
+    set "has_changes=true"
+    
+    if "!STATUS!"=="M" echo [修改] !FILE!
+    if "!STATUS!"=="A" echo [新增] !FILE!
+    if "!STATUS!"=="D" echo [删除] !FILE!
+)
+del status.txt
+
+if "!has_changes!"=="false" (
+    echo %YELLOW%没有检测到文件变动，操作取消%NC%
+    timeout /t 2 >nul
+    goto :menu
+)
+
+echo.
+set /p confirm="确认要提交以上变动到所有分支吗? (yes/no): "
 if /i not "!confirm!"=="yes" (
     echo %YELLOW%操作已取消%NC%
     timeout /t 2 >nul
@@ -180,23 +204,45 @@ if /i not "!confirm!"=="yes" (
 rem 保存当前分支名称
 for /f "tokens=*" %%i in ('git rev-parse --abbrev-ref HEAD') do set original_branch=%%i
 
-rem 获取所有分支列表
+rem 先提交当前分支的更改
+call :do_commit "%original_branch%"
+if !errorlevel! neq 0 (
+    echo %RED%当前分支提交失败，操作终止%NC%
+    timeout /t 2 >nul
+    goto :menu
+)
+
+rem 获取所有分支列表并逐个处理
 for /f "tokens=*" %%b in ('git branch') do (
     set "branch=%%b"
     set "branch=!branch:* =!"
     
-    echo %YELLOW%正在处理分支: !branch!%NC%
-    
-    rem 切换到该分支
-    git checkout "!branch!" 2>nul
-    if !errorlevel! neq 0 (
-        echo %RED%切换到分支 !branch! 失败，跳过...%NC%
-        timeout /t 2 >nul
-        continue
+    rem 跳过当前分支，因为已经处理过了
+    if not "!branch!"=="%original_branch%" (
+        echo %YELLOW%正在处理分支: !branch!%NC%
+        
+        rem 切换到该分支
+        git checkout "!branch!" 2>nul
+        if !errorlevel! neq 0 (
+            echo %RED%切换到分支 !branch! 失败，跳过...%NC%
+            timeout /t 2 >nul
+        ) else (
+            rem 合并原始分支的更改
+            git merge "%original_branch%" 2>nul
+            if !errorlevel! neq 0 (
+                echo %RED%合并到分支 !branch! 失败，跳过...%NC%
+                timeout /t 2 >nul
+            ) else (
+                git push origin "!branch!" 2>nul
+                if !errorlevel! neq 0 (
+                    echo %RED%推送分支 !branch! 失败%NC%
+                    timeout /t 2 >nul
+                ) else (
+                    echo %GREEN%成功更新分支: !branch!%NC%
+                )
+            )
+        )
     )
-    
-    rem 在该分支上执行提交
-    call :do_commit "!branch!"
 )
 
 rem 切回原始分支
