@@ -7,13 +7,13 @@ rem 启用延迟变量扩展
 setlocal EnableDelayedExpansion
 
 rem 版本信息
-set VERSION=1.0.0
+set VERSION=1.0.5
 
 rem 颜色代码
-set RED=[91m
-set GREEN=[92m
-set YELLOW=[93m
-set NC=[0m
+set RED=
+set GREEN=
+set YELLOW=
+set NC=
 
 rem 菜单选项（使用英文变量名避免乱码）
 set "MENU_TITLE=Git 代码管理工具"
@@ -22,8 +22,9 @@ set "MENU_1=1) 提交到当前分支"
 set "MENU_2=2) 创建新分支"
 set "MENU_3=3) 切换分支"
 set "MENU_4=4) 合并到主分支"
-set "MENU_5=5) 退出"
-set "MENU_CHOICE=请选择操作 (1-5): "
+set "MENU_5=5) ⚠️ 提交到所有分支"
+set "MENU_6=6) 退出"
+set "MENU_CHOICE=请选择操作 (1-6): "
 
 rem 检查Git
 where git >nul 2>nul || (
@@ -48,17 +49,19 @@ echo %MENU_1%
 echo %MENU_2%
 echo %MENU_3%
 echo %MENU_4%
-echo %MENU_5%
+echo %RED%%MENU_5%%NC%
+echo %MENU_6%
 echo ==========================
 
-choice /c 12345 /n /m "%MENU_CHOICE%"
+choice /c 123456 /n /m "%MENU_CHOICE%"
 set choice=%errorlevel%
 
 if %choice%==1 goto :commit
 if %choice%==2 goto :create_branch
 if %choice%==3 goto :switch_branch
 if %choice%==4 goto :merge_main
-if %choice%==5 exit /b 0
+if %choice%==5 goto :commit_all_branches
+if %choice%==6 exit /b 0
 
 echo %RED%无效的选择%NC%
 timeout /t 2 >nul
@@ -88,15 +91,50 @@ goto :menu
 
 :switch_branch
 echo %YELLOW%当前可用分支：%NC%
-git branch
-echo.
-set /p branch="请输入要切换的分支名称: "
-echo %YELLOW%正在切换分支...%NC%
-git checkout "%branch%" 2>nul
-if !errorlevel! neq 0 (
-    echo %RED%切换分支失败%NC%
-    timeout /t 2 >nul
+rem 将分支列表保存到临时数组中
+set branch_count=0
+for /f "tokens=*" %%a in ('git branch') do (
+    set /a branch_count+=1
+    set "branch_!branch_count!=%%a"
+    echo !branch_count!^) %%a
 )
+echo.
+
+set /p choice="请输入分支序号: "
+if "!choice!"=="" (
+    echo %RED%序号不能为空%NC%
+    timeout /t 2 >nul
+    goto :menu
+)
+
+rem 验证输入是否为数字且在有效范围内
+set "valid=true"
+for /f "delims=0123456789" %%i in ("!choice!") do set "valid=false"
+if !choice! leq 0 set "valid=false"
+if !choice! gtr !branch_count! set "valid=false"
+
+if "!valid!"=="false" (
+    echo %RED%无效的序号选择%NC%
+    timeout /t 2 >nul
+    goto :menu
+)
+
+rem 获取选择的分支名称（需要去除前面的星号和空格）
+for /f "tokens=*" %%a in ("!branch_%choice%!") do (
+    set "selected_branch=%%a"
+    set "selected_branch=!selected_branch:* =!"
+)
+
+echo %YELLOW%正在切换分支...%NC%
+git checkout "!selected_branch!" 2>nul
+if !errorlevel! neq 0 (
+    echo %RED%切换分支失败，请检查分支名称是否正确%NC%
+    timeout /t 2 >nul
+    goto :menu
+)
+
+echo %GREEN%已成功切换到分支: !selected_branch!%NC%
+timeout /t 2 >nul
 goto :menu
 
 :merge_main
@@ -129,17 +167,61 @@ if /i "%confirm%"=="y" (
 )
 goto :menu
 
+:commit_all_branches
+echo %RED%警告：此操作将会提交代码到所有分支！%NC%
+echo %RED%请确保你了解这样做的影响！%NC%
+set /p confirm="确认要继续吗? (yes/no): "
+if /i not "!confirm!"=="yes" (
+    echo %YELLOW%操作已取消%NC%
+    timeout /t 2 >nul
+    goto :menu
+)
+
+rem 保存当前分支名称
+for /f "tokens=*" %%i in ('git rev-parse --abbrev-ref HEAD') do set original_branch=%%i
+
+rem 获取所有分支列表
+for /f "tokens=*" %%b in ('git branch') do (
+    set "branch=%%b"
+    set "branch=!branch:* =!"
+    
+    echo %YELLOW%正在处理分支: !branch!%NC%
+    
+    rem 切换到该分支
+    git checkout "!branch!" 2>nul
+    if !errorlevel! neq 0 (
+        echo %RED%切换到分支 !branch! 失败，跳过...%NC%
+        timeout /t 2 >nul
+        continue
+    )
+    
+    rem 在该分支上执行提交
+    call :do_commit "!branch!"
+)
+
+rem 切回原始分支
+git checkout "%original_branch%" 2>nul
+echo %GREEN%所有分支处理完成%NC%
+timeout /t 2 >nul
+goto :menu
+
 :do_commit
 set branch=%~1
 echo %YELLOW%正在更新分支 %branch%...%NC%
 git pull origin "%branch%"
 
+rem 显示文件变动状态
 git status -s > status.txt
+echo %YELLOW%当前变动的文件列表：%NC%
+set "has_changes=false"
 set "DEFAULT_MSG="
 for /f "tokens=1,2*" %%a in (status.txt) do (
     set "STATUS=%%a"
     set "FILE=%%b"
+    set "has_changes=true"
+    
     if "!STATUS!"=="M" (
+        echo [修改] !FILE!
         if "!DEFAULT_MSG!"=="" (
             set "DEFAULT_MSG=update: !FILE!"
         ) else (
@@ -147,6 +229,7 @@ for /f "tokens=1,2*" %%a in (status.txt) do (
         )
     )
     if "!STATUS!"=="A" (
+        echo [新增] !FILE!
         if "!DEFAULT_MSG!"=="" (
             set "DEFAULT_MSG=add: !FILE!"
         ) else (
@@ -154,6 +237,7 @@ for /f "tokens=1,2*" %%a in (status.txt) do (
         )
     )
     if "!STATUS!"=="D" (
+        echo [删除] !FILE!
         if "!DEFAULT_MSG!"=="" (
             set "DEFAULT_MSG=remove: !FILE!"
         ) else (
@@ -162,6 +246,20 @@ for /f "tokens=1,2*" %%a in (status.txt) do (
     )
 )
 del status.txt
+
+if "!has_changes!"=="false" (
+    echo %YELLOW%没有检测到文件变动%NC%
+    timeout /t 2 >nul
+    exit /b 0
+)
+
+echo.
+set /p confirm="确认提交以上文件变动？(y/n): "
+if /i not "!confirm!"=="y" (
+    echo %YELLOW%提交已取消%NC%
+    timeout /t 2 >nul
+    exit /b 1
+)
 
 git add .
 
