@@ -1,4 +1,7 @@
 #!/bin/bash
+# 设置字符编码
+export LANG=zh_CN.UTF-8
+export LC_ALL=zh_CN.UTF-8
 
 # 设置错误时退出
 set -e

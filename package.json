@@ -1,7 +1,7 @@
 {
-  "name": "ai-chat-companion",
+  "name": "companion",
   "private": true,
-  "version": "0.35.122.39134",
+  "version": "1.36.133.35038",
   "type": "module",
   "scripts": {
     "dev": "vite",
