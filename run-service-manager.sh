@@ -51,6 +51,84 @@ check_and_install_node() {
     success "Node.js $(node -v) 和 npm $(npm -v) 已安装"
 }
 
+# 设置前端服务
+setup_frontend() {
+    log "正在设置前端服务..."
+    
+    # 1. 创建 Dockerfile
+    log "创建前端 Dockerfile..."
+    cat > Dockerfile << 'EOF'
+FROM node:18-alpine
+
+WORKDIR /app
+
+# 复制 package.json 和 package-lock.json
+COPY package*.json ./
+
+# 安装依赖，包括全局 typescript
+RUN npm install && \
+    npm install -g typescript
+
+# 复制源代码
+COPY . .
+
+# 设置环境变量
+ENV HOST=0.0.0.0
+ENV PORT=4173
+
+# 暴露端口
+EXPOSE 4173
+
+# 修改启动命令
+CMD ["sh", "-c", "npm run build && npm run preview"]
+EOF
+
+    # 2. 修改 docker-compose.yml
+    log "更新 docker-compose.yml..."
+    cat > docker-compose.yml << 'EOF'
+version: '3'
+services:
+  frontend:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "4173:4173"
+    environment:
+      # AI API Keys
+      - VITE_MOONSHOT_API_KEY=${VITE_MOONSHOT_API_KEY}
+      - VITE_GEMINI_API_KEY=${VITE_GEMINI_API_KEY}
+      # App Config
+      - NODE_ENV=production
+      - VITE_API_KEY=${VITE_API_KEY}
+      - VITE_API_URL=http://payment:4242
+      # Firebase Config
+      - VITE_FIREBASE_API_KEY=${VITE_FIREBASE_API_KEY}
+      - VITE_FIREBASE_AUTH_DOMAIN=${VITE_FIREBASE_AUTH_DOMAIN}
+      - VITE_FIREBASE_PROJECT_ID=${VITE_FIREBASE_PROJECT_ID}
+      - VITE_FIREBASE_STORAGE_BUCKET=${VITE_FIREBASE_STORAGE_BUCKET}
+      - VITE_FIREBASE_MESSAGING_SENDER_ID=${VITE_FIREBASE_MESSAGING_SENDER_ID}
+      - VITE_FIREBASE_APP_ID=${VITE_FIREBASE_APP_ID}
+      - VITE_FIREBASE_MEASUREMENT_ID=${VITE_FIREBASE_MEASUREMENT_ID}
+      - HOST=0.0.0.0
+    volumes:
+      - ./src:/app/src:ro
+      - ./public:/app/public:ro
+    command: >
+      sh -c "
+        echo '清理构建目录...' &&
+        rm -rf dist/* &&
+        echo '开始构建前端项目...' &&
+        npm run build &&
+        echo '构建完成，开始预览...' &&
+        npm run preview
+      "
+    restart: unless-stopped
+EOF
+
+    success "前端服务配置完成"
+}
+
 # 设置支付服务器
 setup_payment_server() {
     log "正在设置支付服务器..."
