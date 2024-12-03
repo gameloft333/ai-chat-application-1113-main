@@ -3,12 +3,15 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { PaymentRecordService } from '../services/payment-record-service';
 import { PayPalService } from '../services/paypal-service';
+import { TonService } from '../services/ton-service';
+import { useTranslation } from 'react-i18next';
 
 export const PaymentResult: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser } = useAuth();
   const [message, setMessage] = useState<string>('正在处理支付结果...');
+  const { t } = useTranslation();
 
   useEffect(() => {
     const handlePaymentResult = async () => {
@@ -108,6 +111,42 @@ export const PaymentResult: React.FC = () => {
 
     handlePaymentResult();
   }, [navigate, currentUser, location]);
+
+  const handleTonPaymentResult = async (paymentId: string) => {
+    try {
+      const tonService = TonService.getInstance();
+      const result = await tonService.getPaymentDetails(paymentId);
+      
+      if (result.status === 'success') {
+        const subscription = await PaymentRecordService.getPaymentRecordByOrderId(paymentId);
+        if (subscription) {
+          const now = new Date();
+          const expiredAt = new Date(subscription.expiredAt);
+          const remainingDays = Math.ceil((expiredAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+          setMessage(t('payment.ton.successDetails', {
+            expireDate: expiredAt.toLocaleDateString(),
+            remainingDays: remainingDays
+          }));
+
+          setTimeout(() => {
+            navigate('/', { 
+              replace: true,
+              state: { 
+                paymentStatus: 'success',
+                message: t('payment.ton.success')
+              }
+            });
+          }, 3000);
+        }
+      } else {
+        throw new Error(t('payment.ton.failed'));
+      }
+    } catch (error) {
+      console.error('处理 TON 支付结果失败:', error);
+      setMessage(error instanceof Error ? error.message : t('payment.ton.error'));
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">

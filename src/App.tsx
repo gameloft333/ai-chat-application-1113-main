@@ -36,6 +36,8 @@ import { CharacterStatsService } from './services/character-stats-service';
 import { characters } from './types/character';
 import FeedbackButton from './components/FeedbackButton';
 import DynamicFavicon from './components/DynamicFavicon';
+import { TonService } from './services/ton-service';
+import { TonPayment } from './components/TonPayment';
 
 const API_KEY = import.meta.env.VITE_API_KEY || '';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -93,6 +95,16 @@ const AppContent: React.FC<AppRoutesProps> = ({ themeColor }) => {
   } | null>(null);
   const [characterStats, setCharacterStats] = useState<Record<string, number>>({});
   const [popularCharacters, setPopularCharacters] = useState<string[]>([]);
+  const [showTonPaymentModal, setShowTonPaymentModal] = useState(false);
+  const [tonPaymentData, setTonPaymentData] = useState<{
+    paymentId: string;
+    amount: number;
+    currency: string;
+    planId: string;
+    duration: string;
+    userId: string;
+    expiredAt: Date;
+  } | null>(null);
   
   const generateThemeColor = () => {
     const hue = Math.floor(Math.random() * 360);
@@ -204,7 +216,7 @@ const AppContent: React.FC<AppRoutesProps> = ({ themeColor }) => {
     });
   }, [navigate, t]);
 
-  const handleSubscribe = async (planId: string, duration: string, paymentMethod: 'paypal' | 'stripe') => {
+  const handleSubscribe = async (planId: string, duration: string, paymentMethod: 'paypal' | 'stripe' | 'ton') => {
     try {
       if (!currentUser) {
         throw new Error(t('alerts.error.loginRequired'));
@@ -302,6 +314,31 @@ const AppContent: React.FC<AppRoutesProps> = ({ themeColor }) => {
           });
           throw error;
         }
+      } else if (paymentMethod === 'ton') {
+        try {
+          console.log('开始 TON 支付流程...');
+          const tonService = TonService.getInstance();
+          
+          const paymentId = await tonService.createPaymentIntent(
+            pricing.price,
+            currentCurrency.code
+          );
+          
+          setShowStripePaymentModal(false);
+          setShowTonPaymentModal(true);
+          setTonPaymentData({
+            paymentId,
+            amount: pricing.price,
+            currency: currentCurrency.code,
+            planId,
+            duration,
+            userId: currentUser.uid,
+            expiredAt: expiredAt
+          });
+        } catch (error) {
+          console.error('TON 支付初始化失败:', error);
+          throw error;
+        }
       } else {
         throw new Error(t('alerts.error.invalidPaymentMethod'));
       }
@@ -351,7 +388,7 @@ const AppContent: React.FC<AppRoutesProps> = ({ themeColor }) => {
   const getFilteredCharacters = () => {
     if (selectedGender === 'popular') {
       if (popularCharacters.length === 0) {
-        // 如果热门列表为空，返回所有角色
+        // 如果热门列表为空，返回有角色
         return characters;
       }
       // 按照 popularCharacters 的顺序返回所有角色
@@ -535,6 +572,21 @@ const AppContent: React.FC<AppRoutesProps> = ({ themeColor }) => {
                 />
               </Elements>
             </div>
+          </div>
+        )}
+
+        {showTonPaymentModal && tonPaymentData && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <TonPayment
+              payment={{
+                id: tonPaymentData.paymentId,
+                amount: tonPaymentData.amount
+              }}
+              tonAmount={tonPaymentData.tonAmount || 0}
+              walletAddress={import.meta.env.VITE_TON_TEST_WALLET_ADDRESS}
+              onCancel={() => setShowTonPaymentModal(false)}
+              onClose={() => setShowTonPaymentModal(false)}
+            />
           </div>
         )}
 

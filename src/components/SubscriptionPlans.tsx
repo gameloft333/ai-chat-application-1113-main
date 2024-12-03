@@ -8,7 +8,7 @@ import { SubscriptionModal } from './SubscriptionModal';
 
 interface SubscriptionPlansProps {
   onClose: () => void;
-  onSubscribe: (planId: string, duration: string, method: 'paypal' | 'stripe') => void;
+  onSubscribe: (planId: string, duration: string, method: 'paypal' | 'stripe' | 'ton') => void;
   currentPlanId?: string;
   themeColor: string;
   userEmail?: string;
@@ -17,7 +17,7 @@ interface SubscriptionPlansProps {
 const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscribe, currentPlanId, themeColor, userEmail }) => {
   const { t } = useLanguage();
   const [currentSubscription, setCurrentSubscription] = useState<PaymentRecord | null>(null);
-  const [paymentMethods, setPaymentMethods] = useState<Array<'paypal' | 'stripe'>>([]);
+  const [paymentMethods, setPaymentMethods] = useState<Array<'paypal' | 'stripe' | 'ton'>>([]);
   
   // 获取最大优惠的套餐和时长
   const getMaxDiscountPlan = () => {
@@ -67,7 +67,7 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
   // 在显示支付模态框时随机排序支付方式
   useEffect(() => {
     if (showPaymentModal) {
-      const methods: Array<'paypal' | 'stripe'> = ['paypal', 'stripe'];
+      const methods: Array<'paypal' | 'stripe' | 'ton'> = ['paypal', 'stripe', 'ton'];
       setPaymentMethods(methods.sort(() => Math.random() - 0.5));
     }
   }, [showPaymentModal]);
@@ -180,7 +180,7 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
     }
   };
 
-  const handlePaymentSelect = async (method: 'paypal' | 'stripe') => {
+  const handlePaymentSelect = async (method: 'paypal' | 'stripe' | 'ton') => {
     if (!selectedPlanInfo) return;
     
     try {
@@ -347,7 +347,7 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
                     onClick={() => handlePaymentSelect(method)}
                     className="w-full py-3 px-4 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
                   >
-                    {method === 'paypal' ? 'PayPal 支付' : 'Stripe 支付'}
+                    {method === 'paypal' ? 'PayPal 支付' : method === 'stripe' ? 'Stripe 支付' : 'TON 支付'}
                   </button>
                 ))}
               </div>

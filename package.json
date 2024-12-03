@@ -15,13 +15,18 @@
     "commit": "scripts/run-commit.bat",
     "server": "node server/index.js",
     "dev:server": "nodemon server/index.js",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist",
+    "ton:server": "cross-env NODE_OPTIONS=\"--loader ts-node/esm\" ts-node ton-payment/index.ts",
+    "dev:ton": "nodemon --exec ts-node-esm ton-payment/index.ts"
   },
   "dependencies": {
     "@firebase/auth": "^1.6.0",
     "@firebase/firestore": "^4.4.2",
     "@stripe/react-stripe-js": "^2.4.0",
     "@stripe/stripe-js": "^2.2.0",
+    "@ton/ton": "^15.1.0",
+    "@tonconnect/sdk": "^2.1.3",
+    "@tonconnect/ui-react": "^1.0.0-beta.9",
     "clsx": "^2.1.1",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
@@ -35,9 +40,15 @@
     "react-i18next": "^14.0.0",
     "react-router-dom": "^6.22.1",
     "stripe": "^14.10.0",
-    "tailwind-merge": "^2.5.5"
+    "tailwind-merge": "^2.5.5",
+    "cross-env": "^7.0.3",
+    "ts-node": "^10.9.1",
+    "@types/node": "^20.8.0"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.8.0",
     "@types/react": "^18.2.15",
     "@types/react-dom": "^18.2.7",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
@@ -48,9 +59,9 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.3",
     "postcss": "^8.4.27",
+    "rimraf": "^5.0.5",
     "tailwindcss": "^3.3.3",
     "typescript": "^5.0.2",
-    "vite": "^4.4.5",
-    "rimraf": "^5.0.5"
+    "vite": "^4.4.5"
   }
 }

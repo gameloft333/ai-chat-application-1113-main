@@ -1,0 +1,118 @@
+/* Material Design Card Styles */
+.md-card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin: 16px;
+  overflow: hidden;
+}
+
+.md-card-header {
+  padding: 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.md-title {
+  font-size: 20px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.md-card-content {
+  padding: 16px;
+}
+
+.md-section {
+  margin-bottom: 24px;
+}
+
+/* Button Styles */
+.md-button {
+  padding: 8px 16px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  transition: all 0.3s;
+}
+
+.md-button-primary {
+  background-color: #1976d2;
+  color: white;
+}
+
+.md-button-primary:hover {
+  background-color: #1565c0;
+}
+
+.md-button-secondary {
+  background-color: transparent;
+  border: 1px solid #1976d2;
+  color: #1976d2;
+}
+
+.md-button-secondary:hover {
+  background-color: rgba(25, 118, 210, 0.04);
+}
+
+.md-button-icon {
+  padding: 8px;
+  border-radius: 50%;
+  min-width: 40px;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.md-card-actions {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .md-card {
+    background: #1e1e1e;
+    color: #ffffff;
+  }
+
+  .md-button-secondary {
+    border-color: #90caf9;
+    color: #90caf9;
+  }
+
+  .md-button-secondary:hover {
+    background-color: rgba(144, 202, 249, 0.04);
+  }
+} 
+.payment-amount {
+  margin-bottom: 24px;
+}
+
+.amount-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.address-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 12px;
+  border-radius: 4px;
+}
+
+.wallet-address {
+  font-family: monospace;
+  word-break: break-all;
+  flex: 1;
+}
