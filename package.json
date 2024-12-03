@@ -1,7 +1,7 @@
 {
-  "name": "ai-chat-companion",
+  "name": "companion",
   "private": true,
-  "version": "0.35.122.39134",
+  "version": "1.36.133.33203",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -15,7 +15,7 @@
     "commit": "scripts/run-commit.bat",
     "server": "node server/index.js",
     "dev:server": "nodemon server/index.js",
-    "clean": "rm -rf dist/*"
+    "clean": "rimraf dist"
   },
   "dependencies": {
     "@firebase/auth": "^1.6.0",
