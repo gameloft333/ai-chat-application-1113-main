@@ -224,24 +224,34 @@ const AppContent: React.FC<AppRoutesProps> = ({ themeColor }) => {
         throw new Error(t('alerts.error.loginRequired'));
       }
 
-      // 获取计划和定价信息
-      const plan = pricingPlans.plans.find(p => p.id === planId) || pricingPlans.trialPlan;
-      if (!plan) {
-        throw new Error(t('alerts.error.invalidPlan'));
-      }
-
-      // 验证 duration 是否有效
-      const validDurations = ['1week', '1month', '12months', '24months', 'monthly', 'quarterly', 'yearly', 'lifetime'];
+      // 验证订阅周期
+      const validDurations = ['test', '1week', '1month', '12months', '24months', 'monthly', 'quarterly', 'yearly', 'lifetime'];
       if (!validDurations.includes(duration)) {
         console.error('无效的订阅周期:', { duration, validDurations });
         throw new Error(t('alerts.error.invalidDuration'));
       }
 
+      // 获取计划和定价信息
+      let plan;
+      if (duration === 'test') {
+        plan = pricingPlans.testPlan;
+      } else if (duration === '1week') {
+        plan = pricingPlans.trialPlan;
+      } else {
+        plan = pricingPlans.plans.find(p => p.id === planId);
+      }
+
+      if (!plan) {
+        throw new Error(t('alerts.error.invalidPlan'));
+      }
+
+      // 确保计划有对应的价格
       const pricing = plan.prices[duration];
       if (!pricing) {
         console.error('未找到对应定价:', { 
           duration, 
-          planPrices: plan.prices,
+          planId,
+          plan,
           availableDurations: Object.keys(plan.prices)
         });
         throw new Error(t('alerts.error.invalidDuration'));
@@ -251,11 +261,17 @@ const AppContent: React.FC<AppRoutesProps> = ({ themeColor }) => {
 
       if (paymentMethod === 'paypal') {
         // PayPal 支付逻辑
-        const paypalService = PayPalService.getInstance();
-        const orderId = await paypalService.createPaymentOrder({
-          price: pricing.price,
+        console.log('开始 PayPal 支付流程...', {
+          price: plan.prices[duration].price,
           currency: currentCurrency.code,
-          description: plan.description
+          description: plan.description || `订阅 ${plan.name}`
+        });
+        
+        const paypalService = PayPalService.getInstance();
+        const { orderId, approvalUrl } = await paypalService.createPaymentOrder({
+          price: plan.prices[duration].price,
+          currency: currentCurrency.code,
+          description: plan.description || `订阅 ${plan.name}`
         });
 
         // 创建支付记录
@@ -265,7 +281,7 @@ const AppContent: React.FC<AppRoutesProps> = ({ themeColor }) => {
           planId: planId,
           duration: duration,
           orderId: orderId,
-          amount: pricing.price,
+          amount: plan.prices[duration].price,
           currency: currentCurrency.code,
           status: 'pending',
           createdAt: new Date(),
@@ -277,55 +293,89 @@ const AppContent: React.FC<AppRoutesProps> = ({ themeColor }) => {
         
         // 添加测试账户提示
         alert(`请使用以下测试买家账户登录：
-        邮箱：sb-6vbqu34102045@personal.example.com
-        密码：请使用开发者平台提供的密码
+          邮箱：sb-6vbqu34102045@personal.example.com
+          密码：请使用开发者平台提供的密码
+          
+          注意事项：
+          1. 请确保已退出所有 PayPal 账户
+          2. 建议使用无痕模式
+          3. 如果遇到错误，请清除浏览器缓存后重试`);
+  
+          // 直接跳转到 PayPal 提供的 approvalUrl
+        window.location.href = approvalUrl;
         
-        注意事项：
-        1. 请确保已退出所有 PayPal 账户
-        2. 建议使用无痕模式
-        3. 如果遇到错误，请清除浏览器缓存后重试`);
-
-        // 跳转到 PayPal 支付
-        const returnUrl = `${window.location.origin}/payment-callback`;
-        const cancelUrl = `${window.location.origin}/payment-cancel`;
-        
-        window.location.href = `${PAYPAL_CONFIG.SANDBOX_MODE 
-          ? 'https://www.sandbox.paypal.com' 
-          : 'https://www.paypal.com'}/checkoutnow?token=${orderId}&returnUrl=${encodeURIComponent(returnUrl)}&cancelUrl=${encodeURIComponent(cancelUrl)}`;
       } else if (paymentMethod === 'stripe') {
         try {
           console.log('开始 Stripe 支付流程...');
           const stripeService = StripeService.getInstance();
           
+          // 确保金额符合最小支付要求（至少 400 cents HKD ≈ 0.51 USD）
+          const minAmount = 0.55; // USD，设置为 1 USD 以确保足够支付
+          const amount = Math.max(plan.prices[duration].price, minAmount);
+          
           console.log('创建支付意向，参数:', {
-            price: pricing.price,
-            currency: currentCurrency.code
+            price: amount,
+            currency: currentCurrency.code,
+            originalPrice: plan.prices[duration].price,
+            minRequired: {
+              HKD: 4.00,
+              USD: 0.51
+            }
           });
           
           const clientSecret = await stripeService.createPaymentIntent(
-            pricing.price,
+            amount,
             currentCurrency.code
           );
+          
+          // 创建支付记录
+          const paymentRecord = {
+            uid: currentUser.uid,
+            userEmail: currentUser.email || '',
+            planId: planId,
+            duration: duration,
+            orderId: clientSecret,
+            amount: amount,
+            currency: currentCurrency.code,
+            status: 'pending',
+            createdAt: new Date(),
+            expiredAt: expiredAt,
+            paymentChannel: 'stripe'
+          };
+
+          await PaymentRecordService.createPaymentRecord(paymentRecord);
           
           console.log('支付意向创建成功，准备打开支付表单...');
           setShowStripePaymentModal(true);
           setStripePaymentData({
             clientSecret,
-            amount: pricing.price,
+            amount: amount,
             currency: currentCurrency.code,
             planId,
             duration,
             userId: currentUser.uid,
             userEmail: currentUser.email || '',
-            price: pricing.price,
+            price: plan.prices[duration].price,
             expiredAt: expiredAt
           });
         } catch (error) {
           console.error('Stripe 支付初始化失败:', {
             error,
-            stack: error.stack,
+            stack: error instanceof Error ? error.stack : undefined,
             type: typeof error
           });
+          
+          // 使用 i18next 处理错误消息
+          let errorMessage = t('payment.stripe.error.default');
+          if (error instanceof Error) {
+            if (error.message.includes('Amount must convert')) {
+              errorMessage = t('payment.stripe.error.minimumAmount', { 
+                min: '0.51 USD (≈ 4.00 HKD)',
+                current: `${plan.prices[duration].price} ${currentCurrency.code}`
+              });
+            }
+          }
+          alert(errorMessage);
           throw error;
         }
       } else if (paymentMethod === 'ton') {
@@ -334,7 +384,7 @@ const AppContent: React.FC<AppRoutesProps> = ({ themeColor }) => {
           const tonService = TonService.getInstance();
           
           const paymentId = await tonService.createPaymentIntent(
-            pricing.price,
+            plan.prices[duration].price,
             currentCurrency.code
           );
           
@@ -342,7 +392,7 @@ const AppContent: React.FC<AppRoutesProps> = ({ themeColor }) => {
           setShowTonPaymentModal(true);
           setTonPaymentData({
             paymentId,
-            amount: pricing.price,
+            amount: plan.prices[duration].price,
             currency: currentCurrency.code,
             planId,
             duration,

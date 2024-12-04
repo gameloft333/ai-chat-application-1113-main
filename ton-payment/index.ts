@@ -2,17 +2,25 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { TonClient } from '@ton/ton';
+import path from 'path';
 
-dotenv.config();
+// 根据环境加载对应的环境变量文件
+const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.test';
+dotenv.config({ path: path.resolve(process.cwd(), envFile) });
 
 const app = express();
 const port = process.env.PORT || 4243;
 
 // 初始化 TON 客户端
 const tonClient = new TonClient({
-  endpoint: process.env.TON_ENDPOINT || 'https://testnet.toncenter.com/api/v2/jsonRPC',
+  endpoint: process.env.VITE_TON_NETWORK === 'mainnet' 
+    ? 'https://toncenter.com/api/v2/jsonRPC'
+    : 'https://testnet.toncenter.com/api/v2/jsonRPC',
   apiKey: process.env.VITE_TON_API_KEY
 });
+
+console.log('TON服务器运行模式:', process.env.TON_MODE);
+console.log('TON网络:', process.env.TON_NETWORK);
 
 interface PaymentRequest {
   amount: number;

@@ -61,42 +61,68 @@ export class PayPalService {
         }
     }
 
-    async createPaymentOrder(params: { price: number; currency: string; description: string }): Promise<string> {
+    async createPaymentOrder({ price, currency, description }: {
+        price: number;
+        currency: string;
+        description: string;
+    }): Promise<{orderId: string; approvalUrl: string}> {
         try {
-            const accessToken = await this.getAccessToken();
+            console.log('Creating PayPal order:', { price, currency, description });
             
+            // 确保金额大于等于 0.01
+            if (price < 0.01) {
+                throw new Error('金额必须大于等于 0.01');
+            }
+
+            // 确保货币代码存在
+            if (!currency) {
+                throw new Error('货币代码不能为空');
+            }
+
+            const accessToken = await this.getAccessToken();
             const response = await fetch(`${PAYPAL_CONFIG.API_URL}/v2/checkout/orders`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${accessToken}`,
-                    'PayPal-Request-Id': `order_${Date.now()}`
+                    Authorization: `Bearer ${accessToken}`,
                 },
                 body: JSON.stringify({
                     intent: 'CAPTURE',
                     application_context: {
+                        brand_name: 'Your App Name',
+                        landing_page: 'LOGIN',
+                        user_action: 'PAY_NOW',
                         return_url: `${window.location.origin}/payment-callback`,
                         cancel_url: `${window.location.origin}/payment-cancel`,
-                        user_action: 'PAY_NOW'
+                        shipping_preference: 'NO_SHIPPING'
                     },
                     purchase_units: [{
                         amount: {
-                            currency_code: params.currency,
-                            value: params.price.toString()
+                            currency_code: currency.toUpperCase(),
+                            value: price.toFixed(2)
                         },
-                        description: params.description
+                        description
                     }]
                 })
             });
 
             if (!response.ok) {
                 const errorData = await response.json();
-                console.error('PayPal order error:', errorData);
-                throw new Error(`PayPal API error: ${errorData.message || 'Failed to create order'}`);
+                console.error('PayPal API error:', errorData);
+                throw new Error(`PayPal API error: ${errorData.message}`);
             }
 
             const data = await response.json();
-            return data.id;
+            const approvalUrl = data.links.find((link: any) => link.rel === 'approve')?.href;
+            
+            if (!approvalUrl) {
+                throw new Error('无法获取 PayPal 支付链接');
+            }
+
+            return {
+                orderId: data.id,
+                approvalUrl
+            };
         } catch (error) {
             console.error('PayPal createPaymentOrder error:', error);
             throw error;

@@ -48,6 +48,16 @@ app.post('/api/stripe/create-payment-intent', async (req, res) => {
   }
 });
 
+// 错误处理中间件
+app.use((err, req, res, next) => {
+  console.error('支付服务器错误:', err);
+  res.status(500).json({
+    error: '支付服务出错',
+    message: err.message || '未知错误',
+    details: process.env.NODE_ENV === 'development' ? err.stack : undefined
+  });
+});
+
 app.listen(port, () => {
   console.log(`Stripe 测试服务器运行在 http://localhost:${port}`);
 });

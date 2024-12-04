@@ -109,7 +109,7 @@ export const pricingPlans = {
     ],
     prices: {
       test: {
-        price: 0.01,
+        price: 9.90,
         save: 0,
         extraMonths: 0
       }
