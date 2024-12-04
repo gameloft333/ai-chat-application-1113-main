@@ -22,10 +22,11 @@ export const currentCurrency = currencyConfig.USD;
 
 export const pricingPlans = {
   durations: [
-    { id: '1week', trialOnly: true },
-    { id: '24months' },
-    { id: '12months' },
-    { id: '1month' }
+    { id: 'test', name: 'Test' },
+    { id: '1week', name: '1 Week' },
+    { id: '1month', name: '1 Month' },
+    { id: '12months', name: '12 Months' },
+    { id: '24months', name: '24 Months' }
   ],
   trialPlan: {
     id: 'trial',
@@ -47,7 +48,7 @@ export const pricingPlans = {
       description: 'subscription.basicDesc',
       prices: {
         '24months': { price: 19.00, save: 50, extraMonths: 2 },
-        '12months': { price: 29.00, save: 55, extraMonths: 2 },
+        '12months': { price: 29.00, save: 45, extraMonths: 1 },
         '1month': { price: 39.00, save: 0, extraMonths: 0 }
       },
       features: [
@@ -62,6 +63,11 @@ export const pricingPlans = {
       name: 'memberLevel.pro',
       description: 'subscription.proDesc',
       popular: true,
+      prices: {
+        '24months': { price: 25.00, save: 70, extraMonths: 4 },
+        '12months': { price: 35.00, save: 55, extraMonths: 2 },
+        '1month': { price: 45.00, save: 0, extraMonths: 0 }
+      },
       features: [
         'subscription.features.unlimitedChat',
         'subscription.features.allCharacters',
@@ -69,17 +75,17 @@ export const pricingPlans = {
         'subscription.features.prioritySupport',
         'subscription.features.customCharacter',
         'subscription.features.advancedMemory'
-      ],
-      prices: {
-        '24months': { price: 25.00, save: 70, extraMonths: 4 },
-        '12months': { price: 29.00, save: 55, extraMonths: 2 },
-        '1month': { price: 45.00, save: 0, extraMonths: 0 }
-      }
+      ]
     },
     {
       id: 'premium',
       name: 'memberLevel.premium',
       description: 'subscription.premiumDesc',
+      prices: {
+        '24months': { price: 35.00, save: 75, extraMonths: 4 },
+        '12months': { price: 45.00, save: 65, extraMonths: 3 },
+        '1month': { price: 60.00, save: 0, extraMonths: 0 }
+      },
       features: [
         'subscription.features.unlimitedChat',
         'subscription.features.allCharacters',
@@ -89,12 +95,24 @@ export const pricingPlans = {
         'subscription.features.permanentMemory',
         'subscription.features.exclusiveAccess',
         'subscription.features.apiAccess'
-      ],
-      prices: {
-        '24months': { price: 35.00, save: 75, extraMonths: 4 },
-        '12months': { price: 39.00, save: 60, extraMonths: 2 },
-        '1month': { price: 60.00, save: 0, extraMonths: 0 }
+      ]
+    }
+  ],
+  testPlan: {
+    id: 'test',
+    name: 'Test Plan',
+    description: 'subscription.testPlanDesc',
+    features: [
+      'feature 1',
+      'feature 2',
+      'feature 3'
+    ],
+    prices: {
+      test: {
+        price: 0.01,
+        save: 0,
+        extraMonths: 0
       }
     }
-  ]
+  }
 };

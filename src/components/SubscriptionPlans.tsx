@@ -5,6 +5,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { PaymentRecord } from '../types/payment';
 import { PaymentRecordService } from '../services/payment-record-service';
 import { SubscriptionModal } from './SubscriptionModal';
+import { SUBSCRIPTION_CONFIG } from '../config/subscription-config';
 
 interface SubscriptionPlansProps {
   onClose: () => void;
@@ -74,7 +75,9 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
 
   // 获取可用的时长选项
   const getAvailableDurations = () => {
-    return pricingPlans.durations;
+    return pricingPlans.durations.filter(duration => 
+      SUBSCRIPTION_CONFIG.durationTabs[duration.id]
+    );
   };
 
   // 获取可显示的套餐列表
@@ -200,12 +203,20 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
 
   // 添加函数来过滤显示的套餐
   const getFilteredPlans = (duration: string) => {
-    if (duration === '1week') {
-      // 只显示体验套餐
+    // 根据配置过滤套餐
+    const visiblePlans = pricingPlans.plans.filter(plan => 
+      SUBSCRIPTION_CONFIG.planVisibility[plan.id]
+    );
+
+    if (duration === 'test') {
+      return [pricingPlans.testPlan];
+    } else if (duration === '1week') {
       return [pricingPlans.trialPlan];
     } else {
-      // 其他时长下隐藏体验套餐
-      return pricingPlans.plans.filter(plan => plan.id !== 'trial');
+      return visiblePlans.filter(plan => 
+        plan.id !== 'trial' && 
+        plan.id !== 'test'
+      );
     }
   };
 
