@@ -24,9 +24,9 @@ export const pricingPlans = {
   durations: [
     { id: 'test', name: 'Test' },
     { id: '1week', name: '1 Week' },
-    { id: '1month', name: '1 Month' },
+    { id: '24months', name: '24 Months' },
     { id: '12months', name: '12 Months' },
-    { id: '24months', name: '24 Months' }
+    { id: '1month', name: '1 Month' }
   ],
   trialPlan: {
     id: 'trial',

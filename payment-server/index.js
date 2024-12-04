@@ -30,14 +30,24 @@ app.options('*', cors());
 app.post('/api/stripe/create-payment-intent', async (req, res) => {
   try {
     const { amount, currency } = req.body;
-    console.log('创建支付意向:', { amount, currency });
+    console.log('创建支付意向，详细信息:', { 
+      amount, 
+      currency,
+      amountInCents: Math.round(amount * 100),
+      timestamp: new Date().toISOString()
+    });
     
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(amount * 100),
       currency: currency.toLowerCase(),
     });
 
-    console.log('支付意向创建成功:', paymentIntent.client_secret);
+    console.log('支付意向创建成功:', {
+      clientSecret: paymentIntent.client_secret,
+      status: paymentIntent.status,
+      id: paymentIntent.id
+    });
+    
     res.json({ clientSecret: paymentIntent.client_secret });
   } catch (error) {
     console.error('创建支付意向失败:', error);

@@ -1,26 +1,46 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
+import * as dotenv from 'dotenv';
 import { TonClient } from '@ton/ton';
-import path from 'path';
 
-// 根据环境加载对应的环境变量文件
-const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.test';
-dotenv.config({ path: path.resolve(process.cwd(), envFile) });
+// 确保在最开始就加载环境变量
+dotenv.config({
+  path: process.env.NODE_ENV === 'production' 
+    ? '.env.production'
+    : process.env.NODE_ENV === 'test' 
+      ? '.env.test' 
+      : '.env'
+});
 
 const app = express();
-const port = process.env.PORT || 4243;
+const port = process.env.TON_SERVER_PORT || 4243;
+
+// 验证必要的环境变量
+const requiredEnvVars = [
+  'TON_NETWORK',
+  'TON_API_KEY',
+  'VITE_TON_WALLET_ADDRESS',
+  'NODE_ENV'
+];
+
+for (const envVar of requiredEnvVars) {
+  if (!process.env[envVar]) {
+    console.error(`错误: 未设置 ${envVar} 环境变量`);
+    process.exit(1);
+  }
+}
+
+console.log('TON 服务器运行模式:', process.env.NODE_ENV);
+console.log('TON 网络:', process.env.TON_NETWORK);
+// console.log(`TON 支付服务运行在 http://localhost:${port}`);
 
 // 初始化 TON 客户端
 const tonClient = new TonClient({
-  endpoint: process.env.VITE_TON_NETWORK === 'mainnet' 
+  endpoint: process.env.TON_NETWORK === 'mainnet' 
     ? 'https://toncenter.com/api/v2/jsonRPC'
     : 'https://testnet.toncenter.com/api/v2/jsonRPC',
-  apiKey: process.env.VITE_TON_API_KEY
+  apiKey: process.env.TON_API_KEY
 });
-
-console.log('TON服务器运行模式:', process.env.TON_MODE);
-console.log('TON网络:', process.env.TON_NETWORK);
 
 interface PaymentRequest {
   amount: number;
@@ -69,6 +89,13 @@ app.use(express.json());
 // 从环境变量读取 TON 汇率配置
 const TON_USD_RATE = Number(process.env.TON_USD_RATE) || 5;
 const TON_RATE_BUFFER = Number(process.env.TON_RATE_BUFFER) || 1.05;
+const TON_WALLET_ADDRESS = process.env.NODE_ENV === 'production'
+  ? process.env.VITE_TON_WALLET_ADDRESS
+  : process.env.VITE_TON_TEST_WALLET_ADDRESS || process.env.VITE_TON_WALLET_ADDRESS;
+
+if (!TON_WALLET_ADDRESS) {
+  console.error('TON钱包地址未配置，环境:', process.env.NODE_ENV);
+}
 
 // 创建支付
 app.post('/api/ton/create-payment', async (req: Request<{}, {}, PaymentRequest>, res: Response) => {
@@ -162,5 +189,5 @@ app.use((req: Request, res: Response) => {
 });
 
 app.listen(port, () => {
-  console.log(`TON 支付服务运行在 http://localhost:${port}`);
+  console.log(`TON 支付服务地址： http://localhost:${port}`);
 }); 

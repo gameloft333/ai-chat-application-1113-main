@@ -23,7 +23,7 @@
     "server:prod": "cross-env NODE_ENV=production node server/index.js",
     
     "ton:server:test": "cross-env NODE_ENV=test cross-env NODE_OPTIONS=\"--loader ts-node/esm\" ts-node ton-payment/index.ts",
-    "ton:server:prod": "cross-env NODE_ENV=production cross-env NODE_OPTIONS=\"--loader ts-node/esm\" ts-node ton-payment/index.ts",
+    "ton:server:prod": "cross-env NODE_ENV=production node --experimental-specifier-resolution=node --loader ts-node/esm ton-payment/index.ts",
     
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "update-version": "node scripts/update-version.js",

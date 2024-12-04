@@ -49,6 +49,11 @@ export const TonPayment: React.FC<TonPaymentProps> = ({
 
   // 复制功能实现 - 增强版
   const handleCopyAddress = async () => {
+    // 按优先级获取钱包地址
+    const walletAddress = process.env.NODE_ENV === 'production'
+      ? import.meta.env.VITE_TON_WALLET_ADDRESS
+      : import.meta.env.VITE_TON_TEST_WALLET_ADDRESS || import.meta.env.VITE_TON_WALLET_ADDRESS;
+    
     if (!walletAddress) {
       setError(t('payment.ton.walletAddressError'));
       return;
@@ -104,6 +109,15 @@ export const TonPayment: React.FC<TonPaymentProps> = ({
     }
   };
 
+  useEffect(() => {
+    console.log('TON Payment 环境配置:', {
+      env: process.env.NODE_ENV,
+      walletAddress: walletAddress,
+      testWalletAddress: import.meta.env.VITE_TON_TEST_WALLET_ADDRESS,
+      prodWalletAddress: import.meta.env.VITE_TON_WALLET_ADDRESS
+    });
+  }, [walletAddress]);
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-[#1A1B1E] rounded-xl w-full max-w-md relative">
@@ -154,7 +168,7 @@ export const TonPayment: React.FC<TonPaymentProps> = ({
             {/* 钱包地址显示 - 优化样式和可见性 */}
             <div className="bg-[#1A1B1E] p-3 rounded border border-gray-700">
               <div className="font-mono text-sm text-white break-all">
-                {walletAddress || t('payment.ton.walletAddressError')}
+                {walletAddress || import.meta.env.VITE_TON_WALLET_ADDRESS || import.meta.env.VITE_TON_TEST_WALLET_ADDRESS || t('payment.ton.walletAddressError')}
               </div>
             </div>
           </div>
