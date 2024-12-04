@@ -81,9 +81,23 @@ export const TonPayment: React.FC<TonPaymentProps> = ({
   const handleOpenWallet = () => {
     try {
       console.log('准备打开TON钱包');
+      // 构建完整的支付URL
+      const tonAmount = calculateTonAmount(payment.amount);
       const tonUrl = `ton://transfer/${walletAddress}?amount=${tonAmount}&text=Payment_${payment.id}`;
       console.log('TON支付URL:', tonUrl);
-      window.location.href = tonUrl;
+      
+      // 创建一个隐藏的链接并触发点击
+      const link = document.createElement('a');
+      link.href = tonUrl;
+      link.rel = 'noopener noreferrer';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // 如果直接打开失败，显示备用链接
+      setTimeout(() => {
+        setError(t('payment.ton.openWalletManually'));
+      }, 1000);
     } catch (err) {
       console.error('打开钱包失败:', err);
       setError(t('payment.ton.openWalletError'));
@@ -170,6 +184,18 @@ export const TonPayment: React.FC<TonPaymentProps> = ({
             >
               {t('payment.ton.cancel')}
             </button>
+          </div>
+
+          {/* 在支付信息区域添加显示 */}
+          <div className="bg-[#25262B] p-4 rounded-lg mt-4">
+            <div className="text-sm text-gray-400 mb-2">
+              {t('payment.ton.manualPaymentDesc')}
+            </div>
+            <div className="bg-[#1A1B1E] p-3 rounded border border-gray-700">
+              <div className="font-mono text-sm text-white break-all">
+                ton://transfer/{walletAddress}?amount={tonAmount}&text=Payment_{payment.id}
+              </div>
+            </div>
           </div>
         </div>
       </div>

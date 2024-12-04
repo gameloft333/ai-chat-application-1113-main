@@ -54,7 +54,11 @@ export default {
             '1week': '1 week',
             '24months': '24 months',
             '12months': '12 months',
-            '1month': '1 month'
+            '1month': '1 month',
+            monthly: 'Monthly',
+            quarterly: 'Quarterly',
+            yearly: 'Yearly',
+            lifetime: 'Lifetime'
         },
         features: {
             unlimitedChat: 'Unlimited AI Chat',
@@ -81,7 +85,15 @@ export default {
         remainingTime: 'Remaining Time',
         days: 'days',
         expiryDate: 'Expiry Date',
-        choosePlan: 'Choose Plan'
+        choosePlan: 'Choose Plan',
+        payment: {
+            selectMethod: 'Select Payment Method',
+            processing: 'Processing...',
+            success: 'Payment Successful',
+            failed: 'Payment Failed',
+            retry: 'Retry Payment',
+            cancel: 'Cancel Payment'
+        }
     },
     payment: {
         processing: 'Processing payment result...',
@@ -138,7 +150,18 @@ export default {
             createSubscriptionFailed: 'Subscription failed, please try again later',
             logoutFailed: 'Logout failed, please try again later',
             loginFailed: 'Login failed, please try again later',
-            registerFailed: 'Registration failed, please try again later'
+            registerFailed: 'Registration failed, please try again later',
+            invalidDuration: 'Invalid subscription duration, please select again',
+            paymentFailed: 'Payment failed, please try again',
+            loginRequired: 'Please login first',
+            invalidPlan: 'Invalid subscription plan',
+            invalidPaymentMethod: 'Invalid payment method',
+            paymentProcessing: 'Payment is processing, please wait',
+            paymentCancelled: 'Payment cancelled',
+            networkError: 'Network error, please try again',
+            selectDuration: 'Please select subscription duration',
+            unknownError: 'Unknown error occurred, please try again',
+            selectPaymentMethod: 'Please select payment method'
         },
         auth: {
             registerPrompt: 'No account? Register now',

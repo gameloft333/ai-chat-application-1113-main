@@ -72,8 +72,9 @@ app.post('/api/ton/create-payment', async (req: Request<{}, {}, PaymentRequest>,
       throw new Error('缺少必要参数');
     }
 
-    // 计算 TON 数量（确保至少保留 2 位小数）
+    // 确保计算正确的 TON 数量（确保至少保留 2 位小数）
     const tonAmount = Number(((amount / TON_USD_RATE) * TON_RATE_BUFFER).toFixed(2));
+    console.log('计算的 TON 数量:', { amount, TON_USD_RATE, TON_RATE_BUFFER, tonAmount });
     
     const paymentId = `TON_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
@@ -82,7 +83,7 @@ app.post('/api/ton/create-payment', async (req: Request<{}, {}, PaymentRequest>,
       amount: tonAmount,
       originalAmount: amount,
       currency,
-      status: 'pending' as const,
+      status: 'pending',
       createdAt: new Date()
     };
 
@@ -93,7 +94,8 @@ app.post('/api/ton/create-payment', async (req: Request<{}, {}, PaymentRequest>,
     res.json({ 
       paymentId: payment.id,
       status: payment.status,
-      tonAmount: tonAmount.toFixed(2)
+      tonAmount: tonAmount.toFixed(2),
+      deepLink: `ton://transfer/${process.env.VITE_TON_TEST_WALLET_ADDRESS}?amount=${tonAmount}&text=Payment_${payment.id}`
     });
   } catch (error) {
     console.error('创建 TON 支付失败:', error);

@@ -198,6 +198,17 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
     e.stopPropagation();
   };
 
+  // 添加函数来过滤显示的套餐
+  const getFilteredPlans = (duration: string) => {
+    if (duration === '1week') {
+      // 只显示体验套餐
+      return [pricingPlans.trialPlan];
+    } else {
+      // 其他时长下隐藏体验套餐
+      return pricingPlans.plans.filter(plan => plan.id !== 'trial');
+    }
+  };
+
   return (
     <div 
       className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 overflow-y-auto"
@@ -244,87 +255,89 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
         </div>
 
         {/* 套餐卡片容器 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 p-8">
-          {getAvailablePlans().map(plan => {
-            const pricing = getPlanPricing(plan, selectedDuration);
-            const isPopular = plan === calculateMostPopularPlan(getAvailablePlans(), selectedDuration);
-            const isPlanCurrent = isCurrentPlan(plan.id);
-            
-            return (
-              <div 
-                key={plan.id}
-                onClick={() => !isPlanCurrent && setSelectedPlan(plan.id)}
-                className={`relative bg-[#27282D] rounded-2xl p-6 transition-all 
-                  ${!isPlanCurrent ? 'cursor-pointer hover:bg-[#2C2D33]' : 'cursor-default'} 
-                  ${plan.id === selectedPlan ? 'ring-2' : ''}`}
-                style={{
-                  ...(plan.id === selectedPlan && { ringColor: themeColor })
-                }}
-              >
-                {isPopular && !isPlanCurrent && (
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                    <span className="text-white px-3 py-1 rounded-full text-sm"
-                      style={{ backgroundColor: themeColor }}>
-                      {t('subscription.popular')}
-                    </span>
-                  </div>
-                )}
-                
-                {isPlanCurrent && (
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                    <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm">
+        <div className="flex justify-center p-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+            {getFilteredPlans(selectedDuration).map(plan => {
+              const pricing = getPlanPricing(plan, selectedDuration);
+              const isPopular = plan === calculateMostPopularPlan(getAvailablePlans(), selectedDuration);
+              const isPlanCurrent = isCurrentPlan(plan.id);
+              
+              return (
+                <div 
+                  key={plan.id}
+                  onClick={() => !isPlanCurrent && setSelectedPlan(plan.id)}
+                  className={`relative bg-[#27282D] rounded-2xl p-6 transition-all 
+                    ${!isPlanCurrent ? 'cursor-pointer hover:bg-[#2C2D33]' : 'cursor-default'} 
+                    ${plan.id === selectedPlan ? 'ring-2' : ''}`}
+                  style={{
+                    ...(plan.id === selectedPlan && { ringColor: themeColor })
+                  }}
+                >
+                  {isPopular && !isPlanCurrent && (
+                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                      <span className="text-white px-3 py-1 rounded-full text-sm"
+                        style={{ backgroundColor: themeColor }}>
+                        {t('subscription.popular')}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {isPlanCurrent && (
+                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                      <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm">
+                        {t('subscription.currentPlan')}
+                      </span>
+                    </div>
+                  )}
+                  
+                  <h3 className="text-xl font-bold text-white mb-2">
+                    {getPlanName(plan, selectedDuration)}
+                  </h3>
+                  <p className="text-gray-400 text-sm mb-4">
+                    {t(plan.description)}
+                  </p>
+
+                  {pricing && (
+                    <div className="flex items-baseline mb-6">
+                      <span className="text-3xl font-bold text-white">
+                        {currentCurrency.symbol}{pricing.price}
+                      </span>
+                      <span className="text-gray-400 ml-2">
+                        {selectedDuration === '1week' ? t('subscription.perWeek') : t('subscription.perMonth')}
+                      </span>
+                    </div>
+                  )}
+
+                  <ul className="space-y-3 mb-6">
+                    {plan.features.map(feature => (
+                      <li key={feature} className="flex items-center text-gray-300">
+                        <Check className="w-5 h-5 mr-2" style={{ color: themeColor }} />
+                        <span>{t(feature)}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  {isPlanCurrent ? (
+                    <button
+                      disabled
+                      className="w-full py-3 rounded-xl bg-green-500 text-white cursor-not-allowed"
+                    >
                       {t('subscription.currentPlan')}
-                    </span>
-                  </div>
-                )}
-                
-                <h3 className="text-xl font-bold text-white mb-2">
-                  {getPlanName(plan, selectedDuration)}
-                </h3>
-                <p className="text-gray-400 text-sm mb-4">
-                  {t(plan.description)}
-                </p>
-
-                {pricing && (
-                  <div className="flex items-baseline mb-6">
-                    <span className="text-3xl font-bold text-white">
-                      {currentCurrency.symbol}{pricing.price}
-                    </span>
-                    <span className="text-gray-400 ml-2">
-                      {selectedDuration === '1week' ? t('subscription.perWeek') : t('subscription.perMonth')}
-                    </span>
-                  </div>
-                )}
-
-                <ul className="space-y-3 mb-6">
-                  {plan.features.map(feature => (
-                    <li key={feature} className="flex items-center text-gray-300">
-                      <Check className="w-5 h-5 mr-2" style={{ color: themeColor }} />
-                      <span>{t(feature)}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                {isPlanCurrent ? (
-                  <button
-                    disabled
-                    className="w-full py-3 rounded-xl bg-green-500 text-white cursor-not-allowed"
-                  >
-                    {t('subscription.currentPlan')}
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handlePlanSelect(plan.id)}
-                    disabled={isProcessing}
-                    className="w-full py-3 rounded-xl text-white font-medium transition-colors hover:opacity-90"
-                    style={{ backgroundColor: themeColor }}
-                  >
-                    {t('subscription.subscribe')}
-                  </button>
-                )}
-              </div>
-            );
-          })}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handlePlanSelect(plan.id)}
+                      disabled={isProcessing}
+                      className="w-full py-3 rounded-xl text-white font-medium transition-colors hover:opacity-90"
+                      style={{ backgroundColor: themeColor }}
+                    >
+                      {t('subscription.subscribe')}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* 支付方式选择模态框 */}

@@ -55,7 +55,11 @@ export default {
             '1week': '1周',
             '24months': '24个月',
             '12months': '12个月',
-            '1month': '1个月'
+            '1month': '1个月',
+            monthly: '月付',
+            quarterly: '季付',
+            yearly: '年付',
+            lifetime: '终身'
         },
         features: {
             unlimitedChat: '无限AI对话',
@@ -82,7 +86,15 @@ export default {
         remainingTime: '剩余时间',
         days: '天',
         expiryDate: '到期日期',
-        choosePlan: '选择套餐'
+        choosePlan: '选择套餐',
+        payment: {
+            selectMethod: '选择支付方式',
+            processing: '处理中...',
+            success: '支付成功',
+            failed: '支付失败',
+            retry: '重试支付',
+            cancel: '取消支付'
+        }
     },
     payment: {
         processing: '正在处理支付结果...',
@@ -142,7 +154,18 @@ export default {
             registerFailed: '注册失败，请稍后重试',
             emailAlreadyInUse: '该邮箱已被注册，请直接登录或使用其他邮箱',
             invalidEmail: '邮箱格式不正确',
-            weakPassword: '密码强度不够，请至少包含6个字符'
+            weakPassword: '密码强度不够，请至少包含6个字符',
+            invalidDuration: '无效的订阅周期，请重新选择',
+            paymentFailed: '支付失败，请重试',
+            loginRequired: '请先登录',
+            invalidPlan: '无效的订阅计划',
+            invalidPaymentMethod: '无效的支付方式',
+            paymentProcessing: '支付处理中，请稍候',
+            paymentCancelled: '支付已取消',
+            networkError: '网络错误，请重试',
+            selectDuration: '请选择订阅周期',
+            unknownError: '发生未知错误，请重试',
+            selectPaymentMethod: '请选择支付方式'
         },
         auth: {
             registerPrompt: '没有账号？立即注册',

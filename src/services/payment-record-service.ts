@@ -318,4 +318,135 @@ export class PaymentRecordService {
             return { isSubscribed: false };
         }
     }
+
+    static async createTonPaymentRecord(
+        uid: string,
+        userEmail: string,
+        orderId: string,
+        amount: number,
+        tonAmount: number,
+        duration: string,
+        planId: 'trial' | 'basic' | 'pro' | 'premium'
+    ): Promise<void> {
+        try {
+            console.log('创建 TON 支付记录:', {
+                uid,
+                userEmail,
+                orderId,
+                amount,
+                tonAmount,
+                duration,
+                planId
+            });
+
+            const now = new Date();
+            // 根据 duration 计算到期时间
+            const durationMap = {
+                'monthly': 30,
+                'quarterly': 90,
+                'yearly': 365,
+                'lifetime': 36500 // 100年作为终身
+            };
+            const days = durationMap[duration as keyof typeof durationMap] || 30;
+            const expiredAt = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+
+            const paymentRecord: PaymentRecord = {
+                uid,
+                userEmail,
+                orderId,
+                amount,
+                currency: 'USD',
+                tonAmount, // TON 特有字段
+                paymentChannel: 'ton',
+                status: 'pending',
+                planId,
+                duration,
+                createdAt: now,
+                expiredAt,
+                metadata: {
+                    network: import.meta.env.VITE_TON_NETWORK,
+                    walletAddress: import.meta.env.VITE_TON_TEST_WALLET_ADDRESS
+                }
+            };
+
+            await this.createPaymentRecord(paymentRecord);
+            console.log('TON支付记录已创建:', paymentRecord);
+        } catch (error) {
+            console.error('创建TON支付记录失败:', error);
+            throw error;
+        }
+    }
+
+    static async handleTonPaymentSuccess(
+        orderId: string, 
+        walletAddress: string
+    ): Promise<void> {
+        try {
+            console.log('处理TON支付成功:', { orderId, walletAddress });
+            
+            // 更新支付状态
+            await this.updatePaymentStatus(orderId, 'completed');
+            
+            // 更新支付账户信息
+            await this.updatePaymentWithAccountInfo(
+                orderId,
+                walletAddress,
+                'ton',
+                'completed'
+            );
+
+            // 获取更新后的记录
+            const updatedRecord = await this.getPaymentRecordByOrderId(orderId);
+            
+            if (updatedRecord) {
+                // 触发订阅更新事件
+                window.dispatchEvent(new CustomEvent('subscription-updated', {
+                    detail: {
+                        orderId,
+                        uid: updatedRecord.uid,
+                        userEmail: updatedRecord.userEmail,
+                        expiredAt: updatedRecord.expiredAt,
+                        paymentChannel: 'ton',
+                        walletAddress
+                    }
+                }));
+            }
+        } catch (error) {
+            console.error('处理TON支付成功失败:', error);
+            throw error;
+        }
+    }
+
+    static async getTonPaymentByWalletAddress(
+        walletAddress: string
+    ): Promise<PaymentRecord | null> {
+        try {
+            const paymentsRef = collection(db, 'paymentRecords');
+            const q = query(
+                paymentsRef,
+                where('paymentChannel', '==', 'ton'),
+                where('paymentAccount', '==', walletAddress),
+                where('status', '==', 'completed'),
+                orderBy('createdAt', 'desc'),
+                limit(1)
+            );
+
+            const querySnapshot = await getDocs(q);
+            
+            if (!querySnapshot.empty) {
+                const doc = querySnapshot.docs[0];
+                return {
+                    id: doc.id,
+                    ...doc.data(),
+                    createdAt: new Date(doc.data().createdAt),
+                    expiredAt: new Date(doc.data().expiredAt),
+                    completedAt: doc.data().completedAt ? new Date(doc.data().completedAt) : undefined
+                } as PaymentRecord;
+            }
+            return null;
+        } catch (error) {
+            console.error('获取TON支付记录失败:', error);
+            return null;
+        }
+    }
 }

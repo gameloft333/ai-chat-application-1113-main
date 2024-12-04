@@ -218,6 +218,8 @@ const AppContent: React.FC<AppRoutesProps> = ({ themeColor }) => {
 
   const handleSubscribe = async (planId: string, duration: string, paymentMethod: 'paypal' | 'stripe' | 'ton') => {
     try {
+      console.log('订阅参数:', { planId, duration, paymentMethod }); // 添加日志
+      
       if (!currentUser) {
         throw new Error(t('alerts.error.loginRequired'));
       }
@@ -228,8 +230,20 @@ const AppContent: React.FC<AppRoutesProps> = ({ themeColor }) => {
         throw new Error(t('alerts.error.invalidPlan'));
       }
 
+      // 验证 duration 是否有效
+      const validDurations = ['1week', '1month', '12months', '24months', 'monthly', 'quarterly', 'yearly', 'lifetime'];
+      if (!validDurations.includes(duration)) {
+        console.error('无效的订阅周期:', { duration, validDurations });
+        throw new Error(t('alerts.error.invalidDuration'));
+      }
+
       const pricing = plan.prices[duration];
       if (!pricing) {
+        console.error('未找到对应定价:', { 
+          duration, 
+          planPrices: plan.prices,
+          availableDurations: Object.keys(plan.prices)
+        });
         throw new Error(t('alerts.error.invalidDuration'));
       }
 

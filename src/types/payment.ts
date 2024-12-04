@@ -19,7 +19,9 @@ export interface SubscriptionPlan {
     features: string[];
 }
 
-export type PaymentChannel = 'paypal' | 'telegram' | 'stripe' | 'alipay' | 'wechat';
+export type PaymentChannel = 'paypal' | 'telegram' | 'stripe' | 'alipay' | 'wechat' | 'ton';
+
+export type SubscriptionDuration = 'monthly' | 'quarterly' | 'yearly' | 'lifetime';
 
 export interface PaymentRecord {
     id?: string;
@@ -34,4 +36,10 @@ export interface PaymentRecord {
     completedAt?: Date;
     paymentAccount?: string;
     paymentChannel: PaymentChannel;
+    duration: SubscriptionDuration;
+    tonAmount?: number;
+    metadata?: {
+        network?: string;
+        walletAddress?: string;
+    };
 }
