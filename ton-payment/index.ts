@@ -18,29 +18,83 @@ const port = process.env.TON_SERVER_PORT || 4243;
 // 验证必要的环境变量
 const requiredEnvVars = [
   'TON_NETWORK',
+  'TON_MODE',
   'TON_API_KEY',
-  'VITE_TON_WALLET_ADDRESS',
+  'TON_CALLBACK_URL',
+  'TON_PAYMENT_SERVER_URL',
+  'TON_TEST_WALLET_ADDRESS',
+  'TON_USD_RATE',
+  'TON_RATE_BUFFER',
   'NODE_ENV'
 ];
 
-for (const envVar of requiredEnvVars) {
-  if (!process.env[envVar]) {
-    console.error(`错误: 未设置 ${envVar} 环境变量`);
-    process.exit(1);
+// 验证环境变量并输出配置信息
+const validateEnvConfig = () => {
+  console.log('TON 支付服务配置验证开始...');
+  
+  const missingVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+  
+  if (missingVars.length > 0) {
+    console.error('错误: 以下环境变量未设置:');
+    missingVars.forEach(envVar => {
+      console.error(`- ${envVar}`);
+    });
+    console.log('请在 .env.test 文件中配置所有必要的环境变量');
+    console.log('当前环境:', process.env.NODE_ENV);
+    return false;
   }
+
+  // 验证数值类型的配置
+  const numericConfigs = {
+    TON_USD_RATE: Number(process.env.TON_USD_RATE),
+    TON_RATE_BUFFER: Number(process.env.TON_RATE_BUFFER)
+  };
+
+  for (const [key, value] of Object.entries(numericConfigs)) {
+    if (isNaN(value)) {
+      console.error(`错误: ${key} 必须是有效的数字`);
+      return false;
+    }
+  }
+
+  // 输出配置信息（不包含敏感信息）
+  console.log('TON 支付服务配置信息:');
+  console.log('- 运行模式:', process.env.NODE_ENV);
+  console.log('- TON 网络:', process.env.TON_NETWORK);
+  console.log('- TON 模式:', process.env.TON_MODE);
+  console.log('- 回调 URL:', process.env.TON_CALLBACK_URL);
+  console.log('- 服务器 URL:', process.env.TON_PAYMENT_SERVER_URL);
+  console.log('- USD 汇率:', process.env.TON_USD_RATE);
+  console.log('- 汇率缓冲:', process.env.TON_RATE_BUFFER);
+
+  return true;
+};
+
+// 在应用启动时进行验证
+if (!validateEnvConfig()) {
+  process.exit(1);
 }
 
 console.log('TON 服务器运行模式:', process.env.NODE_ENV);
 console.log('TON 网络:', process.env.TON_NETWORK);
 // console.log(`TON 支付服务运行在 http://localhost:${port}`);
 
+// 初始化 TON 客户端配置
+const getTonClientConfig = () => {
+  const isTestnet = process.env.TON_NETWORK === 'testnet';
+  const endpoint = isTestnet 
+    ? 'https://testnet.toncenter.com/api/v2/jsonRPC'
+    : 'https://toncenter.com/api/v2/jsonRPC';
+    
+  return {
+    endpoint,
+    apiKey: process.env.TON_API_KEY,
+    testnet: isTestnet
+  };
+};
+
 // 初始化 TON 客户端
-const tonClient = new TonClient({
-  endpoint: process.env.TON_NETWORK === 'mainnet' 
-    ? 'https://toncenter.com/api/v2/jsonRPC'
-    : 'https://testnet.toncenter.com/api/v2/jsonRPC',
-  apiKey: process.env.TON_API_KEY
-});
+const tonClient = new TonClient(getTonClientConfig());
 
 interface PaymentRequest {
   amount: number;

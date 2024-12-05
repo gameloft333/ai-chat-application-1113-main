@@ -17,6 +17,41 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
   const { t } = useLanguage();
   const [sortedCharacters, setSortedCharacters] = useState<Character[]>([]);
 
+  // 定义备选的随机颜色数组（避免与会员颜色重复）
+  const fallbackColors = [
+    'rgba(255, 183, 197, 0.5)',  // 粉色
+    'rgba(255, 218, 121, 0.5)',  // 金色
+    'rgba(176, 196, 222, 0.5)',  // 钢蓝色
+    'rgba(144, 238, 144, 0.5)',  // 淡绿色
+    'rgba(221, 160, 221, 0.5)',  // 梅红色
+  ];
+
+  // 获取随机颜色
+  const getRandomFallbackColor = () => {
+    const randomIndex = Math.floor(Math.random() * fallbackColors.length);
+    return fallbackColors[randomIndex];
+  };
+
+  // 处理边框样式
+  const getBorderStyle = (character: Character) => {
+    // 如果有配置的边框颜色，使用预定义的类
+    if (character.borderColor && character.borderColor !== 'none') {
+      return `character-border-${character.borderColor}`;
+    }
+    
+    // 使用随机颜色作为保底
+    const fallbackColor = getRandomFallbackColor();
+    return {
+      boxShadow: `0 0 15px 5px ${fallbackColor}`
+    };
+  };
+
+  // 添加边框样式处理函数
+  const getBorderClass = (borderColor?: BorderColor) => {
+    if (!borderColor || borderColor === 'none') return '';
+    return `character-border-${borderColor}`;
+  };
+
   useEffect(() => {
     const sortCharactersByPopularity = () => {
       // 获取所有角色的统计数据
@@ -70,29 +105,33 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
         {t('common.selectCharacter')}
       </h2>
       <div className="grid grid-cols-4 gap-4">
-        {sortedCharacters.map((character) => (
-          <div
-            key={character.id}
-            className="cursor-pointer transition-all duration-300 transform hover:scale-105 relative"
-            onClick={() => onSelectCharacter(character)}
-          >
-            <img
-              src={character.avatarFile}
-              alt={character.name}
-              className="w-full h-auto rounded-lg shadow-lg"
-              style={{ aspectRatio: '9 / 16', objectFit: 'cover' }}
-            />
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 rounded-b-lg">
-              <h3 className="text-white text-lg font-bold mb-1">{character.name}</h3>
-              <p className="text-gray-300 text-sm">
-                {t(`characters.${character.id}.age`)}
-              </p>
-              <p className="text-gray-300 text-sm mt-2 line-clamp-2">
-                {t(`characters.${character.id}.description`)}
-              </p>
+        {sortedCharacters.map((character) => {
+          const borderStyle = getBorderStyle(character);
+          return (
+            <div
+              key={character.id}
+              onClick={() => onSelectCharacter(character)}
+              className={`relative cursor-pointer rounded-lg overflow-hidden transition-transform hover:scale-105 ${getBorderClass(character.borderColor)}`}
+              style={typeof borderStyle === 'object' ? borderStyle : {}}
+            >
+              <img
+                src={character.avatarFile}
+                alt={character.name}
+                className="w-full h-auto rounded-lg shadow-lg"
+                style={{ aspectRatio: '9 / 16', objectFit: 'cover' }}
+              />
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 rounded-b-lg">
+                <h3 className="text-white text-lg font-bold mb-1">{character.name}</h3>
+                <p className="text-gray-300 text-sm">
+                  {t(`characters.${character.id}.age`)}
+                </p>
+                <p className="text-gray-300 text-sm mt-2 line-clamp-2">
+                  {t(`characters.${character.id}.description`)}
+                </p>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

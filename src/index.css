@@ -44,6 +44,30 @@
   .scrollbar-thumb-rounded::-webkit-scrollbar-thumb {
     border-radius: 9999px;
   }
+
+  .character-border-none {
+    box-shadow: none;
+  }
+  
+  .character-border-white {
+    box-shadow: 0 0 15px 5px rgba(255, 255, 255, 0.5);
+  }
+  
+  .character-border-green {
+    box-shadow: 0 0 15px 5px rgba(72, 187, 120, 0.5);
+  }
+  
+  .character-border-blue {
+    box-shadow: 0 0 15px 5px rgba(66, 153, 225, 0.5);
+  }
+  
+  .character-border-purple {
+    box-shadow: 0 0 15px 5px rgba(159, 122, 234, 0.5);
+  }
+  
+  .character-border-orange {
+    box-shadow: 0 0 15px 5px rgba(237, 137, 54, 0.5);
+  }
 }
 
 .font-serif {

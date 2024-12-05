@@ -1,3 +1,5 @@
+export type BorderColor = 'none' | 'white' | 'green' | 'blue' | 'purple' | 'orange';
+
 export interface Character {
   id: string;
   name: string;
@@ -6,7 +8,8 @@ export interface Character {
   promptFile: string;
   prompt?: string;
   avatarFile: string;
-  gender?: 'male' | 'female';  // 添加可选的性别字段
+  gender?: 'male' | 'female';
+  borderColor?: BorderColor;
 }
 
 export const characters: Character[] = [
