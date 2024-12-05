@@ -18,11 +18,7 @@ const port = process.env.TON_SERVER_PORT || 4243;
 // 验证必要的环境变量
 const requiredEnvVars = [
   'TON_NETWORK',
-  'TON_MODE',
   'TON_API_KEY',
-  'TON_CALLBACK_URL',
-  'TON_PAYMENT_SERVER_URL',
-  'TON_TEST_WALLET_ADDRESS',
   'TON_USD_RATE',
   'TON_RATE_BUFFER',
   'NODE_ENV'
@@ -30,7 +26,14 @@ const requiredEnvVars = [
 
 // 验证环境变量并输出配置信息
 const validateEnvConfig = () => {
-  console.log('TON 支付服务配置验证开始...');
+  const envFile = process.env.NODE_ENV === 'production' 
+    ? '.env.production' 
+    : process.env.NODE_ENV === 'test' 
+      ? '.env.test' 
+      : '.env';
+
+  console.log('TON 支付服务初始化...');
+  console.log(`环境配置: ${process.env.NODE_ENV} (${envFile})`);
   
   const missingVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
   
@@ -39,8 +42,7 @@ const validateEnvConfig = () => {
     missingVars.forEach(envVar => {
       console.error(`- ${envVar}`);
     });
-    console.log('请在 .env.test 文件中配置所有必要的环境变量');
-    console.log('当前环境:', process.env.NODE_ENV);
+    console.log(`请在 ${envFile} 文件中配置所有必要的环境变量`);
     return false;
   }
 
@@ -58,14 +60,10 @@ const validateEnvConfig = () => {
   }
 
   // 输出配置信息（不包含敏感信息）
-  console.log('TON 支付服务配置信息:');
-  console.log('- 运行模式:', process.env.NODE_ENV);
-  console.log('- TON 网络:', process.env.TON_NETWORK);
-  console.log('- TON 模式:', process.env.TON_MODE);
-  console.log('- 回调 URL:', process.env.TON_CALLBACK_URL);
-  console.log('- 服务器 URL:', process.env.TON_PAYMENT_SERVER_URL);
-  console.log('- USD 汇率:', process.env.TON_USD_RATE);
-  console.log('- 汇率缓冲:', process.env.TON_RATE_BUFFER);
+  console.log('服务配置信息:');
+  console.log(`- 网络: ${process.env.TON_NETWORK}`);
+  console.log(`- USD 汇率: ${process.env.TON_USD_RATE}`);
+  console.log(`- 汇率缓冲: ${process.env.TON_RATE_BUFFER}`);
 
   return true;
 };
@@ -161,7 +159,7 @@ app.post('/api/ton/create-payment', async (req: Request<{}, {}, PaymentRequest>,
       throw new Error('缺少必要参数');
     }
 
-    // 确保计算正确的 TON 数量（确保至少保留 2 位小数）
+    // 确保计算正确的 TON ���量（确保至少保留 2 位小数）
     const tonAmount = Number(((amount / TON_USD_RATE) * TON_RATE_BUFFER).toFixed(2));
     console.log('计算的 TON 数量:', { amount, TON_USD_RATE, TON_RATE_BUFFER, tonAmount });
     
@@ -201,7 +199,7 @@ app.get('/api/ton/check-payment/:paymentId', async (req: Request, res: Response)
     const { paymentId } = req.params;
     console.log('检查支付状态:', paymentId);
 
-    // 从存储中获取支付信息（这里需要实现存储逻辑）
+    // 从存储中获取支付信息（��里需要实现存储逻辑）
     const payment = await getPaymentInfo(paymentId);
     
     if (!payment) {
@@ -243,5 +241,5 @@ app.use((req: Request, res: Response) => {
 });
 
 app.listen(port, () => {
-  console.log(`TON 支付服务地址： http://localhost:${port}`);
+  console.log(`TON 支付服务运行在: http://localhost:${port}`);
 }); 
