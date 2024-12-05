@@ -1,7 +1,7 @@
 export const SUBSCRIPTION_CONFIG = {
   // 控制各个时长标签的显示
   durationTabs: {
-    test: true,
+    test: false,
     '1week': true,
     '1month': true,
     '12months': true,

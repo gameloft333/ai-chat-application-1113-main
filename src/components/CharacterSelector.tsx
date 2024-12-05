@@ -17,19 +17,12 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
   const { t } = useLanguage();
   const [sortedCharacters, setSortedCharacters] = useState<Character[]>([]);
 
-  // 定义备选的随机颜色数组（避免与会员颜色重复）
-  const fallbackColors = [
-    'rgba(255, 183, 197, 0.5)',  // 粉色
-    'rgba(255, 218, 121, 0.5)',  // 金色
-    'rgba(176, 196, 222, 0.5)',  // 钢蓝色
-    'rgba(144, 238, 144, 0.5)',  // 淡绿色
-    'rgba(221, 160, 221, 0.5)',  // 梅红色
-  ];
-
-  // 获取随机颜色
-  const getRandomFallbackColor = () => {
-    const randomIndex = Math.floor(Math.random() * fallbackColors.length);
-    return fallbackColors[randomIndex];
+  // 生成随机颜色
+  const getRandomColor = () => {
+    const r = Math.floor(Math.random() * 256);
+    const g = Math.floor(Math.random() * 256);
+    const b = Math.floor(Math.random() * 256);
+    return `rgba(${r}, ${g}, ${b}, 0.5)`;
   };
 
   // 处理边框样式
@@ -39,10 +32,9 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
       return `character-border-${character.borderColor}`;
     }
     
-    // 使用随机颜色作为保底
-    const fallbackColor = getRandomFallbackColor();
+    // 使用随机颜色
     return {
-      boxShadow: `0 0 15px 5px ${fallbackColor}`
+      boxShadow: `0 0 15px 5px ${getRandomColor()}`
     };
   };
 
