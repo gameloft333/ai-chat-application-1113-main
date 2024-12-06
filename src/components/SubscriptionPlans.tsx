@@ -6,6 +6,7 @@ import { PaymentRecord } from '../types/payment';
 import { PaymentRecordService } from '../services/payment-record-service';
 import { SubscriptionModal } from './SubscriptionModal';
 import { SUBSCRIPTION_CONFIG } from '../config/subscription-config';
+import { PAYMENT_CONFIG } from '../config/payment-config';
 
 interface SubscriptionPlansProps {
   onClose: () => void;
@@ -65,11 +66,12 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
     fetchCurrentSubscription();
   }, [userEmail]);
 
-  // 在显示支付模态框时随机排序支付方式
+  
+  // 在显示支付模态框时获取启用的支付方式
   useEffect(() => {
     if (showPaymentModal) {
-      const methods: Array<'paypal' | 'stripe' | 'ton'> = ['paypal', 'stripe', 'ton'];
-      setPaymentMethods(methods.sort(() => Math.random() - 0.5));
+      const enabledMethods = PAYMENT_CONFIG.getEnabledMethods();
+      setPaymentMethods(enabledMethods.sort(() => Math.random() - 0.5)); // 在显示支付模态框时随机排序支付方式
     }
   }, [showPaymentModal]);
 
@@ -362,16 +364,19 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
                 <X className="w-6 h-6" />
               </button>
               
-              <h3 className="text-xl font-bold text-white mb-6">选择支付方式</h3>
+              <h3 className="text-xl font-bold text-white mb-6">
+                {t('payment.selectMethod')}
+              </h3>
               
-              <div className="space-y-4">
+              <div className={`grid gap-4 ${paymentMethods.length === 1 ? 'grid-cols-1' : 
+                paymentMethods.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
                 {paymentMethods.map(method => (
                   <button
                     key={method}
                     onClick={() => handlePaymentSelect(method)}
                     className="w-full py-3 px-4 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
                   >
-                    {method === 'paypal' ? 'PayPal 支付' : method === 'stripe' ? 'Stripe 支付' : 'TON 支付'}
+                    {t(`payment.methods.${method}`)}
                   </button>
                 ))}
               </div>

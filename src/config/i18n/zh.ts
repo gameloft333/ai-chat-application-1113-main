@@ -142,6 +142,11 @@ export default {
             paymentAmount: '支付金额',
             walletAddressTitle: '收款钱包地址',
             walletAddressError: '钱包地址未设置'
+        },
+        methods: {
+            paypal: '使用 PayPal 支付',
+            stripe: '使用 Stripe 支付',
+            ton: '使用 TON 支付'
         }
     },
     alerts: {
@@ -242,7 +247,7 @@ export default {
         inputPlaceholder: '输入消息...',
         send: '发送',
         thinking: '正在思考...',
-        errorMessage: '对不起，我现在遇到了一些技术问题。让我们稍后再聊吧。',
+        errorMessage: '对不起，我现在遇到了一些技术问题。让我们稍后再聊吧���',
         retry: '重试',
         speaking: '正在播放语音...',
         stopSpeaking: '停止播放',

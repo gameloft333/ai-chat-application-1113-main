@@ -3,21 +3,24 @@ export const PAYMENT_CONFIG = {
   environments: {
     paypal: {
       sandbox: false,  // true: 沙箱环境, false: 生产环境
-      apiUrl: process.env.REACT_APP_PAYPAL_API_URL,
-      clientId: process.env.REACT_APP_PAYPAL_CLIENT_ID,
-      secretKey: process.env.REACT_APP_PAYPAL_SECRET_KEY
+      apiUrl: import.meta.env.VITE_PAYPAL_API_URL,
+      clientId: import.meta.env.VITE_PAYPAL_CLIENT_ID,
+      secretKey: import.meta.env.VITE_PAYPAL_CLIENT_SECRET
     },
     stripe: {
-      testMode: false,  // true: 测试模式, false: 生产模式
-      apiUrl: process.env.REACT_APP_STRIPE_API_URL,
-      publicKey: process.env.REACT_APP_STRIPE_PUBLIC_KEY,
-      secretKey: process.env.REACT_APP_STRIPE_SECRET_KEY
+      testMode: import.meta.env.VITE_STRIPE_MODE === 'test',  // true: 测试模式, false: 生产模式
+      publicKey: import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY,
+      secretKey: import.meta.env.VITE_STRIPE_SECRET_KEY
     },
     ton: {
-      testnet: false,  // true: 测试网络, false: 主网络
-      apiUrl: process.env.REACT_APP_TON_API_URL,
-      apiKey: process.env.REACT_APP_TON_API_KEY
+      testnet: import.meta.env.TON_NETWORK === 'testnet',  // true: 测试网络, false: 主网络
+      apiKey: import.meta.env.VITE_TON_API_KEY
     }
+  },
+  enabledMethods: {
+    paypal: import.meta.env.VITE_ENABLE_PAYPAL === 'true',
+    stripe: import.meta.env.VITE_ENABLE_STRIPE === 'true',
+    ton: import.meta.env.VITE_ENABLE_TON === 'true'
   },
   
   // 获取支付环境状态的工具函数
@@ -33,5 +36,12 @@ export const PAYMENT_CONFIG = {
       default:
         return true;
     }
+  },
+  
+  // 获取启用的支付方式列表
+  getEnabledMethods: () => {
+    return Object.entries(PAYMENT_CONFIG.enabledMethods)
+      .filter(([_, enabled]) => enabled)
+      .map(([method]) => method as 'paypal' | 'stripe' | 'ton');
   }
 }; 

@@ -141,6 +141,11 @@ export default {
             paymentAmount: 'Payment Amount',
             walletAddressTitle: 'Receiving Wallet Address',
             walletAddressError: 'Wallet address not set'
+        },
+        methods: {
+            paypal: 'Pay with PayPal',
+            stripe: 'Pay with Stripe',
+            ton: 'Pay with TON'
         }
     },
     alerts: {
