@@ -54,7 +54,7 @@ const MarqueeNotice: React.FC<MarqueeNoticeProps> = ({ messages }) => {
   console.log('使用显示语言:', displayLanguage);
 
   return (
-    <div className={`fixed z-50 top-8 transition-opacity duration-500 ${isVisible ? 'opacity-100' : 'opacity-0'}`} 
+    <div className={`fixed z-40 top-8 transition-opacity duration-500 ${isVisible ? 'opacity-100' : 'opacity-0'}`} 
       style={{ 
         width: '100%',  // 控制宽度
         left: '0%',   // 控制左边距，使其居中
