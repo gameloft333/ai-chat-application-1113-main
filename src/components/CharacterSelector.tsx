@@ -19,16 +19,30 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
   const { t } = useLanguage();
   const [sortedCharacters, setSortedCharacters] = useState<Character[]>([]);
   const [marqueeMessages, setMarqueeMessages] = useState<MarqueeMessage[]>([]);
+  const [randomColors, setRandomColors] = useState<Record<string, string>>({});
 
-  // 生成随机颜色
-  const getRandomColor = () => {
+  // 修改生成随机颜色的逻辑
+  const getRandomColor = (characterId: string) => {
+    // 如果已经有缓存的随机颜色，直接返回
+    if (randomColors[characterId]) {
+      return randomColors[characterId];
+    }
+    
+    // 生成新的随机颜色并缓存
     const r = Math.floor(Math.random() * 256);
     const g = Math.floor(Math.random() * 256);
     const b = Math.floor(Math.random() * 256);
-    return `rgba(${r}, ${g}, ${b}, 0.5)`;
+    const color = `rgba(${r}, ${g}, ${b}, 0.5)`;
+    
+    setRandomColors(prev => ({
+      ...prev,
+      [characterId]: color
+    }));
+    
+    return color;
   };
 
-  // 处理边框样式
+  // 修改边框样式处理函数
   const getBorderStyle = (character: Character) => {
     // 如果有配置的边框颜色，使用预定义的类
     if (character.borderColor && character.borderColor !== 'none') {
@@ -37,7 +51,7 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
     
     // 使用随机颜色
     return {
-      boxShadow: `0 0 15px 5px ${getRandomColor()}`
+      boxShadow: `0 0 15px 5px ${getRandomColor(character.id)}`
     };
   };
 

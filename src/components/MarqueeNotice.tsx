@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { MARQUEE_CONFIG } from '../config/app-config';
 
 interface MarqueeNoticeProps {
   messages: Array<{
@@ -18,6 +19,11 @@ const MarqueeNotice: React.FC<MarqueeNoticeProps> = ({ messages }) => {
   const { currentLanguage } = useLanguage();
   const [defaultLanguage] = useState<'zh' | 'en'>('zh');
 
+  if (!MARQUEE_CONFIG.enabled) {
+    console.log('MarqueeNotice 已在配置中禁用');
+    return null;
+  }
+
   useEffect(() => {
     console.log('MarqueeNotice 收到新消息:', messages);
     console.log('当前语言:', currentLanguage);
@@ -29,24 +35,33 @@ const MarqueeNotice: React.FC<MarqueeNoticeProps> = ({ messages }) => {
   }, [messages, currentLanguage]);
 
   const handleAnimationEnd = () => {
-    console.log('动画结束，设置 isVisible 为 false');
-    setIsVisible(false);
+    const element = document.querySelector('.animate-marquee');
+    if (element) {
+      element.classList.remove('animate-marquee');
+      void element.offsetWidth;
+      element.classList.add('animate-marquee');
+    }
   };
 
+  // 如果组件不可见或没有消息内容，则不渲染任何内容
   if (!isVisible || !currentMessages?.length) {
-    console.log('MarqueeNotice 不显示，isVisible:', isVisible, 'currentMessages:', currentMessages);
+    console.log('MarqueeNotice 不显示, isVisible:', isVisible, 'currentMessages:', currentMessages);
     return null;
   }
 
+  // 确定显示语言，如果没有设置当前语言则使用默认语言
   const displayLanguage = currentLanguage || defaultLanguage;
   console.log('使用显示语言:', displayLanguage);
 
   return (
-    <div className="fixed w-full z-50 top-24 px-4">
-      <div 
-        className="relative w-full overflow-hidden bg-gradient-to-r from-blue-600/10 to-purple-600/10 backdrop-blur-sm rounded-lg"
-        style={{ boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)' }}
-      >
+    <div className={`fixed z-50 top-8 transition-opacity duration-500 ${isVisible ? 'opacity-100' : 'opacity-0'}`} 
+      style={{ 
+        width: '100%',  // 控制宽度
+        left: '0%',   // 控制左边距，使其居中
+        right: '0%'   // 控制右边距
+      }}
+    >
+      <div className="relative w-full overflow-hidden bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-blue-600/10 backdrop-blur-sm rounded-lg">
         <div 
           className="whitespace-nowrap animate-marquee"
           onAnimationEnd={handleAnimationEnd}

@@ -4,6 +4,14 @@ export const USE_TYPEWRITER_MODE = true; // 设置为 true 使用打字机模式
 export const AI_RESPONSE_MODE = 'text'; // 可选值: 'text', 'voice', 'text_and_voice'
 export const DEBUG_MODE = process.env.NODE_ENV === 'development';
 
+// 跑马灯配置
+export const MARQUEE_CONFIG = {
+  enabled: import.meta.env.VITE_MARQUEE_ENABLED === 'true', // 是否启用跑马灯
+  animationDuration: import.meta.env.VITE_MARQUEE_ANIMATION_DURATION || 20000, // 动画持续时间
+  position: 'top', // 显示位置
+  zIndex: 50, // 层级
+}
+
 
 
 
