@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Character, characters } from '../types/character';
 import { CharacterStatsService } from '../services/character-stats-service';
+import { marqueeService } from '../services/marquee-service';
+import MarqueeNotice from './MarqueeNotice';
 
 interface CharacterSelectorProps {
   onSelectCharacter: (character: Character) => void;
@@ -16,6 +18,7 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
 }) => {
   const { t } = useLanguage();
   const [sortedCharacters, setSortedCharacters] = useState<Character[]>([]);
+  const [marqueeMessages, setMarqueeMessages] = useState<MarqueeMessage[]>([]);
 
   // 生成随机颜色
   const getRandomColor = () => {
@@ -91,11 +94,17 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
     reorderSameCountCharacters();
   }, []); // 空依赖数组确保只在组件挂载时执行一次
 
+  useEffect(() => {
+    const unsubscribe = marqueeService.subscribe(setMarqueeMessages);
+    return () => unsubscribe();
+  }, []);
+
   return (
     <div className="space-y-8">
       <h2 className="text-2xl font-bold text-center mb-8">
         {t('common.selectCharacter')}
       </h2>
+      <MarqueeNotice messages={marqueeMessages} />
       <div className="grid grid-cols-4 gap-4">
         {sortedCharacters.map((character) => {
           const borderStyle = getBorderStyle(character);
