@@ -28,6 +28,9 @@ async function callLLMAPI(type: LLMType, prompt: string, apiKey: string, modelNa
         case 'gemini':
           response = await callGeminiAPI(prompt, currentApiKey, currentModelName);
           break;
+        case 'grok':
+          response = await callGrokAPI(prompt, currentApiKey, currentModelName);
+          break;
         default:
           throw new Error(`不支持的 LLM 类型: ${currentType}`);
       }
@@ -166,6 +169,47 @@ async function callGeminiAPI(prompt: string, apiKey: string, modelName: string):
   } catch (error) {
     console.error('Error in callGeminiAPI:', error);
     // 向上传递错误，保持错误处理链
+    throw error;
+  }
+}
+
+async function callGrokAPI(prompt: string, apiKey: string, modelName: string): Promise<string> {
+  try {
+    const response = await fetch('https://api.x.ai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        messages: [
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        model: modelName,
+        stream: false,
+        temperature: 0.7
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      console.error('Detailed Grok API error:', errorData);
+      
+      if (response.status === 401) {
+        throw new Error('GROK_AUTH_ERROR');
+      }
+      
+      throw new Error(`API Error: ${response.status} - ${errorData?.error?.message || response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+
+  } catch (error) {
+    console.error('Error in callGrokAPI:', error);
     throw error;
   }
 }

@@ -5,6 +5,7 @@ export const LLM_TYPES: Record<string, LLMType> = {
   ZHIPU: 'zhipu',
   MOONSHOT: 'moonshot',
   GEMINI: 'gemini',
+  GROK: 'grok'
 };
 
 // LLM 模块映射
@@ -26,4 +27,5 @@ export const DEFAULT_MODEL_NAMES: Record<LLMType, LLMModelName> = {
   [LLM_TYPES.ZHIPU]: 'chatglm_turbo',
   [LLM_TYPES.MOONSHOT]: 'moonshot-v1-8k',
   [LLM_TYPES.GEMINI]: 'gemini-pro',
+  [LLM_TYPES.GROK]: 'grok-beta'
 };
