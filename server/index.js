@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { Server } from 'socket.io';
 import http from 'http';
+import { generateRandomColor } from './utils/color-generator.js';
 
 // 根据环境加载对应的环境变量文件
 const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.test';
@@ -74,7 +75,8 @@ const marqueeMessages = [
     },
     type: 'info',
     priority: 1,
-    shadowColor: '#4299e1'
+    shadowColor: generateRandomColor(),
+    textColor: generateRandomColor()
   },
   {
     id: 2,
@@ -84,18 +86,21 @@ const marqueeMessages = [
     },
     type: 'promotion',
     priority: 2,
-    shadowColor: '#48bb78'
+    shadowColor: generateRandomColor(),
+    textColor: generateRandomColor()
+  },
+  {
+    id: 3,
+    content: {
+      zh: '注意: 现在处于测试模式，服务器重启时会清空聊天记录哦。',
+      en: 'Note: We are currently in test mode, and chat records will be cleared when the server restarts.'
+    },
+    type: 'warning',
+    priority: 3,
+    shadowColor: generateRandomColor(),
+    textColor: generateRandomColor()
   }
 ];
-
-// 生成随机颜色
-function getRandomColor() {
-  const colors = [
-    '#4299e1', '#48bb78', '#ed8936', '#9f7aea', '#ed64a6',
-    '#667eea', '#38b2ac', '#f56565', '#ecc94b', '#4fd1c5'
-  ];
-  return colors[Math.floor(Math.random() * colors.length)];
-}
 
 // 跑马灯 WebSocket 处理
 io.on('connection', (socket) => {
@@ -109,7 +114,7 @@ io.on('connection', (socket) => {
     const updatedMessages = marqueeMessages.map(msg => ({
       ...msg,
       shadowColor: process.env.VITE_MARQUEE_RANDOM_COLORS === 'true' 
-        ? getRandomColor() 
+        ? generateRandomColor() 
         : msg.shadowColor
     }));
     socket.emit('marquee:update', updatedMessages);
