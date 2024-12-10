@@ -1,15 +1,20 @@
 import express from 'express';
 import cors from 'cors';
-import * as dotenv from 'dotenv';
+import dotenv from 'dotenv';
 import { TonClient } from '@ton/ton';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // 确保在最开始就加载环境变量
 dotenv.config({
-  path: process.env.NODE_ENV === 'production' 
+  path: resolve(__dirname, '..', process.env.NODE_ENV === 'production' 
     ? '.env.production'
     : process.env.NODE_ENV === 'test' 
       ? '.env.test' 
-      : '.env'
+      : '.env')
 });
 
 const app = express();
@@ -27,16 +32,30 @@ const getRequiredEnvVars = (env: string) => {
     test: [
       'VITE_TON_API_KEY',
       'TON_NETWORK',
-      'TON_TEST_WALLET_ADDRESS'
+      'VITE_TON_TEST_WALLET_ADDRESS'
     ],
     production: [
       'TON_API_KEY',
       'TON_NETWORK',
-      'TON_WALLET_ADDRESS'
+      'VITE_TON_WALLET_ADDRESS'
     ]
   };
 
   return [...commonVars, ...(envSpecificVars[env] || [])];
+};
+
+// 统一钱包地址的获取逻辑
+const getWalletAddress = () => {
+  const currentEnv = process.env.NODE_ENV;
+  // 优先使用带 VITE_ 前缀的环境变量
+  const walletAddress = currentEnv === 'production'
+    ? (process.env.VITE_TON_WALLET_ADDRESS || process.env.TON_WALLET_ADDRESS)
+    : (process.env.VITE_TON_TEST_WALLET_ADDRESS || process.env.TON_TEST_WALLET_ADDRESS);
+  
+  if (!walletAddress) {
+    console.warn(`警告: ${currentEnv}环境的钱包地址未配置`);
+  }
+  return walletAddress;
 };
 
 // 验证环境变量并输出配置信息
@@ -71,13 +90,10 @@ const validateEnvConfig = () => {
     }
   }
 
-  // 输出服务配置信息（只输出一次）
-  const walletAddress = currentEnv === 'production' 
-    ? process.env.TON_WALLET_ADDRESS 
-    : process.env.TON_TEST_WALLET_ADDRESS;
-
-  console.log('服务配置:');
-  console.log({
+  // 获取钱包地址
+  const walletAddress = getWalletAddress();
+  
+  console.log('服务配置:', {
     环境: currentEnv,
     网络: process.env.TON_NETWORK,
     钱包地址: walletAddress,
@@ -87,11 +103,6 @@ const validateEnvConfig = () => {
       价格缓冲: process.env.TON_RATE_BUFFER
     }
   });
-
-  // 验证钱包地址
-  if (!walletAddress) {
-    console.warn(`警告: ${currentEnv}环境的钱包地址未配置`);
-  }
 
   return true;
 };
@@ -169,13 +180,10 @@ app.use(express.json());
 // 从环境变量读取 TON 汇率配置
 const TON_USD_RATE = Number(process.env.TON_USD_RATE) || 5;
 const TON_RATE_BUFFER = Number(process.env.TON_RATE_BUFFER) || 1.05;
-const TON_WALLET_ADDRESS = process.env.NODE_ENV === 'production'
-  ? process.env.VITE_TON_WALLET_ADDRESS
-  : process.env.VITE_TON_TEST_WALLET_ADDRESS || process.env.VITE_TON_WALLET_ADDRESS;
 
-if (!TON_WALLET_ADDRESS) {
+/*if (!TON_WALLET_ADDRESS) {
   console.error('TON钱包地址未配置，环境:', process.env.NODE_ENV);
-}
+}*/
 
 // 创建支付
 app.post('/api/ton/create-payment', async (req: Request<{}, {}, PaymentRequest>, res: Response) => {
@@ -189,7 +197,7 @@ app.post('/api/ton/create-payment', async (req: Request<{}, {}, PaymentRequest>,
 
     // 确保计算正确的 TON 量（确保至少保留 2 位小数）
     const tonAmount = Number(((amount / TON_USD_RATE) * TON_RATE_BUFFER).toFixed(2));
-    console.log('计算的 TON 数量:', { amount, TON_USD_RATE, TON_RATE_BUFFER, tonAmount });
+    console.log('计算的 TON 数���:', { amount, TON_USD_RATE, TON_RATE_BUFFER, tonAmount });
     
     const paymentId = `TON_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
@@ -206,16 +214,22 @@ app.post('/api/ton/create-payment', async (req: Request<{}, {}, PaymentRequest>,
     await savePaymentInfo(payment);
     console.log('支付信息已保存:', payment);
 
+    const walletAddress = getWalletAddress();
+    if (!walletAddress) {
+      throw new Error('钱包地址未配置');
+    }
+
     res.json({ 
       paymentId: payment.id,
       status: payment.status,
       tonAmount: tonAmount.toFixed(2),
-      deepLink: `ton://transfer/${process.env.VITE_TON_TEST_WALLET_ADDRESS}?amount=${tonAmount}&text=Payment_${payment.id}`
+      walletAddress,
+      deepLink: `ton://transfer/${walletAddress}?amount=${tonAmount}&text=Payment_${payment.id}`
     });
   } catch (error) {
     console.error('创建 TON 支付失败:', error);
     res.status(500).json({ 
-      error: '支付服务出错',
+      error: '创建 TON 支付失败',
       message: error instanceof Error ? error.message : '未知错误'
     });
   }
@@ -269,5 +283,5 @@ app.use((req: Request, res: Response) => {
 });
 
 app.listen(port, () => {
-  console.log(`=== TON 支付服务启动完成, 服务运行在: http://localhost:${port} ===`);
+  console.log(`TON 支付服务运行在 http://localhost:${port}`);
 }); 
