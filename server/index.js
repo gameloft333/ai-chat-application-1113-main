@@ -118,7 +118,7 @@ io.on('connection', (socket) => {
         : msg.shadowColor
     }));
     socket.emit('marquee:update', updatedMessages);
-    console.log('发送跑马灯消息:', updatedMessages);
+    // console.log('发送跑马灯消息:', updatedMessages);
   }, Number(process.env.VITE_MARQUEE_REFRESH_INTERVAL) || 5000);
 
   socket.on('disconnect', () => {
