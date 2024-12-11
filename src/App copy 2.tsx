@@ -501,9 +501,48 @@ const AppContent: React.FC<AppRoutesProps> = ({ themeColor }) => {
               />
             </div>
             
-            <div className="flex items-center space-x-3">              
-              <ThemeToggle themeColor={themeColor} />
+            <div className="flex items-center space-x-3">
+            <ThemeToggle themeColor={themeColor} />
+              {!currentUser ? (
+                <button
+                  onClick={() => setShowLoginModal(true)}
+                  className="px-4 py-2 rounded-lg text-white transition-colors"
+                  style={{ backgroundColor: themeColor }}
+                >
+                  {t('auth.login')}
+                </button>
+              ) : (
+                <>
+                  {user?.isPaid ? (
+                    <>
+                      <SubscriptionExpiry 
+                        expiredAt={new Date(user.expiredAt)} 
+                        themeColor={themeColor}
+                      />
+                      <SubscriptionDropdown
+                        planName={user.planName || 'subscription.defaultPlan'}
+                        daysLeft={user.daysLeft || 0}
+                        themeColor={themeColor}
+                        onChangeSubscription={openSubscriptionModal}
+                      />
+                    </>
+                  ) : (
+                    <button
+                      onClick={handleOpenSubscriptionModal}
+                      className="px-4 py-2 rounded-lg text-white transition-colors"
+                      style={{ backgroundColor: themeColor }}
+                    >
+                      {t('subscription.choosePlan')}
+                    </button>
+                  )}
+                  <UserProfileDropdown 
+                    themeColor={themeColor}
+                  />
+                </>
+              )}
               <LanguageSwitch themeColor={themeColor} />
+              <div className="flex items-center gap-4">
+              <ThemeToggle themeColor={themeColor} />
               
               {currentUser ? (
                 <UserProfileDropdown 
@@ -520,6 +559,7 @@ const AppContent: React.FC<AppRoutesProps> = ({ themeColor }) => {
                 </button>
               )}
             </div>              
+            </div>
           </div>
         </header>
           
