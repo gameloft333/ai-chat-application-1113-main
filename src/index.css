@@ -131,3 +131,42 @@ html, body {
   z-index: 50;
   overflow: hidden;
 }
+
+.mobile-preview {
+  @apply bg-gray-900;
+  
+  body {
+    @apply bg-white dark:bg-gray-800;
+    max-width: 420px;
+    margin: 0 auto;
+    height: 100vh;
+    position: relative;
+    overflow: auto;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* 响应式调整 */
+@media (max-width: 420px) {
+  .mobile-preview body {
+    max-width: 100%;
+    box-shadow: none;
+  }
+}
+
+.mobile-nav-item {
+  @apply relative flex flex-col items-center justify-center;
+  
+  &.active {
+    &::after {
+      content: '';
+      @apply absolute -bottom-1 left-1/2 w-1 h-1 bg-blue-500 rounded-full transform -translate-x-1/2;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .page-container {
+    padding-bottom: 4rem;
+  }
+}

@@ -257,5 +257,18 @@ export default {
         networkError: 'Network connection issue, please check your internet connection.',
         apiKeyError: 'Invalid API key, please contact administrator.',
         emptyResponseError: 'AI response is empty, please try again.'
-    }
+    },
+    nav: {
+        home: 'Home',
+        characters: 'Characters',
+        tasks: 'Tasks',
+        profile: 'Profile',
+        wallet: 'Wallet',
+        community: 'Community'
+    },
+    preview: {
+        toggle: 'Toggle Mobile Preview',
+        mobile: 'Mobile Mode',
+        desktop: 'Desktop Mode'
+  }
 };

@@ -261,5 +261,18 @@ export default {
         networkError: '网络连接出现问题，请检查您的网络连接。',
         apiKeyError: 'API密钥无效，请联系管理员。',
         emptyResponseError: 'AI 响应为空，请重试。'
+    },
+    nav: {
+        home: '首页',
+        characters: '角色',
+        tasks: '任务',
+        profile: '我的',
+        wallet: '钱包',
+        community: '社区'
+    },
+    preview: {
+        toggle: '切换手机预览',
+        mobile: '手机模式',
+        desktop: '桌面模式'
     }
 };

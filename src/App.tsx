@@ -40,6 +40,8 @@ import { TonService } from './services/ton-service';
 import { TonPayment } from './components/TonPayment';
 import { ThemeProvider } from './contexts/ThemeContext';
 import ThemeToggle from './components/ThemeToggle';
+import { MobileNavBar } from './components/MobileNavBar';
+import { MobilePreviewToggle } from './components/MobilePreviewToggle';
 
 const API_KEY = import.meta.env.VITE_API_KEY || '';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -193,7 +195,7 @@ const AppContent: React.FC<AppRoutesProps> = ({ themeColor }) => {
     }
   };
 
-  // 在组件顶部初始化 Stripe
+  // 在组件顶部初��化 Stripe
   const stripePromise = useMemo(() => loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY), []);
   
   // 添加支付成功处理函数
@@ -231,6 +233,14 @@ const AppContent: React.FC<AppRoutesProps> = ({ themeColor }) => {
       if (!validDurations.includes(duration)) {
         console.error('无效的订阅周期:', { duration, validDurations });
         throw new Error(t('alerts.error.invalidDuration'));
+      }
+
+      // PayPal 测试账户提示
+      if (paymentMethod === 'paypal') {
+        alert(t('payment.paypal.testAccount', {
+          email: 'sb-6vbqu34102045@personal.example.com',
+          notes: t('payment.paypal.testNotes')
+        }));
       }
 
       // 获取计划和定价信息
@@ -312,7 +322,7 @@ const AppContent: React.FC<AppRoutesProps> = ({ themeColor }) => {
           const stripeService = StripeService.getInstance();
           
           // 确保金额符合最小支付要求（至少 400 cents HKD ≈ 0.51 USD
-          const minAmount = 0.55; // USD，设置为 1 USD 以确保足够��付
+          const minAmount = 0.55; // USD，设置为 1 USD 以确保足够支付
           const amount = Math.max(plan.prices[duration].price, minAmount);
           
           console.log('创建支付意向，参数:', {
@@ -484,27 +494,41 @@ const AppContent: React.FC<AppRoutesProps> = ({ themeColor }) => {
     <>
       <DynamicFavicon selectedCharacter={selectedCharacter} />
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+        {/* 响应式顶部导航 */}
         <header className="sticky top-0 z-50 backdrop-blur-lg bg-white/75 dark:bg-gray-900/75 border-b border-gray-200 dark:border-gray-800">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div className="flex items-center space-x-6">
               <div className="flex items-center space-x-3">
                 <MessageCircle className="w-8 h-8" style={{ color: themeColor }} />
-                <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+                <h1 className="text-xl font-semibold text-gray-900 dark:text-white md:block hidden">
                   Companions
                 </h1>
               </div>
-              <GenderSelector
-                selectedGender={selectedGender}
-                onGenderChange={handleGenderChange}
-                themeColor={themeColor}
-                onPopularCharactersChange={setPopularCharacters}
-              />
+              {/* 在移动端隐藏性别选择器 */}
+              <div className="hidden md:block">
+                <GenderSelector
+                  selectedGender={selectedGender}
+                  onGenderChange={handleGenderChange}
+                  themeColor={themeColor}
+                  onPopularCharactersChange={setPopularCharacters}
+                />
+              </div>
             </div>
             
-            <div className="flex items-center space-x-3">              
+            {/* 右侧工具栏按钮组 */}
+            <div className="flex items-center space-x-3">
+              {/* 手机预览按钮 - 仅在桌面端显示 */}
+              {/* <div className="hidden md:block">
+                <MobilePreviewToggle themeColor={themeColor} />
+              </div> */}
+              
+              {/* 主题切换按钮 */}
               <ThemeToggle themeColor={themeColor} />
+              
+              {/* 语言切换按钮 */}
               <LanguageSwitch themeColor={themeColor} />
               
+              {/* 用户头像/登录按钮 */}
               {currentUser ? (
                 <UserProfileDropdown 
                   user={currentUser}
@@ -519,11 +543,12 @@ const AppContent: React.FC<AppRoutesProps> = ({ themeColor }) => {
                   {t('auth.login')}
                 </button>
               )}
-            </div>              
+            </div>
           </div>
         </header>
           
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* 主内容区域，添加底部padding以适应移动导航栏 */}
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
           {selectedCharacter ? (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-1">
@@ -568,6 +593,10 @@ const AppContent: React.FC<AppRoutesProps> = ({ themeColor }) => {
             />
           )}
         </main>
+
+        {/* 移动端导航栏 */}
+        <MobileNavBar />
+
         <footer className="bg-black bg-opacity-50 text-white p-4 text-center">
           <p style={{ color: randomColor }}>{t('common.copyright')}</p>
         </footer>
