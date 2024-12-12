@@ -195,7 +195,7 @@ const AppContent: React.FC<AppRoutesProps> = ({ themeColor }) => {
     }
   };
 
-  // 在组件顶部初��化 Stripe
+  // 在组件顶部初始化 Stripe
   const stripePromise = useMemo(() => loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY), []);
   
   // 添加支付成功处理函数
@@ -245,9 +245,7 @@ const AppContent: React.FC<AppRoutesProps> = ({ themeColor }) => {
 
       // 获取计划和定价信息
       let plan;
-      if (duration === 'test') {
-        plan = pricingPlans.testPlan;
-      } else if (duration === '1week') {
+      if (duration === '1week' && planId === 'trial') {
         plan = pricingPlans.trialPlan;
       } else {
         plan = pricingPlans.plans.find(p => p.id === planId);
@@ -517,10 +515,16 @@ const AppContent: React.FC<AppRoutesProps> = ({ themeColor }) => {
             
             {/* 右侧工具栏按钮组 */}
             <div className="flex items-center space-x-3">
-              {/* 手机预览按钮 - 仅在桌面端显示 */}
-              {/* <div className="hidden md:block">
-                <MobilePreviewToggle themeColor={themeColor} />
-              </div> */}
+              {/* 订阅计划按钮 */}
+              {currentUser && !user?.isPaid && (
+                <button
+                  onClick={handleOpenSubscriptionModal}
+                  className="px-4 py-2 rounded-lg text-white transition-colors hover:opacity-90"
+                  style={{ backgroundColor: themeColor }}
+                >
+                  {t('subscription.choosePlan')}
+                </button>
+              )}
               
               {/* 主题切换按钮 */}
               <ThemeToggle themeColor={themeColor} />
@@ -587,10 +591,13 @@ const AppContent: React.FC<AppRoutesProps> = ({ themeColor }) => {
               </div>
             </div>
           ) : (
-            <CharacterSelector
-              onSelectCharacter={handleSelectCharacter}
-              selectedGender={selectedGender}
-            />
+            <>
+              {/* 角色选择器 */}
+              <CharacterSelector
+                onSelectCharacter={handleSelectCharacter}
+                selectedGender={selectedGender}
+              />
+            </>
           )}
         </main>
 

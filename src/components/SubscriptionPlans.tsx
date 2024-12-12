@@ -205,22 +205,30 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
 
   // 添加函数来过滤显示的套餐
   const getFilteredPlans = (duration: string) => {
-    // 根据配置过滤套餐
-    const visiblePlans = pricingPlans.plans.filter(plan => 
-      SUBSCRIPTION_CONFIG.planVisibility[plan.id]
-    );
-
-    if (duration === 'test') {
-      return [pricingPlans.testPlan];
-    } else if (duration === '1week') {
-      return [pricingPlans.trialPlan];
-    } else {
-      return visiblePlans.filter(plan => 
-        plan.id !== 'trial' && 
-        plan.id !== 'test'
-      );
+    console.log('当前选择的时长:', duration); // 调试日志
+    
+    let availablePlans = [];
+    
+    if (duration === '1week') {
+      // 如果是一周套餐，添加试用套餐
+      if (pricingPlans.trialPlan && pricingPlans.trialPlan.prices['1week']) {
+        availablePlans.push(pricingPlans.trialPlan);
+      }
     }
+    
+    // 添加其他有对应时长价格的套餐
+    pricingPlans.plans.forEach(plan => {
+      if (plan.prices[duration]) {
+        availablePlans.push(plan);
+      }
+    });
+    
+    console.log('可用套餐:', availablePlans); // 调试日志
+    return availablePlans;
   };
+
+  const availablePlans = getFilteredPlans(selectedDuration);
+  console.log('Available plans:', availablePlans);
 
   return (
     <div 

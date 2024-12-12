@@ -38,7 +38,7 @@ export const pricingPlans = {
     features: [
       'subscription.features.unlimitedChat',
       'subscription.features.basicCharacters',
-      'subscription.features.basicVoice'
+      // 'subscription.features.basicVoice'
     ]
   },
   plans: [
@@ -54,8 +54,8 @@ export const pricingPlans = {
       features: [
         'subscription.features.unlimitedChat',
         'subscription.features.basicCharacters',
-        'subscription.features.basicVoice',
-        'subscription.features.standardSupport'
+        //'subscription.features.basicVoice',
+        //'subscription.features.standardSupport'
       ]
     },
     {
@@ -70,10 +70,11 @@ export const pricingPlans = {
       },
       features: [
         'subscription.features.unlimitedChat',
-        'subscription.features.allCharacters',
-        'subscription.features.advancedVoice',
+        'subscription.features.basicCharacters',
+        //'subscription.features.allCharacters',
+        //'subscription.features.advancedVoice',
         'subscription.features.prioritySupport',
-        'subscription.features.customCharacter',
+        //'subscription.features.customCharacter',
         'subscription.features.advancedMemory'
       ]
     },
@@ -89,12 +90,12 @@ export const pricingPlans = {
       features: [
         'subscription.features.unlimitedChat',
         'subscription.features.allCharacters',
-        'subscription.features.premiumVoice',
+        //'subscription.features.premiumVoice',
         'subscription.features.dedicatedSupport',
-        'subscription.features.customCharacter',
+        //'subscription.features.customCharacter',
         'subscription.features.permanentMemory',
         'subscription.features.exclusiveAccess',
-        'subscription.features.apiAccess'
+        //'subscription.features.apiAccess'
       ]
     }
   ],
