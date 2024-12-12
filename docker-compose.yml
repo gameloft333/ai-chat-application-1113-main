@@ -32,11 +32,11 @@ services:
     command: >
       sh -c "
         echo '清理构建目录...' &&
-        rm -rf dist/* &&
+        npm run clean &&
         echo '开始构建前端项目...' &&
-        npm run build &&
+        npm run build:prod &&
         echo '构建完成，开始预览...' &&
-        npm run preview
+        npm run preview:prod
       "
     restart: unless-stopped
     healthcheck:
@@ -66,18 +66,19 @@ services:
     depends_on:
       - frontend
     restart: unless-stopped
+    command: npm run server:prod
 
   # Telegram 支付服务
-  telegram-payment:
-    build:
-      context: ./telegram-payment
-      dockerfile: Dockerfile
-    environment:
-      - VITE_TELEGRAM_BOT_TOKEN=${VITE_TELEGRAM_BOT_TOKEN}
-      - VITE_TELEGRAM_PAYMENT_PROVIDER_TOKEN=${VITE_TELEGRAM_PAYMENT_PROVIDER_TOKEN}
-    depends_on:
-      - payment
-    restart: unless-stopped
+  #telegram-payment:
+  #  build:
+  #    context: ./telegram-payment
+  #    dockerfile: Dockerfile
+  #  environment:
+  #    - VITE_TELEGRAM_BOT_TOKEN=${VITE_TELEGRAM_BOT_TOKEN}
+  #    - VITE_TELEGRAM_PAYMENT_PROVIDER_TOKEN=${VITE_TELEGRAM_PAYMENT_PROVIDER_TOKEN}
+  #  depends_on:
+  #    - payment
+  #  restart: unless-stopped
 
 networks:
   default:

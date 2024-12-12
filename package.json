@@ -30,7 +30,9 @@
     "version:major": "node scripts/update-version.js major",
     "version:minor": "node scripts/update-version.js minor",
     "version:patch": "node scripts/update-version.js patch",
-    "commit": "scripts/run-commit.bat"
+    "commit": "scripts/run-commit.bat",
+    "prod": "npm install && npm run clean && npm run build:prod && npm run preview:prod",
+    "prod:server": "npm run server:prod"
   },
   "dependencies": {
     "@firebase/auth": "^1.6.0",
