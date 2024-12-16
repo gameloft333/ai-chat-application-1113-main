@@ -18,9 +18,9 @@ export const PAYMENT_CONFIG = {
     }
   },
   enabledMethods: {
-    paypal: import.meta.env.VITE_ENABLE_PAYPAL === 'true',
-    stripe: import.meta.env.VITE_ENABLE_STRIPE === 'true',
-    ton: import.meta.env.VITE_ENABLE_TON === 'true'
+    paypal: false,
+    stripe: true,
+    ton: false
   },
   
   // 获取支付环境状态的工具函数
