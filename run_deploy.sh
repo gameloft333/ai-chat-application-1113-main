@@ -50,6 +50,46 @@ check_dependencies() {
     success "依赖检查通过"
 }
 
+# 检查环境变量文件
+check_env_file() {
+    log "检查环境变量文件..."
+    
+    if [ ! -f ".env.production" ]; then
+        error "未找到 .env.production 文件"
+        log "请创建 .env.production 文件并配置以下环境变量："
+        echo "
+需要配置的环境变量：
+
+# AI API Keys
+- VITE_MOONSHOT_API_KEY
+- VITE_GEMINI_API_KEY
+
+# Payment Config - Production Mode
+- VITE_STRIPE_MODE
+- STRIPE_SECRET_KEY
+- VITE_STRIPE_PUBLISHABLE_KEY
+
+# Firebase Config
+- VITE_FIREBASE_API_KEY
+- VITE_FIREBASE_AUTH_DOMAIN
+- VITE_FIREBASE_PROJECT_ID
+- VITE_FIREBASE_STORAGE_BUCKET
+- VITE_FIREBASE_MESSAGING_SENDER_ID
+- VITE_FIREBASE_APP_ID
+- VITE_FIREBASE_MEASUREMENT_ID
+
+# App Config
+- VITE_API_KEY
+- NODE_ENV=production
+
+请确保所有环境变量都已正确配置后再运行部署脚本。
+"
+        exit 1
+    else
+        success "已找到 .env.production 文件"
+    fi
+}
+
 # 清理环境
 cleanup() {
     log "开始清理环境..."
@@ -127,11 +167,12 @@ show_status() {
 }
 
 # 主函数
+# 主函数
 main() {
-    log "开始部署服务..."
-    
+    log "开始部署服务..."    
     check_dependencies
-    check_and_stop_services  # 新增：检查并停止运行中的服务
+    check_env_file      # 新增：检查环境变量文件
+    check_and_stop_services
     cleanup
     build_services
     start_services
