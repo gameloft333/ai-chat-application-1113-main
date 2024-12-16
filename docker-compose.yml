@@ -7,6 +7,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - "4173:4173"  # Vite 生产预览端口
+    env_file:
+      - .env.production  # 使用生产环境配置文件
     environment:
       # AI API Keys
       - VITE_MOONSHOT_API_KEY=${VITE_MOONSHOT_API_KEY}
@@ -34,19 +36,22 @@ services:
     user: "node"
     command: >
       sh -c "
+        echo '等待系统初始化...' &&
+        sleep 10 &&
         echo '清理构建目录...' &&
         rm -rf dist/* &&
         echo '开始构建前端项目...' &&
         npm run build &&
         echo '构建完成，开始预览...' &&
-        npm run preview
+        npm run preview --host 0.0.0.0
       "
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:4173"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      interval: 60s
+      timeout: 30s
+      retries: 5
+      start_period: 60s
 
   # 统一支付服务
   payment:
@@ -55,6 +60,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - "4242:4242"
+    env_file:
+      - .env.production  # 使用生产环境配置文件
     environment:
       - PORT=4242
       # Stripe Config
@@ -66,6 +73,7 @@ services:
       # - VITE_PAYPAL_CLIENT_ID=${VITE_PAYPAL_CLIENT_ID}
       # - VITE_PAYPAL_CLIENT_SECRET=${VITE_PAYPAL_CLIENT_SECRET}
       # - VITE_PAYPAL_API_URL=${VITE_PAYPAL_API_URL}
+      - NODE_ENV=production
     depends_on:
       - frontend
     restart: unless-stopped
