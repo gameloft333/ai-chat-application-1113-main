@@ -19,6 +19,20 @@ error() {
     echo -e "${RED}[$(date +'%Y-%m-%d %H:%M:%S')] ✗ $1${NC}"
 }
 
+# 检查并停止运行中的服务
+check_and_stop_services() {
+    log "检查运行中的服务..."
+    
+    # 检查是否有运行中的容器
+    if docker-compose ps -q | grep -q .; then
+        log "发现运行中的服务，正在停止..."
+        docker-compose down
+        success "已停止所有运行中的服务"
+    else
+        log "没有运行中的服务"
+    fi
+}
+
 # 检查 docker 和 docker-compose 是否安装
 check_dependencies() {
     log "检查依赖..."
@@ -31,7 +45,7 @@ check_dependencies() {
     if ! command -v docker-compose &> /dev/null; then
         error "未找到 docker-compose，请先安装 docker-compose"
         exit 1
-    }
+    fi
     
     success "依赖检查通过"
 }
@@ -81,6 +95,7 @@ check_health() {
     log "检查服务健康状态..."
     
     # 等待服务启动
+    log "等待服务启动（30秒）..."
     sleep 30
     
     # 检查前端服务
@@ -116,6 +131,7 @@ main() {
     log "开始部署服务..."
     
     check_dependencies
+    check_and_stop_services  # 新增：检查并停止运行中的服务
     cleanup
     build_services
     start_services
