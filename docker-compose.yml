@@ -64,6 +64,7 @@ services:
       - .env.production  # 使用生产环境配置文件
     environment:
       - PORT=4242
+      - NODE_ENV=production
       # Stripe Config
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
       - VITE_STRIPE_PUBLISHABLE_KEY=${VITE_STRIPE_PUBLISHABLE_KEY}
@@ -75,8 +76,21 @@ services:
       # - VITE_PAYPAL_API_URL=${VITE_PAYPAL_API_URL}
       - NODE_ENV=production
     depends_on:
-      - frontend
+      frontend:
+        condition: service_healthy
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:4242"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    command: >
+      sh -c "
+        echo '等待系统初始化...' &&
+        sleep 15 &&
+        node index.js
+      "
 
   # 注释掉 Telegram 支付服务，但保留配置供后续使用
   # telegram-payment:

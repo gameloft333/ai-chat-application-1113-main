@@ -8,9 +8,17 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 4242;
 
+// 添加错误处理中间件
+process.on('uncaughtException', (err) => {
+  console.error('未捕获的异常:', err);
+});
+
+process.on('unhandledRejection', (err) => {
+  console.error('未处理的 Promise 拒绝:', err);
+});
+
 if (!process.env.STRIPE_SECRET_KEY) {
-  console.error('错误: 未设置 STRIPE_SECRET_KEY 环境变量');
-  process.exit(1);
+  console.error('警告: 未设置 STRIPE_SECRET_KEY 环境变量，使用测试模式');
 }
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
