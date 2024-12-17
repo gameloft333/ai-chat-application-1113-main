@@ -24,9 +24,9 @@ check_and_stop_services() {
     log "检查运行中的服务..."
     
     # 检查是否有运行中的容器
-    if docker-compose ps -q | grep -q .; then
+    if docker-compose -f docker-compose.prod.yml ps -q | grep -q .; then
         log "发现运行中的服务，正在停止..."
-        docker-compose down
+        docker-compose -f docker-compose.prod.yml down
         success "已停止所有运行中的服务"
     else
         log "没有运行中的服务"
@@ -95,7 +95,7 @@ cleanup() {
     log "开始清理环境..."
     
     log "停止所有容器..."
-    docker-compose down
+    docker-compose -f docker-compose.prod.yml down
     
     log "清理 Docker 缓存..."
     docker system prune -f
@@ -110,7 +110,7 @@ cleanup() {
 build_services() {
     log "开始构建服务..."
     
-    if docker-compose build --no-cache; then
+    if docker-compose -f docker-compose.prod.yml build --no-cache; then
         success "服务构建成功"
     else
         error "服务构建失败"
@@ -122,7 +122,7 @@ build_services() {
 start_services() {
     log "开始启动服务..."
     
-    if docker-compose up -d; then
+    if docker-compose -f docker-compose.prod.yml up -d; then
         success "服务启动成功"
     else
         error "服务启动失败"
@@ -156,20 +156,19 @@ check_health() {
 # 显示服务状态
 show_status() {
     log "当前服务状态："
-    docker-compose ps
+    docker-compose -f docker-compose.prod.yml ps
     
     log "服务访问地址："
     echo "前端服务: http://localhost:4173"
     echo "支付服务: http://localhost:4242"
     
     log "查看服务日志（按 Ctrl+C 退出）..."
-    docker-compose logs -f
+    docker-compose -f docker-compose.prod.yml logs -f
 }
 
 # 主函数
-# 主函数
 main() {
-    log "开始部署服务..."    
+    log "开始部署生产环境服务..."
     check_dependencies
     check_env_file      # 新增：检查环境变量文件
     check_and_stop_services
