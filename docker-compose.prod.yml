@@ -13,6 +13,9 @@ services:
       - .env.production
     environment:
       - NODE_ENV=production
+      # Marquee Config
+      - VITE_MARQUEE_ENABLED=true
+      - VITE_MARQUEE_ANIMATION_DURATION=20000
     command: >
       sh -c "
         export PATH=/app/node_modules/.bin:$PATH &&

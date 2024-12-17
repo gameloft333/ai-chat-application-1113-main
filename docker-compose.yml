@@ -28,6 +28,9 @@ services:
       # Stripe Config
       - VITE_STRIPE_PUBLISHABLE_KEY=${VITE_STRIPE_PUBLISHABLE_KEY}
       - VITE_STRIPE_MODE=${VITE_STRIPE_MODE}
+      # Marquee Config
+      - VITE_MARQUEE_ENABLED=true
+      - VITE_MARQUEE_ANIMATION_DURATION=20000
       - HOST=0.0.0.0
     volumes:
       - ./src:/app/src:ro
@@ -110,4 +113,4 @@ networks:
 
 volumes:
   payment_data:
-    driver: local 
+    driver: local
