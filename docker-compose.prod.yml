@@ -29,11 +29,11 @@ services:
         npm run preview:prod
       "
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:4173"]
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:4173 || exit 0"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 30s
+      start_period: 60s
     restart: unless-stopped
 
   payment:

@@ -56,38 +56,35 @@ check_env_file() {
     
     if [ ! -f ".env.production" ]; then
         error "未找到 .env.production 文件"
-        log "请创建 .env.production 文件并配置以下环境变量："
-        echo "
-需要配置的环境变量：
-
-# AI API Keys
-- VITE_MOONSHOT_API_KEY
-- VITE_GEMINI_API_KEY
-
-# Payment Config - Production Mode
-- VITE_STRIPE_MODE
-- STRIPE_SECRET_KEY
-- VITE_STRIPE_PUBLISHABLE_KEY
-
-# Firebase Config
-- VITE_FIREBASE_API_KEY
-- VITE_FIREBASE_AUTH_DOMAIN
-- VITE_FIREBASE_PROJECT_ID
-- VITE_FIREBASE_STORAGE_BUCKET
-- VITE_FIREBASE_MESSAGING_SENDER_ID
-- VITE_FIREBASE_APP_ID
-- VITE_FIREBASE_MEASUREMENT_ID
-
-# App Config
-- VITE_API_KEY
-- NODE_ENV=production
-
-请确保所有环境变量都已正确配置后再运行部署脚本。
-"
+        log "请参考 README.md 中的环境变量配置说明进行设置"
         exit 1
-    else
-        success "已找到 .env.production 文件"
+    }
+
+    # 验证必需的环境变量（仅检查是否存在，不显示具体值）
+    local missing_vars=()
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        # 跳过注释和空行
+        [[ $line =~ ^#.*$ ]] || [[ -z $line ]] && continue
+        # 获取等号前的变量名
+        var_name=$(echo "$line" | cut -d'=' -f1)
+        # 检查变量是否在 .env.production 中定义
+        if ! grep -q "^${var_name}=" .env.production; then
+            missing_vars+=("$var_name")
+        fi
+    done < .env.template
+
+    if [ ${#missing_vars[@]} -ne 0 ]; then
+        error "以下环境变量未在 .env.production 中设置："
+        printf '%s\n' "${missing_vars[@]}"
+        exit 1
     fi
+
+    # 导出环境变量
+    set -a
+    source .env.production
+    set +a
+
+    success "环境变量检查通过"
 }
 
 # 清理环境
@@ -121,13 +118,40 @@ build_services() {
 # 启动服务
 start_services() {
     log "开始启动服务..."
+    local max_retries=3
+    local retry_count=0
     
-    if docker-compose -f docker-compose.prod.yml up -d; then
-        success "服务启动成功"
-    else
-        error "服务启动失败"
-        exit 1
-    fi
+    while [ $retry_count -lt $max_retries ]; do
+        if docker-compose -f docker-compose.prod.yml up -d; then
+            # 等待服务启动
+            log "等待服务启动（30秒）..."
+            sleep 30
+            
+            # 检查服务状态
+            if docker-compose -f docker-compose.prod.yml ps | grep -q "unhealthy"; then
+                error "服务启动异常，查看日志..."
+                docker-compose -f docker-compose.prod.yml logs
+                ((retry_count++))
+                
+                if [ $retry_count -lt $max_retries ]; then
+                    log "尝试重启服务（第 $retry_count 次）..."
+                    docker-compose -f docker-compose.prod.yml down
+                    sleep 10
+                    continue
+                fi
+            else
+                success "服务启动成功"
+                return 0
+            fi
+        else
+            error "服务启动失败"
+            docker-compose -f docker-compose.prod.yml logs
+            exit 1
+        fi
+    done
+    
+    error "服务启动失败，已达到最大重试次数"
+    exit 1
 }
 
 # 检查服务健康状态
