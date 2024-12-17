@@ -109,6 +109,8 @@ export default {
         stripeProcessing: '正在处理 Stripe 支付...',
         stripeSuccess: 'Stripe 支付成功！',
         stripeFailed: 'Stripe 支付失败，请重试',
+        confirmTitle: '支付确认',
+        cardInput: '请输入卡号',
         ton: {
             title: 'TON 支付',
             checking: '正在检查支付状态...',
@@ -147,7 +149,30 @@ export default {
             paypal: '使用 PayPal 支付',
             stripe: '使用 Stripe 支付',
             ton: '使用 TON 支付'
-        }
+        },
+        testMode: {
+            notice: '如果遇到支付问题，请使用稳定IP的网络连接，并使用以下测试卡号进行支付',
+            cardNumber: '测试卡号',
+            expiry: '有效期',
+            cvc: 'CVC',
+            postal: '邮编'
+        },
+        errors: {
+            postalCode: '请输入完整的邮政编码',
+            initFailed: '支付服务初始化失败',
+            formNotLoaded: '支付表单未加载完成',
+            connectionFailed: '支付服务连接失败，请检查网络连接后重试',
+            processingFailed: '支付处理失败',
+            liveTestCard: '无效的支付卡号：请使用真实的支付卡，而不是测试卡号',
+            cardDeclined: '支付卡被拒绝，请检查卡片信息或尝试使用其他支付方式',
+            cardValidationFailed: '支付卡验证失败'
+        },
+        processing: '正在处理...',
+        pay: '支付',
+        amount: '{{amount}} {{currency}}',
+        confirmTitle: '支付确认',
+        cardNumber: '卡号',
+        processing: '处理中...'
     },
     alerts: {
         error: {
@@ -247,7 +272,7 @@ export default {
         inputPlaceholder: '输入消息...',
         send: '发送',
         thinking: '正在思考...',
-        errorMessage: '对不起，我现在遇到了一些技术问题。让我们稍后再聊吧���',
+        errorMessage: '对不起，我现在遇到了一些技术问题。让我们稍后再聊吧',
         retry: '重试',
         speaking: '正在播放语音...',
         stopSpeaking: '停止播放',

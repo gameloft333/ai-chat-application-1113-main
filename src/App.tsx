@@ -42,6 +42,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import ThemeToggle from './components/ThemeToggle';
 import { MobileNavBar } from './components/MobileNavBar';
 import { MobilePreviewToggle } from './components/MobilePreviewToggle';
+import './styles/payment.css';
 
 const API_KEY = import.meta.env.VITE_API_KEY || '';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -96,6 +97,7 @@ const AppContent: React.FC<AppRoutesProps> = ({ themeColor }) => {
     userEmail: string;
     price: number;
     expiredAt: Date;
+    onClose: () => void;
   } | null>(null);
   const [characterStats, setCharacterStats] = useState<Record<string, number>>({});
   const [popularCharacters, setPopularCharacters] = useState<string[]>([]);
@@ -366,7 +368,11 @@ const AppContent: React.FC<AppRoutesProps> = ({ themeColor }) => {
             userId: currentUser.uid,
             userEmail: currentUser.email || '',
             price: plan.prices[duration].price,
-            expiredAt: expiredAt
+            expiredAt: expiredAt,
+            onClose: () => {
+              setShowStripePaymentModal(false); // 关闭支付模态框
+              console.log('用户取消支付');
+            }
           });
         } catch (error) {
           console.error('Stripe 支付初始化失败:', {

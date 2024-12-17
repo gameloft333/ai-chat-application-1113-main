@@ -146,6 +146,22 @@ export default {
             paypal: 'Pay with PayPal',
             stripe: 'Pay with Stripe',
             ton: 'Pay with TON'
+        },
+        confirmTitle: 'Payment Confirmation',
+        cardInput: 'Enter Card Number',
+        amount: '{{amount}} {{currency}}',
+        pay: 'Pay',
+        cancel: 'Cancel',
+        processing: 'Processing...',
+        errors: {
+            postalCode: 'Please enter a complete postal code',
+            initFailed: 'Payment service initialization failed',
+            formNotLoaded: 'Payment form not loaded',
+            connectionFailed: 'Payment service connection failed, please check your network connection and try again',
+            processingFailed: 'Payment processing failed',
+            liveTestCard: 'Invalid card number: Please use a real payment card instead of a test card',
+            cardDeclined: 'Card declined, please check your card information or try another payment method',
+            cardValidationFailed: 'Card validation failed'
         }
     },
     alerts: {

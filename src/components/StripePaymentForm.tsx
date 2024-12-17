@@ -5,6 +5,8 @@ import { StripeService } from '../services/stripe-service';
 import { PaymentRecord } from '../types/payment';
 import { PaymentRecordService } from '../services/payment-record-service';
 import { calculateExpiryDate } from '../utils/payment-utils';
+import { useTranslation } from 'react-i18next';
+import { PAYMENT_CONFIG } from '../config/payment-config';
 
 interface StripePaymentFormProps {
   amount: number;
@@ -15,6 +17,7 @@ interface StripePaymentFormProps {
   userEmail: string;
   onSuccess: () => void;
   onError: (error: string) => void;
+  onClose: () => void;
   themeColor: string;
 }
 
@@ -28,14 +31,21 @@ export const StripePaymentForm: React.FC<StripePaymentFormProps> = ({
   userEmail,
   onSuccess,
   onError,
+  onClose,
   themeColor
 }) => {
-  const { t } = useLanguage();
-  const stripe = useStripe();
-  const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [postalCode, setPostalCode] = useState('');
+  const stripe = useStripe();
+  const elements = useElements();
+  const { t } = useTranslation();
+  
+  // 获取环境变量和支付配置
+  const isProduction = import.meta.env.PROD;
+  const isTestMode = PAYMENT_CONFIG.environments.stripe.testMode;
+
+  // 只在非生产环境且为测试模式时显示测试信息
+  const showTestInfo = !isProduction && isTestMode;
 
   useEffect(() => {
     console.log('StripePaymentForm mounted with:', { clientSecret, amount, currency });
@@ -83,7 +93,24 @@ export const StripePaymentForm: React.FC<StripePaymentFormProps> = ({
             }
           }
           console.error('支付确认错误:', error);
-          throw error;
+          
+          // 根据错误类型返回适当的中文错误信息
+          let userErrorMessage = t('payment.errors.processingFailed');
+          if (error.type === 'card_error') {
+            switch (error.code) {
+              case 'card_declined':
+                if (error.decline_code === 'live_mode_test_card') {
+                  userErrorMessage = t('payment.errors.liveTestCard');
+                } else {
+                  userErrorMessage = t('payment.errors.cardDeclined');
+                }
+                break;
+              default:
+                userErrorMessage = error.message || t('payment.errors.cardValidationFailed');
+            }
+          }
+          
+          throw new Error(userErrorMessage);
         }
 
         if (paymentIntent.status === 'succeeded') {
@@ -125,54 +152,97 @@ export const StripePaymentForm: React.FC<StripePaymentFormProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="p-4 border rounded-lg space-y-4">
-        <CardElement
-          options={{
-            style: {
-              base: {
-                fontSize: '16px',
-                color: '#424770',
-                '::placeholder': {
-                  color: '#aab7c4',
+    <div className="max-w-md mx-auto p-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            {t('payment.cardInput')}
+          </label>
+          <CardElement
+            options={{
+              style: {
+                base: {
+                  fontSize: '16px',
+                  color: 'currentColor',
+                  '::placeholder': {
+                    color: '#6B7280',
+                  },
+                },
+                invalid: {
+                  color: '#EF4444',
                 },
               },
-              invalid: {
-                color: '#9e2146',
-              },
-            },
-            hidePostalCode: false,
-          }}
-        />
-      </div>
-      
-      {errorMessage && (
-        <div className="text-red-500 text-sm">
-          {errorMessage === 'Your postal code is incomplete.' ? '请输入完整的邮政编码' : errorMessage}
+              hidePostalCode: false,
+            }}
+            className="w-full p-4 border rounded-lg bg-gray-50 dark:bg-gray-700 
+              border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 
+              transition-all duration-200"
+          />
         </div>
-      )}
-      
-      <div className="text-sm text-gray-500">
-        如果遇到支付问题，请使用稳定IP的网络连接，并使用以下测试卡号进行支付：
-        <br />
-        测试卡号：4242 4242 4242 4242
-        <br />
-        有效期：任意未来日期（如：12/25）
-        <br />
-        CVC：任意三位数（如：123）
-        <br />
-        邮编：任意五位数（如：12345）
-      </div>
-      
-      <button
-        type="submit"
-        disabled={!stripe || isProcessing}
-        className={`w-full py-2 px-4 rounded-lg text-white ${
-          isProcessing ? 'bg-gray-400' : `bg-[${themeColor}]`
-        }`}
-      >
-        {isProcessing ? '处理中...' : `支付 ${amount} ${currency}`}
-      </button>
-    </form>
+        
+        {errorMessage && (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 p-4 rounded-lg text-sm">
+            {errorMessage === 'Your postal code is incomplete.' ? t('payment.errors.postalCode') : errorMessage}
+          </div>
+        )}
+        
+        {/* 仅在非生产环境且测试模式时显示测试信息 */}
+        {showTestInfo && (
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-lg">
+            <p className="text-sm text-blue-700 dark:text-blue-400">
+              {t('payment.testMode.notice')}
+              <br />
+              {t('payment.testMode.cardNumber')}: 4242 4242 4242 4242
+              <br />
+              {t('payment.testMode.expiry')}: 12/25
+              <br />
+              {t('payment.testMode.cvc')}: 123
+              <br />
+              {t('payment.testMode.postal')}: 12345
+            </p>
+          </div>
+        )}
+        
+        <div className="flex gap-4 mt-8">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 h-12 rounded-lg font-medium 
+              bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 
+              dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200
+              transition-all duration-200"
+          >
+            {t('payment.cancel')}
+          </button>
+          
+          <button
+            type="submit"
+            disabled={!stripe || isProcessing}
+            style={{ backgroundColor: themeColor }}
+            className={`
+              flex-1 h-12 rounded-lg font-medium
+              flex items-center justify-center gap-2
+              ${isProcessing ? 'opacity-70 cursor-not-allowed' : 'hover:opacity-90'}
+              disabled:opacity-50 disabled:cursor-not-allowed
+              text-white transition-all duration-200
+            `}
+          >
+            {isProcessing ? (
+              <>
+                <span className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></span>
+                {t('payment.processing')}
+              </>
+            ) : (
+              <>
+                <span>{t('payment.pay')}</span>
+                <span className="font-medium">
+                  {t('payment.amount', { amount, currency })}
+                </span>
+              </>
+            )}
+          </button>
+        </div>
+      </form>
+    </div>
   );
 };
