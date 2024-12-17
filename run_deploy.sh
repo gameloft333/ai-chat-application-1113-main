@@ -12,11 +12,11 @@ log() {
 }
 
 success() {
-    echo -e "${GREEN}[$(date +'%Y-%m-%d %H:%M:%S')] ✓ $1${NC}"
+    echo -e "${GREEN}[$(date +'%Y-%m-%d %H:%M:%S')] $1${NC}"
 }
 
 error() {
-    echo -e "${RED}[$(date +'%Y-%m-%d %H:%M:%S')] ✗ $1${NC}"
+    echo -e "${RED}[$(date +'%Y-%m-%d %H:%M:%S')] $1${NC}"
 }
 
 # 检查并停止运行中的服务
@@ -55,36 +55,10 @@ check_env_file() {
     log "检查环境变量文件..."
     
     if [ ! -f ".env.production" ]; then
-        error "未找到 .env.production 文件"
-        log "请参考 README.md 中的环境变量配置说明进行设置"
-        exit 1
-    }
-
-    # 验证必需的环境变量（仅检查是否存在，不显示具体值）
-    local missing_vars=()
-    while IFS= read -r line || [[ -n "$line" ]]; do
-        # 跳过注释和空行
-        [[ $line =~ ^#.*$ ]] || [[ -z $line ]] && continue
-        # 获取等号前的变量名
-        var_name=$(echo "$line" | cut -d'=' -f1)
-        # 检查变量是否在 .env.production 中定义
-        if ! grep -q "^${var_name}=" .env.production; then
-            missing_vars+=("$var_name")
-        fi
-    done < .env.template
-
-    if [ ${#missing_vars[@]} -ne 0 ]; then
-        error "以下环境变量未在 .env.production 中设置："
-        printf '%s\n' "${missing_vars[@]}"
+        error "环境变量文件 .env.production 不存在"
         exit 1
     fi
-
-    # 导出环境变量
-    set -a
-    source .env.production
-    set +a
-
-    success "环境变量检查通过"
+    success "环境变量文件检查通过"
 }
 
 # 清理环境
@@ -122,7 +96,7 @@ start_services() {
     local retry_count=0
     
     while [ $retry_count -lt $max_retries ]; do
-        if docker-compose -f docker-compose.prod.yml up -d; then
+        if docker-compose --env-file .env.production -f docker-compose.prod.yml up -d; then
             # 等待服务启动
             log "等待服务启动（30秒）..."
             sleep 30
@@ -194,7 +168,7 @@ show_status() {
 main() {
     log "开始部署生产环境服务..."
     check_dependencies
-    check_env_file      # 新增：检查环境变量文件
+    check_env_file      
     check_and_stop_services
     cleanup
     build_services
