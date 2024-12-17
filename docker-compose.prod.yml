@@ -5,6 +5,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - NODE_ENV=production
     ports:
       - "4173:4173"
     env_file:
@@ -14,7 +16,6 @@ services:
     command: >
       sh -c "
         export PATH=/app/node_modules/.bin:$PATH &&
-        npm install &&
         npm run clean &&
         npm run build:prod &&
         npm run preview:prod
