@@ -2,19 +2,19 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# 全局安装 rimraf
-RUN npm install -g rimraf
+# 安装必要的全局依赖
+RUN npm install -g rimraf vite typescript
 
 # 复制 package.json 和 package-lock.json
 COPY package*.json ./
 
-# 安装依赖
+# 安装项目依赖
 RUN npm install
 
 # 复制源代码和环境变量文件
 COPY . .
 
-# 确保环境变量文件存在
+# 确保环境变量文件存在并且内容正确
 COPY .env.production .env
 
 # 暴露端口
