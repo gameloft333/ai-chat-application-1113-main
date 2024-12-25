@@ -94,20 +94,27 @@ export const StripePaymentForm: React.FC<StripePaymentFormProps> = ({
           }
           console.error('支付确认错误:', error);
           
-          // 根据错误类型返回适当的中文错误信息
+          // 首先处理测试卡在生产环境的情况
+          if (error.type === 'card_error' && error.decline_code === 'live_mode_test_card') {
+            const errorMessage = t('payment.errors.liveTestCard');
+            setErrorMessage(errorMessage);
+            onError(errorMessage);
+            setIsProcessing(false);
+            return;
+          }
+          
+          // 处理其他错误类型
           let userErrorMessage = t('payment.errors.processingFailed');
           if (error.type === 'card_error') {
             switch (error.code) {
               case 'card_declined':
-                if (error.decline_code === 'live_mode_test_card') {
-                  userErrorMessage = t('payment.errors.liveTestCard');
-                } else {
-                  userErrorMessage = t('payment.errors.cardDeclined');
-                }
+                userErrorMessage = t('payment.errors.cardDeclined');
                 break;
               default:
-                userErrorMessage = error.message || t('payment.errors.cardValidationFailed');
+                userErrorMessage = t('payment.errors.cardValidationFailed');
             }
+          } else if (error.type === 'api_connection_error') {
+            userErrorMessage = t('payment.errors.connectionFailed');
           }
           
           throw new Error(userErrorMessage);
