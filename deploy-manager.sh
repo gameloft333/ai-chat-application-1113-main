@@ -190,7 +190,7 @@ check_env_file() {
 cleanup() {
     log "开始清理环境..."
     
-    log "停止所有容器..."
+    log "停止所有容器..."s
     docker-compose -f docker-compose.prod.yml down
     
     log "清理 Docker 缓存..."
