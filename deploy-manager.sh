@@ -146,6 +146,39 @@ check_env_file() {
         error "环境变量文件 .env.production 不存在"
         exit 1
     fi
+    
+    # 检查必需的环境变量
+    required_vars=(
+        "VITE_API_KEY"
+        "VITE_MOONSHOT_API_KEY"
+        "VITE_GEMINI_API_KEY"
+        "VITE_FIREBASE_API_KEY"
+        "VITE_FIREBASE_AUTH_DOMAIN"
+        "VITE_FIREBASE_PROJECT_ID"
+        "VITE_FIREBASE_STORAGE_BUCKET"
+        "VITE_FIREBASE_MESSAGING_SENDER_ID"
+        "VITE_FIREBASE_APP_ID"
+        "VITE_FIREBASE_MEASUREMENT_ID"
+        "VITE_STRIPE_PUBLISHABLE_KEY"
+        "VITE_STRIPE_MODE"
+        "STRIPE_SECRET_KEY"
+    )
+    
+    missing_vars=()
+    for var in "${required_vars[@]}"; do
+        if ! grep -q "^${var}=" .env.production; then
+            missing_vars+=("$var")
+        fi
+    done
+    
+    if [ ${#missing_vars[@]} -ne 0 ]; then
+        error "以下环境变量未在 .env.production 中设置："
+        for var in "${missing_vars[@]}"; do
+            echo "- $var"
+        done
+        exit 1
+    fi
+    
     success "环境变量文件检查通过"
 }
 
@@ -167,6 +200,39 @@ cleanup() {
 
 # 构建和启动服务
 deploy_services() {
+    log "开始部署服务..."
+    
+    # 1. 检查环境变量文件
+    if [ ! -f ".env.production" ]; then
+        error ".env.production 文件不存在，请确保已正确配置环境变量文件"
+        exit 1
+    fi
+    
+    # 2. 检查环境变量
+    check_env_file
+    
+    # 3. 完整的清理流程
+    log "执行完整清理..."
+    
+    # 4. 停止所有相关容器
+    docker-compose -f docker-compose.prod.yml down --remove-orphans
+    
+    # 5. 检查并结束占用端口的进程
+    for port in 4173 4242; do
+        log "检查端口 ${port} 占用情况..."
+        if lsof -i :${port} > /dev/null; then
+            log "端口 ${port} 被占用，尝试释放..."
+            sudo lsof -t -i:${port} | xargs -r kill -9
+        fi
+    done
+    
+    # 6. 清理 Docker 资源
+    log "清理 Docker 资源..."
+    docker system prune -f
+    docker volume prune -f
+    docker network prune -f
+    
+    # 7. 开始构建和部署
     log "开始构建服务..."
     if ! docker-compose -f docker-compose.prod.yml build --no-cache; then
         error "服务构建失败"
@@ -174,29 +240,54 @@ deploy_services() {
     fi
     success "服务构建成功"
     
+    # 8. 启动服务并监控健康状态
     log "开始启动服务..."
     local max_retries=3
     local retry_count=0
     
     while [ $retry_count -lt $max_retries ]; do
         if docker-compose --env-file .env.production -f docker-compose.prod.yml up -d; then
-            log "等待服务启动（30秒）..."
-            sleep 30
+            log "服务已启动，等待健康检查..."
             
-            if docker-compose -f docker-compose.prod.yml ps | grep -q "unhealthy"; then
-                error "服务启动异常，查看日志..."
-                docker-compose -f docker-compose.prod.yml logs
-                ((retry_count++))
+            # 循环检查每个服务的状态
+            for i in {1..30}; do
+                log "检查服务状态... (${i}/30)"
                 
-                if [ $retry_count -lt $max_retries ]; then
-                    log "尝试重启服务（第 $retry_count 次）..."
-                    docker-compose -f docker-compose.prod.yml down
-                    sleep 10
-                    continue
+                # 获取每个服务的状态
+                frontend_status=$(docker-compose -f docker-compose.prod.yml ps frontend | grep -o "healthy\|unhealthy\|starting" || echo "unknown")
+                payment_status=$(docker-compose -f docker-compose.prod.yml ps payment | grep -o "healthy\|unhealthy\|starting" || echo "unknown")
+                nginx_status=$(docker-compose -f docker-compose.prod.yml ps nginx | grep -o "healthy\|unhealthy\|starting" || echo "unknown")
+                
+                echo "Frontend: ${frontend_status} | Payment: ${payment_status} | Nginx: ${nginx_status}"
+                
+                if [[ "$frontend_status" == "healthy" ]] && 
+                   [[ "$payment_status" == "healthy" ]] && 
+                   [[ "$nginx_status" == "healthy" ]]; then
+                    success "所有服务已成功启动并通过健康检查"
+                    return 0
                 fi
-            else
-                success "服务启动成功"
-                return 0
+                
+                # 显示不健康服务的日志
+                for service in "frontend" "payment" "nginx"; do
+                    status_var="${service}_status"
+                    if [[ "${!status_var}" == "unhealthy" ]]; then
+                        error "${service} 服务不健康，最新日志："
+                        docker-compose -f docker-compose.prod.yml logs --tail=50 ${service}
+                    fi
+                done
+                
+                sleep 10
+            done
+            
+            error "服务启动超时，完整日志："
+            docker-compose -f docker-compose.prod.yml logs
+            ((retry_count++))
+            
+            if [ $retry_count -lt $max_retries ]; then
+                log "尝试重启服务（第 $retry_count 次）..."
+                docker-compose -f docker-compose.prod.yml down
+                sleep 10
+                continue
             fi
         else
             error "服务启动失败"
