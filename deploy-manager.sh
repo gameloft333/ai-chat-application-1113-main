@@ -149,9 +149,16 @@ check_env_file() {
     
     # 检查必需的环境变量
     required_vars=(
-        "VITE_API_KEY"
         "VITE_MOONSHOT_API_KEY"
-        "VITE_GEMINI_API_KEY"
+        "VITE_GEMINI_API_KEY" 
+        "VITE_GROK_API_KEY"
+        "VITE_PAYPAL_CLIENT_ID"
+        "VITE_PAYPAL_CLIENT_SECRET"
+        "VITE_STRIPE_MODE"
+        "STRIPE_SECRET_KEY"
+        "VITE_STRIPE_PUBLISHABLE_KEY"
+        "TON_API_KEY"
+        "VITE_TON_WALLET_ADDRESS"
         "VITE_FIREBASE_API_KEY"
         "VITE_FIREBASE_AUTH_DOMAIN"
         "VITE_FIREBASE_PROJECT_ID"
@@ -159,9 +166,6 @@ check_env_file() {
         "VITE_FIREBASE_MESSAGING_SENDER_ID"
         "VITE_FIREBASE_APP_ID"
         "VITE_FIREBASE_MEASUREMENT_ID"
-        "VITE_STRIPE_PUBLISHABLE_KEY"
-        "VITE_STRIPE_MODE"
-        "STRIPE_SECRET_KEY"
     )
     
     missing_vars=()
