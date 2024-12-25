@@ -67,7 +67,11 @@ app.post('/api/stripe/create-payment-intent', async (req, res) => {
 });
 
 app.get('/health', (req, res) => {
-    res.status(200).json({ status: 'ok' });
+    res.status(200).json({ 
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        stripe: !!process.env.STRIPE_SECRET_KEY
+    });
 });
 
 // 错误处理中间件

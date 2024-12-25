@@ -456,28 +456,27 @@ check_payment_service() {
     while [ $attempt -le $max_attempts ]; do
         log "尝试连接支付服务 (${attempt}/${max_attempts})..."
         
-        # 获取容器健康状态
-        local health_status=$(docker inspect --format='{{.State.Health.Status}}' ${PROJECT_NAME}-payment-1 2>/dev/null || echo "unknown")
-        log "支付服务健康状态: ${health_status}"
+        # 检查环境变量
+        if [ -z "$STRIPE_SECRET_KEY" ] || [ -z "$VITE_STRIPE_PUBLISHABLE_KEY" ]; then
+            error "Stripe 配置缺失，请检查 .env.production 文件"
+            return 1
+        fi
         
         # 获取容器状态
         local container_status=$(docker inspect --format='{{.State.Status}}' ${PROJECT_NAME}-payment-1 2>/dev/null || echo "unknown")
-        log "支付服务容器状态: ${container_status}"
+        log "容器状态: ${container_status}"
         
-        # 显示最近的健康检查日志
-        log "最近的健康检查日志:"
-        docker inspect --format='{{range .State.Health.Log}}{{.Output}}{{end}}' ${PROJECT_NAME}-payment-1 2>/dev/null || echo "无健康检查日志"
-        
-        if [ "$health_status" = "healthy" ]; then
-            success "支付服务运行正常"
-            return 0
+        if [ "$container_status" = "running" ]; then
+            # 检查健康状态
+            if curl -s http://localhost:4242/health > /dev/null; then
+                success "支付服务运行正常"
+                return 0
+            fi
         fi
         
-        # 如果服务不健康，显示容器日志
-        if [ "$health_status" = "unhealthy" ]; then
-            error "支付服务不健康，最新日志："
-            docker logs --tail=50 ${PROJECT_NAME}-payment-1
-        fi
+        # 如果服务不正常，显示日志
+        error "支付服务异常，查看日志："
+        docker logs --tail=50 ${PROJECT_NAME}-payment-1
         
         ((attempt++))
         sleep 10
