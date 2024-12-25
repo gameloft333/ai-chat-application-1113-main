@@ -66,6 +66,10 @@ app.post('/api/stripe/create-payment-intent', async (req, res) => {
   }
 });
 
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'ok' });
+});
+
 // 错误处理中间件
 app.use((err, req, res, next) => {
   console.error('支付服务器错误:', err);

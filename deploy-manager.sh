@@ -447,3 +447,42 @@ main() {
 
 # 执行主函数
 main 
+
+check_payment_service() {
+    log "检查支付服务状态..."
+    local max_attempts=5
+    local attempt=1
+    
+    while [ $attempt -le $max_attempts ]; do
+        log "尝试连接支付服务 (${attempt}/${max_attempts})..."
+        
+        # 获取容器健康状态
+        local health_status=$(docker inspect --format='{{.State.Health.Status}}' ${PROJECT_NAME}-payment-1 2>/dev/null || echo "unknown")
+        log "支付服务健康状态: ${health_status}"
+        
+        # 获取容器状态
+        local container_status=$(docker inspect --format='{{.State.Status}}' ${PROJECT_NAME}-payment-1 2>/dev/null || echo "unknown")
+        log "支付服务容器状态: ${container_status}"
+        
+        # 显示最近的健康检查日志
+        log "最近的健康检查日志:"
+        docker inspect --format='{{range .State.Health.Log}}{{.Output}}{{end}}' ${PROJECT_NAME}-payment-1 2>/dev/null || echo "无健康检查日志"
+        
+        if [ "$health_status" = "healthy" ]; then
+            success "支付服务运行正常"
+            return 0
+        fi
+        
+        # 如果服务不健康，显示容器日志
+        if [ "$health_status" = "unhealthy" ]; then
+            error "支付服务不健康，最新日志："
+            docker logs --tail=50 ${PROJECT_NAME}-payment-1
+        fi
+        
+        ((attempt++))
+        sleep 10
+    done
+    
+    error "支付服务健康检查失败"
+    return 1
+} 
