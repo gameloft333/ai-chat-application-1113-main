@@ -7,7 +7,7 @@ rem 启用延迟变量扩展
 setlocal EnableDelayedExpansion
 
 rem 版本信息
-set VERSION=1.0.5
+set VERSION=1.0.6
 
 rem 颜色代码
 set RED=[91m
@@ -156,7 +156,9 @@ if !errorlevel! neq 0 (
 )
 
 echo %GREEN%代码已成功提交到 %branch%%NC%
-timeout /t 2 >nul
+echo.
+echo %YELLOW%按任意键返回主菜单...%NC%
+pause >nul
 exit /b 0
 
 :create_branch
@@ -173,7 +175,7 @@ if !errorlevel! neq 0 (
     timeout /t 2 >nul
     goto :menu
 )
-echo %GREEN%分��创建成功%NC%
+echo %GREEN%分支创建成功%NC%
 call :do_commit "!new_branch!"
 goto :menu
 
