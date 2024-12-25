@@ -147,43 +147,66 @@ check_env_file() {
         exit 1
     fi
     
-    # 检查必需的环境变量
-    required_vars=(
-        "VITE_MOONSHOT_API_KEY"
-        "VITE_GEMINI_API_KEY" 
-        "VITE_GROK_API_KEY"
-        "VITE_PAYPAL_CLIENT_ID"
-        "VITE_PAYPAL_CLIENT_SECRET"
-        "VITE_STRIPE_MODE"
-        "STRIPE_SECRET_KEY"
-        "VITE_STRIPE_PUBLISHABLE_KEY"
-        "TON_API_KEY"
-        "VITE_TON_WALLET_ADDRESS"
-        "VITE_FIREBASE_API_KEY"
-        "VITE_FIREBASE_AUTH_DOMAIN"
-        "VITE_FIREBASE_PROJECT_ID"
-        "VITE_FIREBASE_STORAGE_BUCKET"
-        "VITE_FIREBASE_MESSAGING_SENDER_ID"
-        "VITE_FIREBASE_APP_ID"
-        "VITE_FIREBASE_MEASUREMENT_ID"
-    )
+    # 从 .env.production 文件中读取所有非注释的键
+    required_vars=($(grep -v '^#' .env.production | grep '=' | cut -d '=' -f1))
     
-    missing_vars=()
+    # 检查每个环境变量是否有值
+    missing_or_empty=()
     for var in "${required_vars[@]}"; do
-        if ! grep -q "^${var}=" .env.production; then
-            missing_vars+=("$var")
+        # 获取变量值
+        value=$(grep "^${var}=" .env.production | cut -d '=' -f2)
+        
+        # 检查值是否为空
+        if [ -z "$value" ] || [ "$value" = '""' ] || [ "$value" = "''" ]; then
+            missing_or_empty+=("$var")
         fi
     done
     
-    if [ ${#missing_vars[@]} -ne 0 ]; then
-        error "以下环境变量未在 .env.production 中设置："
-        for var in "${missing_vars[@]}"; do
+    # 如果有空值或未设置的变量
+    if [ ${#missing_or_empty[@]} -ne 0 ]; then
+        error "以下环境变量在 .env.production 中未设置或为空："
+        for var in "${missing_or_empty[@]}"; do
             echo "- $var"
         done
-        exit 1
+        
+        read -p "是否继续部署？(y/n) " continue_deploy
+        if [[ ! "$continue_deploy" =~ ^[Yy]$ ]]; then
+            error "部署已取消"
+            exit 1
+        fi
+        
+        log "继续部署，但某些功能可能无法正常工作..."
+    else
+        success "所有环境变量检查通过"
     fi
     
-    success "环境变量文件检查通过"
+    # 检查关键服务的必需变量
+    critical_vars=(
+        "STRIPE_SECRET_KEY"
+        "VITE_STRIPE_PUBLISHABLE_KEY"
+        "VITE_STRIPE_MODE"
+    )
+    
+    missing_critical=()
+    for var in "${critical_vars[@]}"; do
+        value=$(grep "^${var}=" .env.production | cut -d '=' -f2)
+        if [ -z "$value" ] || [ "$value" = '""' ] || [ "$value" = "''" ]; then
+            missing_critical+=("$var")
+        fi
+    done
+    
+    if [ ${#missing_critical[@]} -ne 0 ]; then
+        error "以下关键环境变量未设置，支付功能可能无法正常工作："
+        for var in "${missing_critical[@]}"; do
+            echo "- $var"
+        done
+        
+        read -p "确定要继续部署吗？(y/n) " continue_deploy
+        if [[ ! "$continue_deploy" =~ ^[Yy]$ ]]; then
+            error "部署已取消"
+            exit 1
+        fi
+    fi
 }
 
 # 清理环境
