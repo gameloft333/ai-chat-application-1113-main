@@ -7,7 +7,7 @@ rem 启用延迟变量扩展
 setlocal EnableDelayedExpansion
 
 rem 版本信息
-set VERSION=1.0.6
+set VERSION=1.0.7
 
 rem 颜色代码
 set RED=[91m
@@ -155,7 +155,15 @@ if !errorlevel! neq 0 (
     )
 )
 
+rem 获取提交前的 revision
+for /f "tokens=*" %%i in ('git rev-parse HEAD') do set old_revision=%%i
+
 echo %GREEN%代码已成功提交到 %branch%%NC%
+echo %YELLOW%Revision 变更:%NC%
+echo 从: %old_revision:~0,7%
+echo 到: %new_revision:~0,7%
+echo %YELLOW%完整对比链接:%NC%
+echo https://github.com/[username]/[repository]/compare/%old_revision%...%new_revision%
 echo.
 echo %YELLOW%按任意键返回主菜单...%NC%
 pause >nul
