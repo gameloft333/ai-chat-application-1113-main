@@ -7,13 +7,13 @@ rem 启用延迟变量扩展
 setlocal EnableDelayedExpansion
 
 rem 版本信息
-set VERSION=1.0.7
+set VERSION=1.0.8
 
 rem 颜色代码
-set RED=[91m
-set GREEN=[92m
-set YELLOW=[93m
-set NC=[0m
+set RED=[91m]
+set GREEN=[92m]
+set YELLOW=[93m]
+set NC=[0m]
 
 rem 菜单选项
 set "MENU_TITLE=Git 代码管理工具"
@@ -134,6 +134,9 @@ echo %YELLOW%默认提交信息: !DEFAULT_MSG!%NC%
 set /p COMMIT_MSG="请输入提交信息 (直接回车使用默认信息): "
 if "!COMMIT_MSG!"=="" set "COMMIT_MSG=!DEFAULT_MSG!"
 
+rem 获取提交前的 revision
+for /f "tokens=*" %%i in ('git rev-parse HEAD') do set old_revision=%%i
+
 echo %YELLOW%正在提交...%NC%
 git commit -m "!COMMIT_MSG!" 2>nul
 if !errorlevel! neq 0 (
@@ -155,8 +158,8 @@ if !errorlevel! neq 0 (
     )
 )
 
-rem 获取提交前的 revision
-for /f "tokens=*" %%i in ('git rev-parse HEAD') do set old_revision=%%i
+rem 获取推送后的最新 revision
+for /f "tokens=*" %%i in ('git rev-parse HEAD') do set new_revision=%%i
 
 echo %GREEN%代码已成功提交到 %branch%%NC%
 echo %YELLOW%Revision 变更:%NC%
