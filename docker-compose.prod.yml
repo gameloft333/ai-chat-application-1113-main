@@ -80,13 +80,21 @@ services:
       - VITE_STRIPE_PUBLISHABLE_KEY=${VITE_STRIPE_PUBLISHABLE_KEY}
       - VITE_STRIPE_MODE=${VITE_STRIPE_MODE}
     command: >
-      sh -c "npm install && npm start"
+      sh -c "
+        echo '等待系统初始化...' &&
+        sleep 15 &&
+        npm install &&
+        npm start
+      "
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:4242"]
+      test: ["CMD-SHELL", "curl -f http://localhost:4242 || exit 1"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 30s
+      retries: 5
+      start_period: 40s
+    depends_on:
+      frontend:
+        condition: service_healthy
     restart: unless-stopped
 
 networks:

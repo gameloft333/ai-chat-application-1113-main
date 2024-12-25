@@ -276,6 +276,20 @@ deploy_services() {
         if docker-compose --env-file .env.production -f docker-compose.prod.yml up -d; then
             log "服务已启动，等待健康检查..."
             
+            # 先检查支付服务
+            if ! check_payment_service; then
+                error "支付服务启动失败，尝试重启..."
+                docker-compose -f docker-compose.prod.yml restart payment
+                sleep 15
+                
+                if ! check_payment_service; then
+                    error "支付服务重启后仍然失败"
+                    docker-compose -f docker-compose.prod.yml logs payment
+                    ((retry_count++))
+                    continue
+                fi
+            fi
+            
             # 循环检查每个服务的状态
             for i in {1..30}; do
                 log "检查服务状态... (${i}/30)"
