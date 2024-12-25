@@ -58,22 +58,44 @@ setup_environment() {
 setup_git_credentials() {
     log "配置 Git 凭证..."
     
-    # 检查是否已配置凭证
-    if [ ! -f ~/.git-credentials ]; then
-        # 从环境变量获取 GitHub 凭证
-        if [ -z "$GITHUB_TOKEN" ] || [ -z "$GITHUB_USERNAME" ]; then
-            error "未找到 GitHub 凭证，请设置 GITHUB_USERNAME 和 GITHUB_TOKEN 环境变量"
-            exit 1
+    # 强制重新配置 Git 凭证
+    log "更新 Git 配置..."
+    git config --global credential.helper store
+    
+    while true; do
+        # 检查并更新 token
+        if [ -z "$GITHUB_TOKEN" ] || [ -z "$GITHUB_USERNAME" ] || ! check_token_permissions; then
+            show_token_guide
+            read -p "请输入 GitHub 用户名: " github_username
+            read -s -p "请输入 GitHub Personal Access Token: " github_token
+            echo ""
+            
+            # 更新环境变量
+            export GITHUB_USERNAME="${github_username}"
+            export GITHUB_TOKEN="${github_token}"
+            
+            # 如果权限检查通过则跳出循环
+            if check_token_permissions; then
+                # 更新 .bashrc
+                sed -i '/GITHUB_USERNAME/d' ~/.bashrc
+                sed -i '/GITHUB_TOKEN/d' ~/.bashrc
+                echo "export GITHUB_USERNAME='${github_username}'" >> ~/.bashrc
+                echo "export GITHUB_TOKEN='${github_token}'" >> ~/.bashrc
+                break
+            fi
+            
+            error "Token 权限不足，请重新创建"
+            continue
+        else
+            break
         fi
-        
-        # 配置 Git
-        git config --global credential.helper store
-        echo "https://${GITHUB_USERNAME}:${GITHUB_TOKEN}@github.com" > ~/.git-credentials
-        chmod 600 ~/.git-credentials
-        success "Git 凭证已配置"
-    else
-        log "Git 凭证已存在"
-    fi
+    done
+    
+    # 更新 git 凭证文件
+    echo "https://${GITHUB_USERNAME}:${GITHUB_TOKEN}@github.com" > ~/.git-credentials
+    chmod 600 ~/.git-credentials
+    
+    success "Git 凭证已更新"
     
     # 更新代码
     log "从 GitHub 更新代码..."
@@ -212,7 +234,7 @@ check_health() {
     if curl -s -f http://localhost:4242 > /dev/null; then
         success "支付服务运行正常"
     else
-        error "支付服务未正常运行"
+        error "支付服务未正常���行"
     fi
 }
 
@@ -227,6 +249,61 @@ show_status() {
     
     log "查看服务日志（按 Ctrl+C 退出）..."
     docker-compose -f docker-compose.prod.yml logs -f
+}
+
+# 检查 GitHub Token 权限
+check_token_permissions() {
+    log "检查 GitHub Token 权限..."
+    
+    # 使用 GitHub API 检查 token 权限
+    local token_check=$(curl -s -H "Authorization: token ${GITHUB_TOKEN}" \
+                            -H "Accept: application/vnd.github.v3+json" \
+                            https://api.github.com/user)
+    
+    if echo "$token_check" | grep -q "Bad credentials"; then
+        error "Token 无效或已过期"
+        show_token_guide
+        return 1
+    fi
+    
+    # 检查仓库访问权限
+    local repo_check=$(curl -s -H "Authorization: token ${GITHUB_TOKEN}" \
+                           -H "Accept: application/vnd.github.v3+json" \
+                           "https://api.github.com/repos/${GITHUB_USERNAME}/${PROJECT_NAME}")
+    
+    if echo "$repo_check" | grep -q "Not Found"; then
+        error "Token 没有仓库访问权限"
+        show_token_guide
+        return 1
+    fi
+    
+    success "Token 权限验证通过"
+    return 0
+}
+
+show_token_guide() {
+    echo "
+请按以下步骤创建正确的 GitHub Token：
+
+1. 访问 GitHub.com
+2. 点击右上角头像 -> Settings
+3. 左侧菜单底部选择 Developer settings
+4. 选择 Personal access tokens -> Tokens (classic)
+5. 点击 Generate new token -> Generate new token (classic)
+6. 设置 Token 名称（如：AWS_DEPLOY）
+7. 选择以下必要权限：
+   ✓ repo (全选所有子项)
+      - repo:status
+      - repo_deployment
+      - public_repo
+      - repo:invite
+   ✓ workflow (如果使用 GitHub Actions)
+8. 设置合适的过期时间（建议90天）
+9. 点击底部的 Generate token
+10. 立即复制生成的 token（它只显示一次！）
+
+创建完成后，请重新运行部署脚本。
+"
 }
 
 # 主函数
