@@ -7,7 +7,7 @@ rem 启用延迟变量扩展
 setlocal EnableDelayedExpansion
 
 rem 版本信息
-set VERSION=1.0.1
+set VERSION=1.0.5
 
 rem 颜色代码
 set RED=[91m
@@ -55,7 +55,16 @@ choice /c 12345 /n /m "%MENU_CHOICE%"
 set choice=%errorlevel%
 
 if %choice%==1 (
+    rem 临时关闭 SSL 验证
+    echo %YELLOW%临时关闭 SSL 验证...%NC%
+    git config --global http.sslVerify false
+    
     call :do_commit "%current_branch%"
+    
+    rem 恢复 SSL 验证
+    echo %YELLOW%恢复 SSL 验证...%NC%
+    git config --global http.sslVerify true
+    
     goto :menu
 )
 if %choice%==2 goto :create_branch
@@ -164,7 +173,7 @@ if !errorlevel! neq 0 (
     timeout /t 2 >nul
     goto :menu
 )
-echo %GREEN%分支创建成功%NC%
+echo %GREEN%分��创建成功%NC%
 call :do_commit "!new_branch!"
 goto :menu
 
