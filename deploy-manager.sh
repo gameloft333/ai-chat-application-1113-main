@@ -267,7 +267,7 @@ deploy_services() {
     fi
     success "服务构建成功"
     
-    # 8. 启动服务并监控健康状态
+    # 8. ��动服务并监控健康状态
     log "开始启动服务..."
     local max_retries=3
     local retry_count=0
@@ -423,6 +423,47 @@ show_token_guide() {
 "
 }
 
+# 检查支付服务状态
+check_payment_service() {
+    log "检查支付服务状态..."
+    local max_attempts=5
+    local attempt=1
+    
+    while [ $attempt -le $max_attempts ]; do
+        log "尝试连接支付服务 (${attempt}/${max_attempts})..."
+        
+        # 获取容器状态和日志
+        local container_id=$(docker-compose -f docker-compose.prod.yml ps -q payment)
+        if [ -z "$container_id" ]; then
+            error "找不到支付服务容器"
+            return 1
+        fi
+        
+        local container_status=$(docker inspect --format='{{.State.Status}}' $container_id 2>/dev/null || echo "unknown")
+        local health_status=$(docker inspect --format='{{.State.Health.Status}}' $container_id 2>/dev/null || echo "unknown")
+        
+        log "容器状态: ${container_status}, 健康状态: ${health_status}"
+        
+        # 显示容器日志
+        log "最近的容器日志:"
+        docker logs --tail=20 $container_id
+        
+        if [ "$container_status" = "running" ]; then
+            if [ "$health_status" = "healthy" ] || curl -s http://localhost:4242/health > /dev/null; then
+                success "支付服务运行正常"
+                return 0
+            fi
+        fi
+        
+        error "支付服务未就绪，等待重试..."
+        ((attempt++))
+        sleep 10
+    done
+    
+    error "支付服务健康检查失败"
+    return 1
+}
+
 # 主函数
 main() {
     log "开始一键部署流程..."
@@ -447,41 +488,3 @@ main() {
 
 # 执行主函数
 main 
-
-check_payment_service() {
-    log "检查支付服务状态..."
-    local max_attempts=5
-    local attempt=1
-    
-    while [ $attempt -le $max_attempts ]; do
-        log "尝试连接支付服务 (${attempt}/${max_attempts})..."
-        
-        # 检查环境变量
-        if [ -z "$STRIPE_SECRET_KEY" ] || [ -z "$VITE_STRIPE_PUBLISHABLE_KEY" ]; then
-            error "Stripe 配置缺失，请检查 .env.production 文件"
-            return 1
-        fi
-        
-        # 获取容器状态
-        local container_status=$(docker inspect --format='{{.State.Status}}' ${PROJECT_NAME}-payment-1 2>/dev/null || echo "unknown")
-        log "容器状态: ${container_status}"
-        
-        if [ "$container_status" = "running" ]; then
-            # 检查健康状态
-            if curl -s http://localhost:4242/health > /dev/null; then
-                success "支付服务运行正常"
-                return 0
-            fi
-        fi
-        
-        # 如果服务不正常，显示日志
-        error "支付服务异常，查看日志："
-        docker logs --tail=50 ${PROJECT_NAME}-payment-1
-        
-        ((attempt++))
-        sleep 10
-    done
-    
-    error "支付服务健康检查失败"
-    return 1
-} 
