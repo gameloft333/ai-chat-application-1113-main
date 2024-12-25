@@ -66,9 +66,50 @@ setup_git_credentials() {
         # 检查并更新 token
         if [ -z "$GITHUB_TOKEN" ] || [ -z "$GITHUB_USERNAME" ] || ! check_token_permissions; then
             show_token_guide
-            read -p "请输入 GitHub 用户名: " github_username
-            read -s -p "请输入 GitHub Personal Access Token: " github_token
-            echo ""
+            
+            # 提供多种输入方式
+            echo "选择 Token 输入方式："
+            echo "1) 直接输入"
+            echo "2) 从文件读取"
+            echo "3) 手动输入（逐字符）"
+            read -p "请选择输入方式 (1-3): " input_method
+            
+            case $input_method in
+                1)
+                    read -p "请输入 GitHub 用户名: " github_username
+                    read -s -p "请输入 GitHub Personal Access Token: " github_token
+                    echo ""
+                    ;;
+                2)
+                    read -p "请将 token 保存到文件并输入文件路径: " token_file
+                    if [ -f "$token_file" ]; then
+                        github_token=$(cat "$token_file")
+                        read -p "请输入 GitHub 用户名: " github_username
+                        # 清理临时文件
+                        rm -f "$token_file"
+                    else
+                        error "文件不存在"
+                        continue
+                    fi
+                    ;;
+                3)
+                    read -p "请输入 GitHub 用户名: " github_username
+                    echo -n "请逐个字符输入 token (输入完成后按回车): "
+                    github_token=""
+                    while IFS= read -r -n1 char; do
+                        if [ -z "$char" ]; then
+                            break
+                        fi
+                        github_token="${github_token}${char}"
+                        echo -n "*"
+                    done
+                    echo ""
+                    ;;
+                *)
+                    error "无效的选择"
+                    continue
+                    ;;
+            esac
             
             # 更新环境变量
             export GITHUB_USERNAME="${github_username}"
@@ -234,7 +275,7 @@ check_health() {
     if curl -s -f http://localhost:4242 > /dev/null; then
         success "支付服务运行正常"
     else
-        error "支付服务未正常���行"
+        error "支付服务未正常运行"
     fi
 }
 
