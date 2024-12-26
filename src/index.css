@@ -3,7 +3,7 @@
 @import 'tailwindcss/utilities';
 
 @layer base {
-  body {
+  :is(body) {
     @apply bg-[#1A1B1E] text-white font-sans;
   }
 
@@ -74,7 +74,7 @@
   font-family: serif;
 }
 
-html, body {
+:is(html, body) {
   height: 100%;
   margin: 0;
 }
@@ -135,7 +135,7 @@ html, body {
 .mobile-preview {
   @apply bg-gray-900;
   
-  body {
+  :is(body) {
     @apply bg-white dark:bg-gray-800;
     max-width: 420px;
     margin: 0 auto;
@@ -148,7 +148,7 @@ html, body {
 
 /* 响应式调整 */
 @media (max-width: 420px) {
-  .mobile-preview body {
+  .mobile-preview :is(body) {
     max-width: 100%;
     box-shadow: none;
   }

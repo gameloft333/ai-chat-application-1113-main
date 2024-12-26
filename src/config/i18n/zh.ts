@@ -1,7 +1,7 @@
 export default {
     common: {
         selectCharacter: '请选择您想要交谈的AI伴侣',
-        copyright: '© 2024 Companions. All rights reserved.',
+        copyright: ' 2024 Companions. All rights reserved.',
         testMode: '注意: 现在处于测试模式，服务器重启时会清空聊天记录哦。',
         back: '返回',
         welcome: '欢迎使用 Companions',
@@ -109,15 +109,15 @@ export default {
         stripeProcessing: '正在处理 Stripe 支付...',
         stripeSuccess: 'Stripe 支付成功！',
         stripeFailed: 'Stripe 支付失败，请重试',
-        confirmTitle: '支付确认',
-        cardInput: '请输入卡号',
         ton: {
             title: 'TON 支付',
+            amount: '需支付 TON 数量',
             checking: '正在检查支付状态...',
             success: '支付成功！',
             failed: '支付失败',
             error: '处理支付时出现错误',
             successDetails: '支付成功！\n到期日期：{{expireDate}}\n剩余天数：{{remainingDays}} 天\n\n您现在可以享受所有会员特权了！',
+            testWallet: '请使用以下测试钱包：\n地址：{{address}}\n注意事项：\n1. 请确保使用测试网络\n2. 如遇问题请清除浏览器缓存',
             waitingConfirm: '等待区块链确认中...',
             confirmations: '确认数：{{count}}/{{required}}',
             insufficientBalance: '钱包余额不足',
@@ -130,8 +130,6 @@ export default {
             addressCopied: '已复制',
             manualPayment: '手动支付',
             manualPaymentDesc: '如果自动支付失败，您可以手动向以下地址转账 TON',
-            tonAmount: '需支付 TON 数量',
-            walletAddressDesc: '请向以下测试钱包地址转账：',
             notice: '注意事项',
             testNetworkNotice: '请确保使用测试网络',
             clearCacheNotice: '如遇支付问题请清除浏览器缓存',
@@ -139,7 +137,7 @@ export default {
             timeoutNotice: '请在30分钟内完成支付',
             copyFailed: '复制地址失败，请重试',
             walletAddress: '钱包地址',
-            payButton: '打开 TON 钱包支付',
+            paymentButton: '打开 TON 钱包支付',
             cancel: '取消支付',
             paymentAmount: '支付金额',
             walletAddressTitle: '收款钱包地址',
@@ -150,6 +148,12 @@ export default {
             stripe: '使用 Stripe 支付',
             ton: '使用 TON 支付'
         },
+        paymentConfirmTitle: '支付确认',
+        cardInput: '请输入卡号',
+        amount: '{{amount}} {{currency}}',
+        payAction: '支付',
+        cancel: '取消',
+        processingPayment: '处理中...',
         testMode: {
             notice: '如果遇到支付问题，请使用稳定IP的网络连接，并使用以下测试卡号进行支付',
             cardNumber: '测试卡号',
@@ -166,13 +170,7 @@ export default {
             liveTestCard: '无效的支付卡号：请使用真实的支付卡，而不是测试卡号',
             cardDeclined: '支付卡被拒绝，请检查卡片信息或尝试使用其他支付方式',
             cardValidationFailed: '支付卡验证失败'
-        },
-        processing: '正在处理...',
-        pay: '支付',
-        amount: '{{amount}} {{currency}}',
-        confirmTitle: '支付确认',
-        cardNumber: '卡号',
-        processing: '处理中...'
+        }
     },
     alerts: {
         error: {

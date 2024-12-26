@@ -441,47 +441,74 @@ deploy_services() {
 # 检查服务健康状态
 check_health() {
     local max_attempts=30
-    local attempt=0
+    local interval=10
     local services=("frontend" "payment" "nginx")
     local health_status=()
 
     log "🩺 开始服务健康检查..."
-    
+    log "📋 将检查以下服务: ${services[*]}"
+    log "⏱️ 每次检查间隔 $interval 秒，最大尝试 $max_attempts 次"
+
     for service in "${services[@]}"; do
-        attempt=0
+        log "🔍 正在检查 $service 服务健康状态..."
+        
+        local attempt=0
+        local last_status=""
+        
         while [ $attempt -lt $max_attempts ]; do
-            local status=$(docker-compose -f docker-compose.prod.yml ps -a | grep "$service" | awk '{print $4}')
+            # 获取服务状态
+            local current_status=$(docker-compose -f docker-compose.prod.yml ps -a | grep "$service" | awk '{print $4}')
             
-            if [[ "$status" == "healthy" ]]; then
-                success "✅ $service 服务健康状态正常"
-                health_status+=("$service:healthy")
+            # 状态变化时输出详细信息
+            if [[ "$current_status" != "$last_status" ]]; then
+                case "$current_status" in
+                    "healthy")
+                        success "✅ $service 服务健康检查通过！"
+                        health_status+=("$service:healthy")
+                        break
+                        ;;
+                    "unhealthy")
+                        error "❌ $service 服务健康检查失败！"
+                        health_status+=("$service:unhealthy")
+                        break
+                        ;;
+                    *)
+                        log "🕒 $service 服务正在启动中... (尝试 $((attempt+1))/$max_attempts)"
+                        ;;
+                esac
+                last_status="$current_status"
+            fi
+
+            sleep $interval
+            ((attempt++))
+
+            # 如果达到最大尝试次数
+            if [ $attempt -eq $max_attempts ]; then
+                error "❌ $service 服务启动超时！"
+                health_status+=("$service:timeout")
                 break
-            elif [[ "$status" == "unhealthy" ]]; then
-                error "❌ $service 服务健康检查失败"
-                health_status+=("$service:unhealthy")
-                break
-            else
-                log "🔄 等待 $service 服务就绪... (尝试 $((attempt+1))/$max_attempts)"
-                sleep 10
-                ((attempt++))
             fi
         done
-
-        if [ $attempt -eq $max_attempts ]; then
-            error "❌ $service 服务启动超时"
-            health_status+=("$service:timeout")
-        fi
     done
 
-    # 显示总体健康状态
-    local overall_health="✨ 部署健康状态总览:\n"
+    # 生成总体健康报告
+    log "📊 服务健康检查总结："
     for status in "${health_status[@]}"; do
         service=$(echo "$status" | cut -d ':' -f1)
         health=$(echo "$status" | cut -d ':' -f2)
-        overall_health+="  $service: $health\n"
+        
+        case "$health" in
+            "healthy")
+                success "  ✅ $service: 服务正常"
+                ;;
+            "unhealthy")
+                error "  ❌ $service: 服务异常"
+                ;;
+            "timeout")
+                warning "  ⚠️ $service: 服务启动超时"
+                ;;
+        esac
     done
-    
-    log "$overall_health"
 
     # 检查是否所有服务都健康
     if [[ ! " ${health_status[@]} " =~ "unhealthy" ]] && [[ ! " ${health_status[@]} " =~ "timeout" ]]; then

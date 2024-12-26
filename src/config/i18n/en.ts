@@ -1,7 +1,7 @@
 export default {
     common: {
         selectCharacter: 'Please select your companion',
-        copyright: '© 2024 Companions. All rights reserved.',
+        copyright: ' 2024 Companions. All rights reserved.',
         testMode: 'Note: In test mode, chat history will be cleared on server restart.',
         back: 'Back',
         welcome: 'Welcome to Companions',
@@ -136,7 +136,7 @@ export default {
             timeoutNotice: 'Please complete payment within 30 minutes',
             copyFailed: 'Failed to copy address, please try again',
             walletAddress: 'Wallet Address',
-            payButton: 'Open TON Wallet',
+            paymentButton: 'Open TON Wallet',
             cancel: 'Cancel Payment',
             paymentAmount: 'Payment Amount',
             walletAddressTitle: 'Receiving Wallet Address',
@@ -147,12 +147,12 @@ export default {
             stripe: 'Pay with Stripe',
             ton: 'Pay with TON'
         },
-        confirmTitle: 'Payment Confirmation',
+        paymentConfirmTitle: 'Payment Confirmation',
         cardInput: 'Enter Card Number',
         amount: '{{amount}} {{currency}}',
-        pay: 'Pay',
+        payAction: 'Pay',
         cancel: 'Cancel',
-        processing: 'Processing...',
+        processingPayment: 'Processing...',
         errors: {
             postalCode: 'Please enter a complete postal code',
             initFailed: 'Payment service initialization failed',
@@ -286,5 +286,5 @@ export default {
         toggle: 'Toggle Mobile Preview',
         mobile: 'Mobile Mode',
         desktop: 'Desktop Mode'
-  }
+    }
 };
