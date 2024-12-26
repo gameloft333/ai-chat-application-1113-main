@@ -25,6 +25,10 @@ error() {
     echo -e "${RED}[$(date '+%Y-%m-%d %H:%M:%S')] 错误: $1${NC}"
 }
 
+warning() {
+    echo -e "\033[1;33m[$(date '+%Y-%m-%d %H:%M:%S')] 警告: $1\033[0m" >&2
+}
+
 # 配置环境变量
 setup_environment() {
     log "检查 Git 环境变量..."
@@ -142,55 +146,122 @@ check_dependencies() {
 check_env_file() {
     log "🔍 检查环境变量配置..."
 
-    # 定义必需的环境变量列表
-    local required_vars=(
-        # Frontend Variables
-        "VITE_MOONSHOT_API_KEY"
-        "VITE_GEMINI_API_KEY"
-        "VITE_API_KEY"
-        # Firebase Variables
-        "VITE_FIREBASE_API_KEY"
-        "VITE_FIREBASE_AUTH_DOMAIN"
-        "VITE_FIREBASE_PROJECT_ID"
-        "VITE_FIREBASE_STORAGE_BUCKET"
-        "VITE_FIREBASE_MESSAGING_SENDER_ID"
-        "VITE_FIREBASE_APP_ID"
-        "VITE_FIREBASE_MEASUREMENT_ID"
-        # Stripe Variables
-        "VITE_STRIPE_PUBLISHABLE_KEY"
-        "VITE_STRIPE_MODE"
-        "STRIPE_SECRET_KEY"
-    )
-
-    local missing_vars=()
     local env_file=".env.production"
-
+    
     # 检查 .env.production 文件是否存在
     if [ ! -f "$env_file" ]; then
         error "❌ 环境变量文件 $env_file 不存在！"
-        return 1
+        return 1  # 阻止部署
     fi
 
-    # 检查每个必需变量
-    for var in "${required_vars[@]}"; do
+    # 定义必要和非必要环境变量
+    declare -A env_var_types=(
+        # 必要变量 - 缺失时需要中断并要求添加
+        ["STRIPE_SECRET_KEY"]=required
+        ["VITE_FIREBASE_API_KEY"]=required
+        ["VITE_FIREBASE_PROJECT_ID"]=required
+
+        # 可选变量 - 缺失时仅警告
+        ["VITE_MOONSHOT_API_KEY"]=optional
+        ["VITE_GEMINI_API_KEY"]=optional
+        ["VITE_GROK_API_KEY"]=optional
+        
+        ["VITE_PAYPAL_SANDBOX_MODE"]=optional
+        ["VITE_PAYPAL_CLIENT_ID"]=optional
+        ["VITE_PAYPAL_CLIENT_SECRET"]=optional
+        
+        ["VITE_STRIPE_MODE"]=optional
+        ["VITE_STRIPE_PUBLISHABLE_KEY"]=optional
+        
+        ["VITE_FIREBASE_AUTH_DOMAIN"]=optional
+        ["VITE_FIREBASE_STORAGE_BUCKET"]=optional
+        ["VITE_FIREBASE_MESSAGING_SENDER_ID"]=optional
+        ["VITE_FIREBASE_APP_ID"]=optional
+        ["VITE_FIREBASE_MEASUREMENT_ID"]=optional
+        
+        ["TON_NETWORK"]=optional
+        ["TON_API_KEY"]=optional
+        ["VITE_TON_WALLET_ADDRESS"]=optional
+        ["TON_SERVER_PORT"]=optional
+        ["TON_USD_RATE"]=optional
+        ["TON_RATE_BUFFER"]=optional
+        
+        ["NODE_ENV"]=optional
+        ["VITE_ENABLE_PAYPAL"]=optional
+        ["VITE_ENABLE_STRIPE"]=optional
+        ["VITE_ENABLE_TON"]=optional
+        
+        ["VITE_MARQUEE_ENABLED"]=optional
+        ["VITE_MARQUEE_WEBSOCKET_URL"]=optional
+        ["VITE_MARQUEE_ANIMATION_DURATION"]=optional
+        ["VITE_MARQUEE_REFRESH_INTERVAL"]=optional
+        ["VITE_MARQUEE_RANDOM_COLORS"]=optional
+        ["VITE_MARQUEE_DEFAULT_SHADOW_COLOR"]=optional
+    )
+
+    local required_missing=()
+    local optional_missing=()
+    local empty_required=()
+
+    # 检查每个变量
+    for var in "${!env_var_types[@]}"; do
+        # 检查变量是否在文件中存在
         if ! grep -q "^$var=" "$env_file"; then
-            missing_vars+=("$var")
+            if [[ "${env_var_types[$var]}" == "required" ]]; then
+                required_missing+=("$var")
+            else
+                optional_missing+=("$var")
+            fi
+            continue
+        fi
+
+        # 获取变量值（去除首尾空格和引号）
+        value=$(grep "^$var=" "$env_file" | cut -d '=' -f2- | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")
+        
+        # 对于必要变量，检查值是否为空
+        if [[ "${env_var_types[$var]}" == "required" && -z "$value" ]]; then
+            empty_required+=("$var")
         fi
     done
 
-    # 处理缺失的变量
-    if [ ${#missing_vars[@]} -ne 0 ]; then
-        error "❌ 以下必需环境变量未设置:"
-        for missing_var in "${missing_vars[@]}"; do
-            echo "   - $missing_var"
+    # 处理必要变量缺失情况
+    if [ ${#required_missing[@]} -ne 0 ]; then
+        error "❌ 以下必要环境变量未定义，请添加："
+        for var in "${required_missing[@]}"; do
+            echo "   - $var"
         done
         
-        log "💡 建议在 $env_file 中添加这些变量，或者在部署前设置它们。"
-        return 1
-    else
-        success "✅ 所有必需环境变量已正确配置"
-        return 0
+        read -p "是否要继续部署？(y/n) " continue_deploy
+        if [[ ! "$continue_deploy" =~ ^[Yy]$ ]]; then
+            log "部署已取消"
+            return 1
+        fi
     fi
+
+    # 处理必要变量为空情况
+    if [ ${#empty_required[@]} -ne 0 ]; then
+        error "❌ 以下必要环境变量为空，请设置值："
+        for var in "${empty_required[@]}"; do
+            echo "   - $var"
+        done
+        
+        read -p "是否要继续部署？(y/n) " continue_deploy
+        if [[ ! "$continue_deploy" =~ ^[Yy]$ ]]; then
+            log "部署已取消"
+            return 1
+        fi
+    fi
+
+    # 处理可选变量缺失情况
+    if [ ${#optional_missing[@]} -ne 0 ]; then
+        warning "⚠️ 以下可选环境变量未定义，可能影响部分功能："
+        for var in "${optional_missing[@]}"; do
+            echo "   - $var"
+        done
+    fi
+
+    success "✅ 环境变量检查完成"
+    return 0
 }
 
 # 部署服务前的最终检查
