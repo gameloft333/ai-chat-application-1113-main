@@ -58,7 +58,7 @@ services:
         echo ' Listing dist contents...' &&
         ls -la dist &&
         echo ' Starting Preview Server...' &&
-        npm run preview:prod --host 0.0.0.0
+        npm run preview:prod
       "
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:4173 || exit 1"]
