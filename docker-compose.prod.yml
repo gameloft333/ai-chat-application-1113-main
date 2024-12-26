@@ -88,7 +88,7 @@ services:
         echo ' Starting Payment Service...' &&
         sleep 15 &&
         echo ' Checking Environment Variables...' &&
-        node -e \"console.log('环境变量检查:\nSTRIPE_SECRET_KEY=' + (process.env.STRIPE_SECRET_KEY || '未设置') + '\nVITE_STRIPE_MODE=' + (process.env.VITE_STRIPE_MODE || '未设置'))\" &&
+        node -e 'console.log("环境变量检查:\nSTRIPE_SECRET_KEY=" + (process.env.STRIPE_SECRET_KEY || "未设置") + "\nVITE_STRIPE_MODE=" + (process.env.VITE_STRIPE_MODE || "未设置"))' &&
         echo ' Installing Dependencies...' &&
         npm install &&
         echo ' Starting Payment Server...' &&

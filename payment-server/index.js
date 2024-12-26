@@ -91,6 +91,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(port, () => {
-  console.log(`Stripe 测试服务器运行在 http://localhost:${port}`);
+app.listen(port, '0.0.0.0', () => {
+  console.log(`Stripe 服务器运行在 http://0.0.0.0:${port}`);
 });
