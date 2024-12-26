@@ -140,73 +140,99 @@ check_dependencies() {
 
 # 检查环境变量文件
 check_env_file() {
-    log "检查环境变量文件..."
-    
-    if [ ! -f ".env.production" ]; then
-        error "环境变量文件 .env.production 不存在"
-        exit 1
-    fi
-    
-    # 从 .env.production 文件中读取所有非注释的键
-    required_vars=($(grep -v '^#' .env.production | grep '=' | cut -d '=' -f1))
-    
-    # 检查每个环境变量是否有值
-    missing_or_empty=()
-    for var in "${required_vars[@]}"; do
-        # 获取变量值
-        value=$(grep "^${var}=" .env.production | cut -d '=' -f2)
-        
-        # 检查值是否为空
-        if [ -z "$value" ] || [ "$value" = '""' ] || [ "$value" = "''" ]; then
-            missing_or_empty+=("$var")
-        fi
-    done
-    
-    # 如果有空值或未设置的变量
-    if [ ${#missing_or_empty[@]} -ne 0 ]; then
-        error "以下环境变量在 .env.production 中未设置或为空："
-        for var in "${missing_or_empty[@]}"; do
-            echo "- $var"
-        done
-        
-        read -p "是否继续部署？(y/n) " continue_deploy
-        if [[ ! "$continue_deploy" =~ ^[Yy]$ ]]; then
-            error "部署已取消"
-            exit 1
-        fi
-        
-        log "继续部署，但某些功能可能无法正常工作..."
-    else
-        success "所有环境变量检查通过"
-    fi
-    
-    # 检查关键服务的必需变量
-    critical_vars=(
-        "STRIPE_SECRET_KEY"
+    log "🔍 检查环境变量配置..."
+
+    # 定义必需的环境变量列表
+    local required_vars=(
+        # Frontend Variables
+        "VITE_MOONSHOT_API_KEY"
+        "VITE_GEMINI_API_KEY"
+        "VITE_API_KEY"
+        # Firebase Variables
+        "VITE_FIREBASE_API_KEY"
+        "VITE_FIREBASE_AUTH_DOMAIN"
+        "VITE_FIREBASE_PROJECT_ID"
+        "VITE_FIREBASE_STORAGE_BUCKET"
+        "VITE_FIREBASE_MESSAGING_SENDER_ID"
+        "VITE_FIREBASE_APP_ID"
+        "VITE_FIREBASE_MEASUREMENT_ID"
+        # Stripe Variables
         "VITE_STRIPE_PUBLISHABLE_KEY"
         "VITE_STRIPE_MODE"
+        "STRIPE_SECRET_KEY"
     )
-    
-    missing_critical=()
-    for var in "${critical_vars[@]}"; do
-        value=$(grep "^${var}=" .env.production | cut -d '=' -f2)
-        if [ -z "$value" ] || [ "$value" = '""' ] || [ "$value" = "''" ]; then
-            missing_critical+=("$var")
+
+    local missing_vars=()
+    local env_file=".env.production"
+
+    # 检查 .env.production 文件是否存在
+    if [ ! -f "$env_file" ]; then
+        error "❌ 环境变量文件 $env_file 不存在！"
+        return 1
+    fi
+
+    # 检查每个必需变量
+    for var in "${required_vars[@]}"; do
+        if ! grep -q "^$var=" "$env_file"; then
+            missing_vars+=("$var")
         fi
     done
-    
-    if [ ${#missing_critical[@]} -ne 0 ]; then
-        error "以下关键环境变量未设置，支付功能可能无法正常工作："
-        for var in "${missing_critical[@]}"; do
-            echo "- $var"
+
+    # 处理缺失的变量
+    if [ ${#missing_vars[@]} -ne 0 ]; then
+        error "❌ 以下必需环境变量未设置:"
+        for missing_var in "${missing_vars[@]}"; do
+            echo "   - $missing_var"
         done
         
-        read -p "确定要继续部署吗？(y/n) " continue_deploy
-        if [[ ! "$continue_deploy" =~ ^[Yy]$ ]]; then
-            error "部署已取消"
-            exit 1
-        fi
+        log "💡 建议在 $env_file 中添加这些变量，或者在部署前设置它们。"
+        return 1
+    else
+        success "✅ 所有必需环境变量已正确配置"
+        return 0
     fi
+}
+
+# 部署服务前的最终检查
+pre_deployment_checks() {
+    log "🚦 开始部署前检查..."
+
+    # 检查 Docker 和 Docker Compose 版本
+    docker version > /dev/null 2>&1
+    if [ $? -ne 0 ]; then
+        error "❌ Docker 未正确安装或运行"
+        return 1
+    fi
+
+    docker-compose version > /dev/null 2>&1
+    if [ $? -ne 0 ]; then
+        error "❌ Docker Compose 未正确安装"
+        return 1
+    fi
+
+    # 检查环境变量
+    check_env_file
+    if [ $? -ne 0 ]; then
+        error "❌ 环境变量检查未通过，无法继续部署"
+        return 1
+    fi
+
+    # 检查必要的配置文件
+    local required_files=(
+        "docker-compose.prod.yml"
+        "Dockerfile"
+        ".env.production"
+    )
+
+    for file in "${required_files[@]}"; do
+        if [ ! -f "$file" ]; then
+            error "❌ 缺少必要的配置文件: $file"
+            return 1
+        fi
+    done
+
+    success "✅ 所有部署前检查已通过"
+    return 0
 }
 
 # 清理环境
@@ -519,10 +545,11 @@ main() {
     
     # 4. 部署服务
     cleanup
+    pre_deployment_checks
     deploy_services
     check_health
     show_status
 }
 
 # 执行主函数
-main 
+main
