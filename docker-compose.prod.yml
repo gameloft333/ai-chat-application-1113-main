@@ -59,11 +59,11 @@ services:
         npm run preview:prod
       "
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:4173 || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 90s
+      test: ["CMD-SHELL", "curl -f http://localhost:4173 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
     restart: unless-stopped
 
   payment:
@@ -94,10 +94,10 @@ services:
       "
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:4242/api/health || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 90s
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
     depends_on:
       frontend:
         condition: service_healthy

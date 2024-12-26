@@ -21,5 +21,5 @@ COPY .env.production .env
 EXPOSE 4173
 
 # 设置健康检查
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD wget --spider -q http://localhost:4173 || exit 1
+HEALTHCHECK --interval=30s --timeout=20s --start-period=120s --retries=5 \
+  CMD curl -f http://localhost:4173 || exit 1
