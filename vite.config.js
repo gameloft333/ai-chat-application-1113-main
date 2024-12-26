@@ -1,5 +1,6 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
+import path from 'path'
 
 export default defineConfig(({ mode }) => {
   // 加载环境变量
@@ -7,6 +8,9 @@ export default defineConfig(({ mode }) => {
   
   // 删除 .env 文件中的 NODE_ENV
   delete env.NODE_ENV
+
+  console.log('🚀 Vite Configuration Mode:', mode)
+  console.log('🔧 Environment Variables:', JSON.stringify(env, null, 2))
 
   return {
     // 明确设置 NODE_ENV
@@ -54,7 +58,26 @@ export default defineConfig(({ mode }) => {
     // 预览服务器配置
     preview: {
       host: '0.0.0.0',
-      port: 4173
+      port: 4173,
+      strictPort: true,
+      open: false
+    },
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src')
+      }
+    },
+    server: {
+      host: '0.0.0.0',
+      port: 4173,
+      strictPort: true,
+      open: false,
+      // 添加日志输出
+      logger: {
+        info: console.log,
+        warn: console.warn,
+        error: console.error
+      }
     }
   }
 })

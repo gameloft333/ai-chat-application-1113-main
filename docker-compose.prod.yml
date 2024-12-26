@@ -55,6 +55,8 @@ services:
         npm run clean &&
         echo ' Building Production Assets...' &&
         npm run build:prod &&
+        echo ' Listing dist contents...' &&
+        ls -la dist &&
         echo ' Starting Preview Server...' &&
         npm run preview:prod --host 0.0.0.0
       "
