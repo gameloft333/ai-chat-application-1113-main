@@ -626,6 +626,42 @@ check_payment_service() {
     return 1
 }
 
+# 生产环境部署函数
+deploy_prod() {
+    local log_file="${LOG_DIR}/deploy_prod_$(date +"%Y%m%d_%H%M%S").log"
+    
+    echo "🚀 开始生产环境部署..."
+    echo "📅 部署时间: $(date '+%Y-%m-%d %H:%M:%S')"
+    
+    # 检查必要的环境变量和配置文件
+    if [ ! -f ".env.production" ]; then
+        echo "❌ 错误：未找到 .env.production 文件"
+        return 1
+    fi
+    
+    # 备份当前的 docker-compose 文件
+    cp docker-compose.prod.yml docker-compose.prod.yml.bak
+    
+    # 执行生产环境部署
+    docker-compose -f docker-compose.prod.yml up -d --build | tee "$log_file"
+    
+    local deploy_status=${PIPESTATUS[0]}
+    
+    if [ $deploy_status -eq 0 ]; then
+        echo "✅ 生产环境部署成功！"
+        echo "📄 详细日志: $log_file"
+    else
+        echo "❌ 生产环境部署失败！"
+        echo "📄 错误日志: $log_file"
+        
+        # 尝试回滚
+        echo "🔄 正在尝试回滚..."
+        docker-compose -f docker-compose.prod.yml down
+        
+        return 1
+    fi
+}
+
 # 主函数
 main() {
     log "开始一键部署流程..."
@@ -650,4 +686,11 @@ main() {
 }
 
 # 执行主函数
-main
+case "$1" in
+    deploy_prod)
+        deploy_prod
+        ;;
+    *)
+        main
+        ;;
+esac
