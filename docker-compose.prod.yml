@@ -61,10 +61,10 @@ services:
         npm run preview:prod
       "
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:4173 || exit 1"]
+      test: ["CMD-SHELL", "/healthcheck.sh"]
       interval: 30s
-      timeout: 10s
-      retries: 3
+      timeout: 20s
+      retries: 5
       start_period: 120s
     restart: unless-stopped
 
