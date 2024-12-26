@@ -343,18 +343,56 @@ deploy_services() {
 
 # 检查服务健康状态
 check_health() {
-    log "检查服务健康状态..."
+    local max_attempts=30
+    local attempt=0
+    local services=("frontend" "payment" "nginx")
+    local health_status=()
+
+    log "🩺 开始服务健康检查..."
     
-    if curl -s -f http://localhost:4173 > /dev/null; then
-        success "前端服务运行正常"
-    else
-        error "前端服务未正常运行"
-    fi
+    for service in "${services[@]}"; do
+        attempt=0
+        while [ $attempt -lt $max_attempts ]; do
+            local status=$(docker-compose -f docker-compose.prod.yml ps -a | grep "$service" | awk '{print $4}')
+            
+            if [[ "$status" == "healthy" ]]; then
+                success "✅ $service 服务健康状态正常"
+                health_status+=("$service:healthy")
+                break
+            elif [[ "$status" == "unhealthy" ]]; then
+                error "❌ $service 服务健康检查失败"
+                health_status+=("$service:unhealthy")
+                break
+            else
+                log "🔄 等待 $service 服务就绪... (尝试 $((attempt+1))/$max_attempts)"
+                sleep 10
+                ((attempt++))
+            fi
+        done
+
+        if [ $attempt -eq $max_attempts ]; then
+            error "❌ $service 服务启动超时"
+            health_status+=("$service:timeout")
+        fi
+    done
+
+    # 显示总体健康状态
+    local overall_health="✨ 部署健康状态总览:\n"
+    for status in "${health_status[@]}"; do
+        service=$(echo "$status" | cut -d ':' -f1)
+        health=$(echo "$status" | cut -d ':' -f2)
+        overall_health+="  $service: $health\n"
+    done
     
-    if curl -s -f http://localhost:4242 > /dev/null; then
-        success "支付服务运行正常"
+    log "$overall_health"
+
+    # 检查是否所有服务都健康
+    if [[ ! " ${health_status[@]} " =~ "unhealthy" ]] && [[ ! " ${health_status[@]} " =~ "timeout" ]]; then
+        success "🎉 所有服务已成功部署并健康运行！"
+        return 0
     else
-        error "支付服务未正常运行"
+        error "🚨 部署存在问题，请检查服务状态！"
+        return 1
     fi
 }
 

@@ -74,6 +74,13 @@ app.get('/health', (req, res) => {
     });
 });
 
+app.get('/api/health', (req, res) => {
+    res.status(200).json({
+        status: 'ok',
+        stripe: process.env.STRIPE_SECRET_KEY ? 'configured' : 'missing'
+    });
+});
+
 // 错误处理中间件
 app.use((err, req, res, next) => {
   console.error('支付服务器错误:', err);
