@@ -50,6 +50,11 @@ export default defineConfig(({ mode }) => {
       modules: {
         generateScopedName: '[name]__[local]___[hash:base64:5]'
       }
+    },
+    // 预览服务器配置
+    preview: {
+      host: '0.0.0.0',
+      port: 4173
     }
   }
 })
