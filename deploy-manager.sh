@@ -420,32 +420,32 @@ check_services_status() {
     payment_status=$(docker-compose -f docker-compose.prod.yml ps payment | grep -o "healthy\|unhealthy\|starting" || echo "unknown")
     nginx_status=$(docker-compose -f docker-compose.prod.yml ps nginx | grep -o "healthy\|unhealthy\|starting" || echo "unknown")
     
-    # 检查 npm 漏洞并修复
+    # 检查并修复 npm 漏洞
     if docker-compose -f docker-compose.prod.yml exec payment npm audit | grep -q "severity"; then
         warning "检测到 npm 安全漏洞，正在修复..."
-        if docker-compose -f docker-compose.prod.yml exec payment npm audit fix; then
-            success "npm 安全漏洞修复完成"
-        else
-            error "npm 安全漏洞修复失败"
-        fi
+        docker-compose -f docker-compose.prod.yml exec -T payment npm audit fix
+        docker-compose -f docker-compose.prod.yml restart payment
+        sleep 5
     fi
     
-    # 检查 SSL 证书
-    if [ ! -f "/etc/nginx/ssl/fullchain.pem" ] || [ ! -f "/etc/nginx/ssl/privkey.pem" ]; then
-        warning "SSL证书文件不存在，正在尝试重新生成..."
-        manage_ssl_certificates
+    # 如果 nginx 状态为 unknown，尝试重启
+    if [[ "$nginx_status" == "unknown" ]]; then
+        warning "Nginx 状态未知，尝试重启..."
+        docker-compose -f docker-compose.prod.yml restart nginx
+        sleep 10
+        nginx_status=$(docker-compose -f docker-compose.prod.yml ps nginx | grep -o "healthy\|unhealthy\|starting" || echo "unknown")
     fi
     
-    # 如果所有服务都健康，返回成功
+    # 输出当前状态
+    log "服务状态: Frontend: $frontend_status | Payment: $payment_status | Nginx: $nginx_status"
+    
+    # 检查是否所有服务都健康
     if [[ "$frontend_status" == "healthy" ]] && 
        [[ "$payment_status" == "healthy" ]] && 
        [[ "$nginx_status" == "healthy" ]]; then
         success "所有服务健康状态正常"
         return 0
     fi
-    
-    # 输出当前状态
-    log "服务状态: Frontend: $frontend_status | Payment: $payment_status | Nginx: $nginx_status"
     
     return 1
 }
