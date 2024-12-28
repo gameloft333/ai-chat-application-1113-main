@@ -389,7 +389,7 @@ deploy_services() {
             
             # 循环检查每个服务的状态
             for i in {1..30}; do
-                log "检查服务状��... (${i}/30)"
+                log "检查服务状态... (${i}/30)"
                 
                 # 获取每个服务的状态
                 frontend_status=$(docker-compose -f docker-compose.prod.yml ps frontend | grep -o "healthy\|unhealthy\|starting" || echo "unknown")
@@ -649,7 +649,7 @@ deploy_prod() {
     
     if [ $deploy_status -eq 0 ]; then
         echo "✅ 生产环境部署成功！"
-        echo "📄 详���日志: $log_file"
+        echo "📄 详细日志: $log_file"
     else
         echo "❌ 生产环境部署失败！"
         echo "📄 错误日志: $log_file"
@@ -685,7 +685,12 @@ manage_ssl_certificates() {
         # 检查 certbot 是否安装
         if ! command -v certbot &> /dev/null; then
             log "安装 certbot..."
-            if [ -f /etc/debian_version ]; then
+            # 针对 AWS Linux 2 的安装方式
+            if grep -q "Amazon Linux" /etc/os-release; then
+                log "检测到 AWS Linux，使用 EPEL 仓库安装 certbot..."
+                sudo yum install -y epel-release
+                sudo yum install -y certbot python3-certbot-nginx
+            elif [ -f /etc/debian_version ]; then
                 sudo apt-get update
                 sudo apt-get install -y certbot
             elif [ -f /etc/redhat-release ]; then
