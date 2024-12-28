@@ -420,6 +420,16 @@ check_services_status() {
     payment_status=$(docker-compose -f docker-compose.prod.yml ps payment | grep -o "healthy\|unhealthy\|starting" || echo "unknown")
     nginx_status=$(docker-compose -f docker-compose.prod.yml ps nginx | grep -o "healthy\|unhealthy\|starting" || echo "unknown")
     
+    # 检查 npm 漏洞并修复
+    if docker-compose -f docker-compose.prod.yml exec payment npm audit | grep -q "severity"; then
+        warning "检测到 npm 安全漏洞，正在修复..."
+        if docker-compose -f docker-compose.prod.yml exec payment npm audit fix; then
+            success "npm 安全漏洞修复完成"
+        else
+            error "npm 安全漏洞修复失败"
+        fi
+    fi
+    
     # 检查 SSL 证书
     if [ ! -f "/etc/nginx/ssl/fullchain.pem" ] || [ ! -f "/etc/nginx/ssl/privkey.pem" ]; then
         warning "SSL证书文件不存在，正在尝试重新生成..."
