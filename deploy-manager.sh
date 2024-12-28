@@ -390,7 +390,7 @@ deploy_services() {
             # 循环检查每个服务的状态
             check_services_status
             
-            error "服务启动超时，完整日志："
+            error "服���启动超时，完整日志："
             docker-compose -f docker-compose.prod.yml logs
             ((retry_count++))
             
@@ -602,7 +602,7 @@ deploy_prod() {
     echo "🚀 开始生产环境部署..."
     echo "📅 部署时间: $(date '+%Y-%m-%d %H:%M:%S')"
     
-    # 检查必要的环境变量和配置文件
+    # 检��必要的环境变量和配置文件
     if [ ! -f ".env.production" ]; then
         echo "❌ 错误：未找到 .env.production 文件"
         return 1
@@ -733,8 +733,9 @@ server {
 }
 
 server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
     server_name $DOMAIN;
     
     ssl_certificate /etc/nginx/ssl/$DOMAIN.crt;
@@ -745,7 +746,7 @@ server {
     error_log /var/log/nginx/love.error.log debug;
     
     location / {
-        proxy_pass http://frontend:4173;
+        proxy_pass http://127.0.0.1:4173;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -754,6 +755,15 @@ server {
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+    
+    location /api {
+        proxy_pass http://127.0.0.1:4242;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_cache_bypass \$http_upgrade;
     }
 }
 EOF
