@@ -390,7 +390,7 @@ deploy_services() {
             # 循环检查每个服务的状态
             check_services_status
             
-            error "服���启动超时，完整日志："
+            error "服务启动超时，完整日志："
             docker-compose -f docker-compose.prod.yml logs
             ((retry_count++))
             
@@ -418,7 +418,9 @@ check_services_status() {
     # 获取每个服务的状态
     frontend_status=$(docker-compose -f docker-compose.prod.yml ps frontend | grep -o "healthy\|unhealthy\|starting" || echo "unknown")
     payment_status=$(docker-compose -f docker-compose.prod.yml ps payment | grep -o "healthy\|unhealthy\|starting" || echo "unknown")
-    nginx_status=$(docker-compose -f docker-compose.prod.yml ps nginx | grep -o "healthy\|unhealthy\|starting\|running" || echo "unknown")
+    
+    # 检查 Nginx 容器状态
+    nginx_container_status=$(docker-compose -f docker-compose.prod.yml ps nginx | grep -q "Up" && echo "running" || echo "stopped")
     
     # 检查并修复 npm 漏洞
     if docker-compose -f docker-compose.prod.yml exec payment npm audit | grep -q "severity"; then
@@ -428,26 +430,29 @@ check_services_status() {
         sleep 5
     fi
     
-    # 如果 nginx 状态为 unknown，检查是否在运行
-    if [[ "$nginx_status" == "unknown" ]]; then
-        container_status=$(docker-compose -f docker-compose.prod.yml ps nginx | grep -q "Up" && echo "running" || echo "stopped")
-        if [[ "$container_status" == "running" ]]; then
-            nginx_status="running"
-        else
-            warning "Nginx 容器未运行，尝试重启..."
-            docker-compose -f docker-compose.prod.yml restart nginx
-            sleep 10
-            nginx_status=$(docker-compose -f docker-compose.prod.yml ps nginx | grep -o "healthy\|unhealthy\|starting\|running" || echo "unknown")
+    # 如果 Nginx 容器未运行，尝试重启
+    if [[ "$nginx_container_status" != "running" ]]; then
+        warning "Nginx 容器未运行，尝试重启..."
+        docker-compose -f docker-compose.prod.yml restart nginx
+        sleep 10
+        nginx_container_status=$(docker-compose -f docker-compose.prod.yml ps nginx | grep -q "Up" && echo "running" || echo "stopped")
+    fi
+    
+    # 如果 Nginx 正在运行，检查配置文件是否存在
+    if [[ "$nginx_container_status" == "running" ]]; then
+        if ! docker-compose -f docker-compose.prod.yml exec nginx test -f /etc/nginx/conf.d/love.conf; then
+            warning "Nginx 配置文件不存在，正在更新配置..."
+            update_nginx_config
         fi
     fi
     
     # 输出当前状态
-    log "服务状态: Frontend: $frontend_status | Payment: $payment_status | Nginx: $nginx_status"
+    log "服务状态: Frontend: $frontend_status | Payment: $payment_status | Nginx: $nginx_container_status"
     
     # 检查是否所有服务都正常
     if [[ "$frontend_status" == "healthy" ]] && 
        [[ "$payment_status" == "healthy" ]] && 
-       [[ "$nginx_status" =~ ^(healthy|running)$ ]]; then
+       [[ "$nginx_container_status" == "running" ]]; then
         success "所有服务运行正常"
         return 0
     fi
@@ -455,7 +460,7 @@ check_services_status() {
     return 1
 }
 
-# 修��后的健康检查逻辑
+# 修复后的健康检查逻辑
 check_health() {
     local max_attempts=5
     local attempt=1
@@ -934,7 +939,7 @@ EOF
 main() {
     log "开始一键部署流程..."
     
-    # 1. 配置环境变��
+    # 1. 配置环境变量
     setup_environment
     
     # 2. 配置 Git 并更新代码
