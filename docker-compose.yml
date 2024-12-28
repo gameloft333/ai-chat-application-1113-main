@@ -68,32 +68,25 @@ services:
     environment:
       - PORT=4242
       - NODE_ENV=production
+      - HOST=0.0.0.0
       # Stripe Config
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
       - VITE_STRIPE_PUBLISHABLE_KEY=${VITE_STRIPE_PUBLISHABLE_KEY}
       - VITE_STRIPE_MODE=${VITE_STRIPE_MODE}
-      # PayPal Config
-      # - VITE_PAYPAL_SANDBOX_MODE=${VITE_PAYPAL_SANDBOX_MODE}
-      # - VITE_PAYPAL_CLIENT_ID=${VITE_PAYPAL_CLIENT_ID}
-      # - VITE_PAYPAL_CLIENT_SECRET=${VITE_PAYPAL_CLIENT_SECRET}
-      # - VITE_PAYPAL_API_URL=${VITE_PAYPAL_API_URL}
-      - NODE_ENV=production
-    depends_on:
-      frontend:
-        condition: service_healthy
-    restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:4242"]
+      test: ["CMD", "curl", "-f", "http://localhost:4242/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 30s
+      retries: 5
+      start_period: 60s
     command: >
       sh -c "
-        echo '等待系统初始化...' &&
-        sleep 15 &&
+        echo '启动支付服务...' &&
+        npm install &&
+        npm install -g curl &&
         node index.js
       "
+    restart: unless-stopped
 
   # 注释掉 Telegram 支付服务，但保留配置供后续使用
   # telegram-payment:

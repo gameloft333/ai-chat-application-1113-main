@@ -389,7 +389,7 @@ deploy_services() {
             
             # 循环检查每个服务的状态
             for i in {1..30}; do
-                log "检查服务状态... (${i}/30)"
+                log "检查服务状��... (${i}/30)"
                 
                 # 获取每个服务的状态
                 frontend_status=$(docker-compose -f docker-compose.prod.yml ps frontend | grep -o "healthy\|unhealthy\|starting" || echo "unknown")
@@ -442,82 +442,62 @@ deploy_services() {
 check_health() {
     local max_attempts=30
     local interval=10
-    local services=("frontend" "payment" "nginx")
-    local health_status=()
-
-    log "🩺 开始服务健康检查..."
-    log "📋 将检查以下服务: ${services[*]}"
-    log "⏱️ 每次检查间隔 $interval 秒，最大尝试 $max_attempts 次"
-
-    for service in "${services[@]}"; do
-        log "🔍 正在检查 $service 服务健康状态..."
+    local current_attempt=1
+    
+    log "🚀 开始健康检查流程..."
+    
+    while [ $current_attempt -le $max_attempts ]; do
+        log "⏳ 第 ${current_attempt}/${max_attempts} 次检查..."
         
-        local attempt=0
-        local last_status=""
+        # 检查前端服务
+        log "  📱 检查前端服务..."
+        if curl -s -f http://localhost:4173 > /dev/null; then
+            success "    ✅ 前端服务正常运行"
+        else
+            warning "    ⚠️ 前端服务未就绪"
+        fi
         
-        while [ $attempt -lt $max_attempts ]; do
-            # 获取服务状态
-            local current_status=$(docker-compose -f docker-compose.prod.yml ps -a | grep "$service" | awk '{print $4}')
-            
-            # 状态变化时输出详细信息
-            if [[ "$current_status" != "$last_status" ]]; then
-                case "$current_status" in
-                    "healthy")
-                        success "✅ $service 服务健康检查通过！"
-                        health_status+=("$service:healthy")
-                        break
-                        ;;
-                    "unhealthy")
-                        error "❌ $service 服务健康检查失败！"
-                        health_status+=("$service:unhealthy")
-                        break
-                        ;;
-                    *)
-                        log "🕒 $service 服务正在启动中... (尝试 $((attempt+1))/$max_attempts)"
-                        ;;
-                esac
-                last_status="$current_status"
-            fi
-
+        # 检查支付服务
+        log "  💳 检查支付服务..."
+        local payment_health=$(curl -s -f http://localhost:4242/health || echo "failed")
+        if [ "$payment_health" != "failed" ]; then
+            success "    ✅ 支付服务正常运行"
+            log "    📊 支付服务详细状态:"
+            echo "$payment_health" | jq '.' || echo "$payment_health"
+        else
+            warning "    ⚠️ 支付服务未就绪"
+        fi
+        
+        # 检查 Nginx 服务
+        log "  🌐 检查 Nginx 服务..."
+        if curl -s -f http://localhost > /dev/null; then
+            success "    ✅ Nginx 服务正常运行"
+        else
+            warning "    ⚠️ Nginx 服务未就绪"
+        fi
+        
+        # 检查所有服务是否都正常
+        if docker-compose -f docker-compose.prod.yml ps | grep -q "unhealthy"; then
+            warning "⚠️ 发现不健康的服务，等待下一次检查..."
             sleep $interval
-            ((attempt++))
-
-            # 如果达到最大尝试次数
-            if [ $attempt -eq $max_attempts ]; then
-                error "❌ $service 服务启动超时！"
-                health_status+=("$service:timeout")
-                break
-            fi
-        done
-    done
-
-    # 生成总体健康报告
-    log "📊 服务健康检查总结："
-    for status in "${health_status[@]}"; do
-        service=$(echo "$status" | cut -d ':' -f1)
-        health=$(echo "$status" | cut -d ':' -f2)
+            ((current_attempt++))
+            continue
+        fi
         
-        case "$health" in
-            "healthy")
-                success "  ✅ $service: 服务正常"
-                ;;
-            "unhealthy")
-                error "  ❌ $service: 服务异常"
-                ;;
-            "timeout")
-                warning "  ⚠️ $service: 服务启动超时"
-                ;;
-        esac
+        # 所有检查通过
+        if curl -s -f http://localhost:4173 > /dev/null && \
+           [ "$payment_health" != "failed" ] && \
+           curl -s -f http://localhost > /dev/null; then
+            success "🎉 所有服务健康检查通过！"
+            return 0
+        fi
+        
+        sleep $interval
+        ((current_attempt++))
     done
-
-    # 检查是否所有服务都健康
-    if [[ ! " ${health_status[@]} " =~ "unhealthy" ]] && [[ ! " ${health_status[@]} " =~ "timeout" ]]; then
-        success "🎉 所有服务已成功部署并健康运行！"
-        return 0
-    else
-        error "🚨 部署存在问题，请检查服务状态！"
-        return 1
-    fi
+    
+    error "❌ 健康检查失败，已达到最大重试次数"
+    return 1
 }
 
 # 显示服务状态
@@ -718,7 +698,7 @@ manage_ssl_certificates() {
         sudo chmod 600 $SSL_DIR/$DOMAIN.key
         sudo chmod 644 $SSL_DIR/$DOMAIN.crt
     else
-        log "SSL 证书已存在，检查有效期..."
+        log "SSL 证书已存在，检查有��期..."
         
         # 检查证书有效期
         local expiry_date=$(openssl x509 -enddate -noout -in "$SSL_DIR/$DOMAIN.crt" | cut -d= -f2)
@@ -759,7 +739,7 @@ update_nginx_config() {
     awk -v domain="$DOMAIN" '
     BEGIN { found = 0 }
     {
-        # 如果找到目标服务器块的开始
+        # 如果找到目标���务器块的开始
         if ($0 ~ "server_name[[:space:]]+" domain ";") {
             found = 1
             # 输出新的服务器配置

@@ -67,11 +67,16 @@ app.post('/api/stripe/create-payment-intent', async (req, res) => {
 });
 
 app.get('/health', (req, res) => {
-    res.status(200).json({ 
-        status: 'ok',
+    const healthStatus = {
+        status: 'healthy',
         timestamp: new Date().toISOString(),
-        stripe: !!process.env.STRIPE_SECRET_KEY
-    });
+        stripe: {
+            configured: !!process.env.STRIPE_SECRET_KEY,
+            mode: process.env.VITE_STRIPE_MODE
+        }
+    };
+    console.log('健康检查:', healthStatus);
+    res.status(200).json(healthStatus);
 });
 
 app.get('/api/health', (req, res) => {
