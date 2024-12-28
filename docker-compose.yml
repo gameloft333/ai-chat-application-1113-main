@@ -74,7 +74,9 @@ services:
       - VITE_STRIPE_PUBLISHABLE_KEY=${VITE_STRIPE_PUBLISHABLE_KEY}
       - VITE_STRIPE_MODE=${VITE_STRIPE_MODE}
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4242/health"]
+      test: |
+        CMD-SHELL
+        curl --fail http://localhost:4242/health || exit 1
       interval: 30s
       timeout: 10s
       retries: 5
@@ -84,6 +86,7 @@ services:
         echo '启动支付服务...' &&
         npm install &&
         npm install -g curl &&
+        echo '安装完成，启动服务...' &&
         node index.js
       "
     restart: unless-stopped
