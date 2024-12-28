@@ -364,7 +364,7 @@ deploy_services() {
     fi
     success "服务构建成功"
     
-    # 8. ��动服务并监控健康状态
+    # 8. 启动服务并监控健康状态
     log "开始启动服务..."
     local max_retries=3
     local retry_count=0
@@ -389,7 +389,7 @@ deploy_services() {
             
             # 循环检查每个服务的状态
             for i in {1..30}; do
-                log "检查服务状态... (${i}/30)"
+                log "检查服务状��... (${i}/30)"
                 
                 # 获取每个服务的状态
                 frontend_status=$(docker-compose -f docker-compose.prod.yml ps frontend | grep -o "healthy\|unhealthy\|starting" || echo "unknown")
@@ -649,7 +649,7 @@ deploy_prod() {
     
     if [ $deploy_status -eq 0 ]; then
         echo "✅ 生产环境部署成功！"
-        echo "📄 详细日志: $log_file"
+        echo "📄 详���日志: $log_file"
     else
         echo "❌ 生产环境部署失败！"
         echo "📄 错误日志: $log_file"
@@ -662,7 +662,174 @@ deploy_prod() {
     fi
 }
 
-# 主函数
+# 管理 SSL 证书
+manage_ssl_certificates() {
+    log "检查和管理 SSL 证书..."
+    
+    local SSL_DIR="/etc/nginx/ssl"
+    local DOMAIN="love.saga4v.com"
+    
+    # 检查 SSL 目录
+    if [ ! -d "$SSL_DIR" ]; then
+        log "创建 SSL 证书目录..."
+        if ! sudo mkdir -p "$SSL_DIR"; then
+            error "创建 SSL 目录失败"
+            return 1
+        fi
+    fi
+    
+    # 检查证书文件
+    if [ ! -f "$SSL_DIR/$DOMAIN.crt" ] || [ ! -f "$SSL_DIR/$DOMAIN.key" ]; then
+        log "SSL 证书不存在，开始申请..."
+        
+        # 检查 certbot 是否安装
+        if ! command -v certbot &> /dev/null; then
+            log "安装 certbot..."
+            if [ -f /etc/debian_version ]; then
+                sudo apt-get update
+                sudo apt-get install -y certbot
+            elif [ -f /etc/redhat-release ]; then
+                sudo yum install -y certbot
+            else
+                error "不支持的操作系统，请手动安装 certbot"
+                return 1
+            fi
+        fi
+        
+        # 申请证书
+        log "使用 certbot 申请证书..."
+        if ! sudo certbot certonly --standalone -d $DOMAIN --non-interactive --agree-tos --email admin@saga4v.com; then
+            error "证书申请失败"
+            return 1
+        fi
+        
+        # 复制证书到 nginx ssl 目录
+        log "复制证书到 Nginx 目录..."
+        sudo cp /etc/letsencrypt/live/$DOMAIN/fullchain.pem $SSL_DIR/$DOMAIN.crt
+        sudo cp /etc/letsencrypt/live/$DOMAIN/privkey.pem $SSL_DIR/$DOMAIN.key
+        
+        # 设置权限
+        sudo chown -R root:root $SSL_DIR
+        sudo chmod 600 $SSL_DIR/$DOMAIN.key
+        sudo chmod 644 $SSL_DIR/$DOMAIN.crt
+    else
+        log "SSL 证书已存在，检查有效期..."
+        
+        # 检查证书有效期
+        local expiry_date=$(openssl x509 -enddate -noout -in "$SSL_DIR/$DOMAIN.crt" | cut -d= -f2)
+        local expiry_epoch=$(date -d "$expiry_date" +%s)
+        local current_epoch=$(date +%s)
+        local days_left=$(( ($expiry_epoch - $current_epoch) / 86400 ))
+        
+        if [ $days_left -lt 30 ]; then
+            warning "SSL 证书将在 $days_left 天后过期，尝试续期..."
+            if ! sudo certbot renew --quiet; then
+                error "证书续期失败"
+                return 1
+            fi
+            success "证书续期成功"
+        else
+            success "SSL 证书有效期充足，还有 $days_left 天"
+        fi
+    fi
+    
+    success "SSL 证书管理完成"
+    return 0
+}
+
+# 更新 nginx 配置
+update_nginx_config() {
+    log "更新 nginx 配置..."
+    
+    local NGINX_CONF="/etc/nginx/nginx.conf"
+    local DOMAIN="love.saga4v.com"
+    local TEMP_CONF="/tmp/nginx.conf.tmp"
+    
+    # 备份原配置
+    log "备份当前 nginx 配置..."
+    sudo cp $NGINX_CONF "${NGINX_CONF}.backup"
+    
+    # 读取原配置文件并更新指定域名的服务器块
+    log "查找并更新 $DOMAIN 的配置..."
+    awk -v domain="$DOMAIN" '
+    BEGIN { found = 0 }
+    {
+        # 如果找到目标服务器块的开始
+        if ($0 ~ "server_name[[:space:]]+" domain ";") {
+            found = 1
+            # 输出新的服务器配置
+            print "\t# love 服务器配置"
+            print "\tserver {"
+            print "\t\tlisten 80;"
+            print "\t\tlisten 443 ssl;"
+            print "\t\tserver_name " domain ";"
+            print ""
+            print "\t\tssl_certificate /etc/nginx/ssl/" domain ".crt;"
+            print "\t\tssl_certificate_key /etc/nginx/ssl/" domain ".key;"
+            print "\t\tssl_protocols TLSv1.2 TLSv1.3;"
+            print "\t\tssl_ciphers HIGH:!aNULL:!MD5;"
+            print ""
+            print "\t\taccess_log /var/log/nginx/love.access.log;"
+            print "\t\terror_log /var/log/nginx/love.error.log debug;"
+            print ""
+            print "\t\tlocation / {"
+            print "\t\t\tproxy_pass http://127.0.0.1:4173;"
+            print "\t\t\tproxy_http_version 1.1;"
+            print "\t\t\tproxy_set_header Upgrade $http_upgrade;"
+            print "\t\t\tproxy_set_header Connection '\''upgrade'\'';"
+            print "\t\t\tproxy_set_header Host $host;"
+            print "\t\t\tproxy_set_header X-Real-IP $remote_addr;"
+            print "\t\t\tproxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;"
+            print "\t\t\tproxy_set_header X-Forwarded-Proto $scheme;"
+            print "\t\t\tproxy_cache_bypass $http_upgrade;"
+            print "\t\t\tadd_header X-Debug-Message \"Proxying to 4173\" always;"
+            print "\t\t}"
+            print ""
+            print "\t\tlocation /api {"
+            print "\t\t\tproxy_pass http://127.0.0.1:4242;"
+            print "\t\t\tproxy_http_version 1.1;"
+            print "\t\t\tproxy_set_header Upgrade $http_upgrade;"
+            print "\t\t\tproxy_set_header Connection '\''upgrade'\'';"
+            print "\t\t\tproxy_set_header Host $host;"
+            print "\t\t\tproxy_set_header X-Real-IP $remote_addr;"
+            print "\t\t\tproxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;"
+            print "\t\t\tproxy_set_header X-Forwarded-Proto $scheme;"
+            print "\t\t\tproxy_cache_bypass $http_upgrade;"
+            print "\t\t\tadd_header X-Debug-Message \"Proxying to 4242\" always;"
+            print "\t\t}"
+            print "\t}"
+            print ""
+            
+            # 跳过原有的服务器块
+            while (getline && $0 !~ /^[[:space:]]*}[[:space:]]*$/) { }
+            next
+        }
+        # 输出所有其他行
+        print $0
+    }' $NGINX_CONF > $TEMP_CONF
+    
+    # 检查临时配置文件是否创建成功
+    if [ ! -f $TEMP_CONF ]; then
+        error "配置文件更新失败"
+        return 1
+    fi
+    
+    # 应用新配置
+    sudo mv $TEMP_CONF $NGINX_CONF
+    
+    # 测试配置
+    log "测试 nginx 配置..."
+    if ! sudo nginx -t; then
+        error "nginx 配置测试失败，正在还原备份..."
+        sudo mv "${NGINX_CONF}.backup" $NGINX_CONF
+        return 1
+    fi
+    
+    success "nginx 配置更新完成"
+    return 0
+}
+
+# 更新主函数
 main() {
     log "开始一键部署流程..."
     
@@ -677,7 +844,13 @@ main() {
     check_dependencies
     check_env_file
     
-    # 4. 部署服务
+    # 4. 管理 SSL 证书
+    if ! manage_ssl_certificates; then
+        error "SSL 证书管理失败"
+        exit 1
+    fi
+    
+    # 5. 部署服务
     cleanup
     pre_deployment_checks
     deploy_services

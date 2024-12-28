@@ -32,7 +32,7 @@ services:
       - VITE_GEMINI_API_KEY=${VITE_GEMINI_API_KEY:-}
       - NODE_ENV=production
       - VITE_API_KEY=${VITE_API_KEY:-}
-      - VITE_API_URL=http://payment:4242
+      - VITE_API_URL=https://love.saga4v.com/api
       # Firebase Config with default empty strings
       - VITE_FIREBASE_API_KEY=${VITE_FIREBASE_API_KEY:-}
       - VITE_FIREBASE_AUTH_DOMAIN=${VITE_FIREBASE_AUTH_DOMAIN:-}
@@ -43,11 +43,12 @@ services:
       - VITE_FIREBASE_MEASUREMENT_ID=${VITE_FIREBASE_MEASUREMENT_ID:-}
       # Stripe Config with default empty strings
       - VITE_STRIPE_PUBLISHABLE_KEY=${VITE_STRIPE_PUBLISHABLE_KEY:-}
-      - VITE_STRIPE_MODE=${VITE_STRIPE_MODE:-}
+      - VITE_STRIPE_MODE=live
       # Marquee Config
       - VITE_MARQUEE_ENABLED=true
       - VITE_MARQUEE_ANIMATION_DURATION=20000
       - HOST=0.0.0.0
+      - VITE_USE_HTTPS=true
     command: >
       sh -c "
         export PATH=/app/node_modules/.bin:$PATH &&
@@ -82,7 +83,8 @@ services:
       # Stripe Config with default empty strings
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}
       - VITE_STRIPE_PUBLISHABLE_KEY=${VITE_STRIPE_PUBLISHABLE_KEY:-}
-      - VITE_STRIPE_MODE=${VITE_STRIPE_MODE:-}
+      - VITE_STRIPE_MODE=live
+      - VITE_USE_HTTPS=true
     command: >
       sh -c "
         echo ' Starting Payment Service...' &&

@@ -75,10 +75,7 @@ app.get('/health', (req, res) => {
 });
 
 app.get('/api/health', (req, res) => {
-    res.status(200).json({
-        status: 'ok',
-        stripe: process.env.STRIPE_SECRET_KEY ? 'configured' : 'missing'
-    });
+    res.status(200).json({ status: 'healthy' });
 });
 
 // 错误处理中间件
