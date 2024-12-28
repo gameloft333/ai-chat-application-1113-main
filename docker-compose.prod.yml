@@ -80,31 +80,27 @@ services:
     environment:
       - PORT=4242
       - NODE_ENV=production
-      # Stripe Config with default empty strings
+      - HOST=0.0.0.0
+      # Stripe Config
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}
       - VITE_STRIPE_PUBLISHABLE_KEY=${VITE_STRIPE_PUBLISHABLE_KEY:-}
       - VITE_STRIPE_MODE=live
       - VITE_USE_HTTPS=true
+      # 添加 CORS 配置
+      - ALLOWED_ORIGINS=https://love.saga4v.com
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4242/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
     command: >
       sh -c "
         echo ' Starting Payment Service...' &&
         sleep 15 &&
-        echo ' Checking Environment Variables...' &&
-        node -e \"console.log('环境变量检查:\\nSTRIPE_SECRET_KEY=' + (process.env.STRIPE_SECRET_KEY || '未设置') + '\\nVITE_STRIPE_MODE=' + (process.env.VITE_STRIPE_MODE || '未设置'))\" &&
-        echo ' Installing Dependencies...' &&
         npm install &&
-        echo ' Starting Payment Server...' &&
         npm start
       "
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:4242/api/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 120s
-    depends_on:
-      frontend:
-        condition: service_healthy
     restart: unless-stopped
 
 networks:
