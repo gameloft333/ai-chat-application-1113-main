@@ -420,30 +420,29 @@ check_services_status() {
     payment_status=$(docker-compose -f docker-compose.prod.yml ps payment | grep -o "healthy\|unhealthy\|starting" || echo "unknown")
     nginx_status=$(docker-compose -f docker-compose.prod.yml ps nginx | grep -o "healthy\|unhealthy\|starting" || echo "unknown")
     
-    echo "Frontend: ${frontend_status} | Payment: ${payment_status} | Nginx: ${nginx_status}"
+    # 检查 SSL 证书
+    if [ ! -f "/etc/nginx/ssl/fullchain.pem" ] || [ ! -f "/etc/nginx/ssl/privkey.pem" ]; then
+        warning "SSL证书文件不存在，正在尝试重新生成..."
+        manage_ssl_certificates
+    fi
     
-    # 检查是否所有服务都健康
+    # 如果所有服务都健康，返回成功
     if [[ "$frontend_status" == "healthy" ]] && 
        [[ "$payment_status" == "healthy" ]] && 
        [[ "$nginx_status" == "healthy" ]]; then
+        success "所有服务健康状态正常"
         return 0
     fi
     
-    # 如果有服务不健康，显示其日志
-    for service in "frontend" "payment" "nginx"; do
-        status_var="${service}_status"
-        if [[ "${!status_var}" != "healthy" ]]; then
-            warning "${service} 服务状态: ${!status_var}"
-            docker-compose -f docker-compose.prod.yml logs --tail=20 $service
-        fi
-    done
+    # 输出当前状态
+    log "服务状态: Frontend: $frontend_status | Payment: $payment_status | Nginx: $nginx_status"
     
     return 1
 }
 
 # 修改后的健康检查逻辑
 check_health() {
-    local max_attempts=10
+    local max_attempts=5
     local attempt=1
     local wait_time=30
     
@@ -466,6 +465,7 @@ check_health() {
     done
     
     error "健康检查失败，已达到最大重试次数"
+    docker-compose -f docker-compose.prod.yml logs --tail=50
     return 1
 }
 
@@ -667,7 +667,7 @@ manage_ssl_certificates() {
         sudo chmod 600 $SSL_DIR/$DOMAIN.key
         sudo chmod 644 $SSL_DIR/$DOMAIN.crt
     else
-        log "SSL 证书已存在，检查有��期..."
+        log "SSL 证书已存在，检查有效期..."
         
         # 检查证书有效期
         local expiry_date=$(openssl x509 -enddate -noout -in "$SSL_DIR/$DOMAIN.crt" | cut -d= -f2)
