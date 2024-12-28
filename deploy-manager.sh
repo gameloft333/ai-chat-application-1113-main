@@ -390,7 +390,7 @@ deploy_services() {
             # 循环检查每个服务的状态
             check_services_status
             
-            error "服���启动超时，完整日志："
+            error "服务启动超时，完整日志："
             docker-compose -f docker-compose.prod.yml logs
             ((retry_count++))
             
@@ -546,7 +546,7 @@ show_token_guide() {
       - public_repo
       - repo:invite
    ✓ workflow (如果使用 GitHub Actions)
-8. 设置合适的过期时间（建议90天）
+8. 设��合适的过期时间（建议90天）
 9. 点击底部的 Generate token
 10. 立即复制生成的 token（它只显示一次！）
 
@@ -602,7 +602,7 @@ deploy_prod() {
     echo "🚀 开始生产环境部署..."
     echo "📅 部署时间: $(date '+%Y-%m-%d %H:%M:%S')"
     
-    # 检��必要的环境变量和配置文件
+    # 检查必要的环境变量和配置文件
     if [ ! -f ".env.production" ]; then
         echo "❌ 错误：未找到 .env.production 文件"
         return 1
@@ -717,10 +717,18 @@ update_nginx_config() {
     local TEMP_CONF="/tmp/nginx.conf.tmp"
     local DOMAIN="love.saga4v.com"
     
-    log "更新 love.saga4v.com 的 Nginx 配置..."
+    log "��新 love.saga4v.com 的 Nginx 配置..."
     
     # 创建新的配置
     cat > $TEMP_CONF << EOF
+upstream frontend_servers {
+    server frontend:4173;
+}
+
+upstream payment_servers {
+    server payment:4242;
+}
+
 server {
     listen 80;
     listen [::]:80;
@@ -746,7 +754,7 @@ server {
     error_log /var/log/nginx/love.error.log debug;
     
     location / {
-        proxy_pass http://127.0.0.1:4173;
+        proxy_pass http://frontend_servers;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -758,7 +766,7 @@ server {
     }
     
     location /api {
-        proxy_pass http://127.0.0.1:4242;
+        proxy_pass http://payment_servers;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection 'upgrade';
