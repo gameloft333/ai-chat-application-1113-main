@@ -390,7 +390,7 @@ deploy_services() {
             # 循环检查每个服务的状态
             check_services_status
             
-            error "服务启动超时，完整日志："
+            error "服���启动超时，完整日志："
             docker-compose -f docker-compose.prod.yml logs
             ((retry_count++))
             
@@ -418,7 +418,7 @@ check_services_status() {
     # 获取每个服务的状态
     frontend_status=$(docker-compose -f docker-compose.prod.yml ps frontend | grep -o "healthy\|unhealthy\|starting" || echo "unknown")
     payment_status=$(docker-compose -f docker-compose.prod.yml ps payment | grep -o "healthy\|unhealthy\|starting" || echo "unknown")
-    nginx_status=$(docker-compose -f docker-compose.prod.yml ps nginx | grep -o "healthy\|unhealthy\|starting" || echo "unknown")
+    nginx_status=$(docker-compose -f docker-compose.prod.yml ps nginx | grep -o "healthy\|unhealthy\|starting\|running" || echo "unknown")
     
     # 检查并修复 npm 漏洞
     if docker-compose -f docker-compose.prod.yml exec payment npm audit | grep -q "severity"; then
@@ -428,29 +428,34 @@ check_services_status() {
         sleep 5
     fi
     
-    # 如果 nginx 状态为 unknown，尝试重启
+    # 如果 nginx 状态为 unknown，检查是否在运行
     if [[ "$nginx_status" == "unknown" ]]; then
-        warning "Nginx 状态未知，尝试重启..."
-        docker-compose -f docker-compose.prod.yml restart nginx
-        sleep 10
-        nginx_status=$(docker-compose -f docker-compose.prod.yml ps nginx | grep -o "healthy\|unhealthy\|starting" || echo "unknown")
+        container_status=$(docker-compose -f docker-compose.prod.yml ps nginx | grep -q "Up" && echo "running" || echo "stopped")
+        if [[ "$container_status" == "running" ]]; then
+            nginx_status="running"
+        else
+            warning "Nginx 容器未运行，尝试重启..."
+            docker-compose -f docker-compose.prod.yml restart nginx
+            sleep 10
+            nginx_status=$(docker-compose -f docker-compose.prod.yml ps nginx | grep -o "healthy\|unhealthy\|starting\|running" || echo "unknown")
+        fi
     fi
     
     # 输出当前状态
     log "服务状态: Frontend: $frontend_status | Payment: $payment_status | Nginx: $nginx_status"
     
-    # 检查是否所有服务都健康
+    # 检查是否所有服务都正常
     if [[ "$frontend_status" == "healthy" ]] && 
        [[ "$payment_status" == "healthy" ]] && 
-       [[ "$nginx_status" == "healthy" ]]; then
-        success "所有服务健康状态正常"
+       [[ "$nginx_status" =~ ^(healthy|running)$ ]]; then
+        success "所有服务运行正常"
         return 0
     fi
     
     return 1
 }
 
-# 修改后的健康检查逻辑
+# 修��后的健康检查逻辑
 check_health() {
     local max_attempts=5
     local attempt=1
@@ -703,93 +708,64 @@ manage_ssl_certificates() {
 
 # 更新 nginx 配置
 update_nginx_config() {
-    log "更新 nginx 配置..."
-    
-    local NGINX_CONF="/etc/nginx/nginx.conf"
-    local DOMAIN="love.saga4v.com"
+    local NGINX_CONF="/etc/nginx/conf.d/love.conf"
     local TEMP_CONF="/tmp/nginx.conf.tmp"
+    local DOMAIN="love.saga4v.com"
     
-    # 备份原配置
-    log "备份当前 nginx 配置..."
-    sudo cp $NGINX_CONF "${NGINX_CONF}.backup"
+    log "更新 love.saga4v.com 的 Nginx 配置..."
     
-    # 读取原配置文件并更新指定域名的服务器块
-    log "查找并更新 $DOMAIN 的配置..."
-    awk -v domain="$DOMAIN" '
-    BEGIN { found = 0 }
-    {
-        # 如果找到目标服务器块的开始
-        if ($0 ~ "server_name[[:space:]]+" domain ";") {
-            found = 1
-            # 输出新的服务器配置
-            print "\t# love 服务器配置"
-            print "\tserver {"
-            print "\t\tlisten 80;"
-            print "\t\tlisten 443 ssl;"
-            print "\t\tserver_name " domain ";"
-            print ""
-            print "\t\tssl_certificate /etc/nginx/ssl/" domain ".crt;"
-            print "\t\tssl_certificate_key /etc/nginx/ssl/" domain ".key;"
-            print "\t\tssl_protocols TLSv1.2 TLSv1.3;"
-            print "\t\tssl_ciphers HIGH:!aNULL:!MD5;"
-            print ""
-            print "\t\taccess_log /var/log/nginx/love.access.log;"
-            print "\t\terror_log /var/log/nginx/love.error.log debug;"
-            print ""
-            print "\t\tlocation / {"
-            print "\t\t\tproxy_pass http://127.0.0.1:4173;"
-            print "\t\t\tproxy_http_version 1.1;"
-            print "\t\t\tproxy_set_header Upgrade $http_upgrade;"
-            print "\t\t\tproxy_set_header Connection '\''upgrade'\'';"
-            print "\t\t\tproxy_set_header Host $host;"
-            print "\t\t\tproxy_set_header X-Real-IP $remote_addr;"
-            print "\t\t\tproxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;"
-            print "\t\t\tproxy_set_header X-Forwarded-Proto $scheme;"
-            print "\t\t\tproxy_cache_bypass $http_upgrade;"
-            print "\t\t\tadd_header X-Debug-Message \"Proxying to 4173\" always;"
-            print "\t\t}"
-            print ""
-            print "\t\tlocation /api {"
-            print "\t\t\tproxy_pass http://127.0.0.1:4242;"
-            print "\t\t\tproxy_http_version 1.1;"
-            print "\t\t\tproxy_set_header Upgrade $http_upgrade;"
-            print "\t\t\tproxy_set_header Connection '\''upgrade'\'';"
-            print "\t\t\tproxy_set_header Host $host;"
-            print "\t\t\tproxy_set_header X-Real-IP $remote_addr;"
-            print "\t\t\tproxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;"
-            print "\t\t\tproxy_set_header X-Forwarded-Proto $scheme;"
-            print "\t\t\tproxy_cache_bypass $http_upgrade;"
-            print "\t\t\tadd_header X-Debug-Message \"Proxying to 4242\" always;"
-            print "\t\t}"
-            print "\t}"
-            print ""
-            
-            # 跳过原有的服务器块
-            while (getline && $0 !~ /^[[:space:]]*}[[:space:]]*$/) { }
-            next
-        }
-        # 输出所有其他行
-        print $0
-    }' $NGINX_CONF > $TEMP_CONF
+    # 创建新的配置
+    cat > $TEMP_CONF << EOF
+server {
+    listen 80;
+    listen [::]:80;
+    server_name $DOMAIN;
     
-    # 检查临时配置文件是否创建成功
-    if [ ! -f $TEMP_CONF ]; then
-        error "配置文件更新失败"
-        return 1
-    fi
+    # 将 HTTP 重定向到 HTTPS
+    location / {
+        return 301 https://\$server_name\$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name $DOMAIN;
     
+    ssl_certificate /etc/nginx/ssl/$DOMAIN.crt;
+    ssl_certificate_key /etc/nginx/ssl/$DOMAIN.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    
+    access_log /var/log/nginx/love.access.log;
+    error_log /var/log/nginx/love.error.log debug;
+    
+    location / {
+        proxy_pass http://frontend:4173;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_cache_bypass \$http_upgrade;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+}
+EOF
+
     # 应用新配置
     sudo mv $TEMP_CONF $NGINX_CONF
     
     # 测试配置
-    log "测试 nginx 配置..."
     if ! sudo nginx -t; then
-        error "nginx 配置测试失败，正在还原备份..."
-        sudo mv "${NGINX_CONF}.backup" $NGINX_CONF
+        error "Nginx 配置测试失败"
         return 1
     fi
     
-    success "nginx 配置更新完成"
+    # 重启 Nginx
+    sudo systemctl reload nginx
+    
+    success "love.saga4v.com Nginx 配置更新完成"
     return 0
 }
 
@@ -958,7 +934,7 @@ EOF
 main() {
     log "开始一键部署流程..."
     
-    # 1. 配置环境变量
+    # 1. 配置环境变��
     setup_environment
     
     # 2. 配置 Git 并更新代码
