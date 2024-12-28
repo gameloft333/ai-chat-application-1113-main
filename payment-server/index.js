@@ -84,23 +84,21 @@ app.post('/api/stripe/create-payment-intent', async (req, res) => {
 });
 
 // 统一的健康检查路由
-app.get(['/health', '/api/health'], (req, res) => {
-    console.log('收到健康检查请求，路径:', req.path);
-    const healthStatus = {
-        status: 'healthy',
-        timestamp: new Date().toISOString(),
-        path: req.path,
-        stripe: {
-            configured: !!process.env.STRIPE_SECRET_KEY,
-            mode: process.env.VITE_STRIPE_MODE
-        },
-        server: {
-            port: process.env.PORT,
-            env: process.env.NODE_ENV
-        }
-    };
-    console.log('健康状态:', healthStatus);
-    res.status(200).json(healthStatus);
+app.get('/health', (req, res) => {
+    try {
+        const healthStatus = {
+            status: 'healthy',
+            timestamp: new Date().toISOString(),
+            stripe: {
+                configured: !!process.env.STRIPE_SECRET_KEY
+            }
+        };
+        console.log('健康检查状态:', healthStatus);
+        res.status(200).json(healthStatus);
+    } catch (error) {
+        console.error('健康检查失败:', error);
+        res.status(500).json({ status: 'unhealthy', error: error.message });
+    }
 });
 
 // 错误处理中间件

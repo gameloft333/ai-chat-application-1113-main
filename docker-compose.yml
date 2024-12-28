@@ -63,32 +63,16 @@ services:
       dockerfile: Dockerfile
     ports:
       - "4242:4242"
-    env_file:
-      - .env.production  # 使用生产环境配置文件
     environment:
       - PORT=4242
-      - NODE_ENV=production
       - HOST=0.0.0.0
-      # Stripe Config
+      - NODE_ENV=production
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
       - VITE_STRIPE_PUBLISHABLE_KEY=${VITE_STRIPE_PUBLISHABLE_KEY}
       - VITE_STRIPE_MODE=${VITE_STRIPE_MODE}
-    healthcheck:
-      test: |
-        CMD-SHELL
-        curl --fail http://localhost:4242/health || exit 1
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
-    command: >
-      sh -c "
-        echo '启动支付服务...' &&
-        npm install &&
-        npm install -g curl &&
-        echo '安装完成，启动服务...' &&
-        node index.js
-      "
+    depends_on:
+      frontend:
+        condition: service_healthy
     restart: unless-stopped
 
   # 注释掉 Telegram 支付服务，但保留配置供后续使用

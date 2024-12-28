@@ -698,7 +698,7 @@ manage_ssl_certificates() {
         sudo chmod 600 $SSL_DIR/$DOMAIN.key
         sudo chmod 644 $SSL_DIR/$DOMAIN.crt
     else
-        log "SSL 证书已存在，检查有��期..."
+        log "SSL 证书已存在，检查有效期..."
         
         # 检查证书有效期
         local expiry_date=$(openssl x509 -enddate -noout -in "$SSL_DIR/$DOMAIN.crt" | cut -d= -f2)
@@ -739,7 +739,7 @@ update_nginx_config() {
     awk -v domain="$DOMAIN" '
     BEGIN { found = 0 }
     {
-        # 如果找到目标���务器块的开始
+        # 如果找到目标服务器块的开始
         if ($0 ~ "server_name[[:space:]]+" domain ";") {
             found = 1
             # 输出新的服务器配置
@@ -814,6 +814,167 @@ update_nginx_config() {
     return 0
 }
 
+# 设置支付服务器
+setup_payment_server() {
+    log "正在设置支付服务器..."
+    
+    # 1. 创建目录
+    if [ ! -d "payment-server" ]; then
+        mkdir -p payment-server
+        success "创建 payment-server 目录成功"
+    else
+        log "payment-server 目录已存在"
+    fi
+
+    # 2. 创建 Dockerfile
+    log "创建支付服务器 Dockerfile..."
+    cat > payment-server/Dockerfile << 'EOF'
+FROM node:18-alpine
+
+WORKDIR /app
+
+# 安装必要的工具
+RUN apk add --no-cache curl
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+
+ENV PORT=4242
+ENV HOST=0.0.0.0
+
+EXPOSE 4242
+
+# 添加健康检查脚本
+COPY healthcheck.sh /healthcheck.sh
+RUN chmod +x /healthcheck.sh
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD /healthcheck.sh
+
+CMD ["node", "index.js"]
+EOF
+
+    # 3. 创建健康检查脚本
+    log "创建健康检查脚本..."
+    cat > payment-server/healthcheck.sh << 'EOF'
+#!/bin/sh
+if curl -f http://localhost:4242/health; then
+    echo "健康检查成功"
+    exit 0
+else
+    echo "健康检查失败"
+    exit 1
+fi
+EOF
+    chmod +x payment-server/healthcheck.sh
+
+    # 4. 创建 index.js
+    log "创建支付服务器 index.js..."
+    cat > payment-server/index.js << 'EOF'
+import express from 'express';
+import cors from 'cors';
+import Stripe from 'stripe';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const app = express();
+const port = process.env.PORT || 4242;
+
+// CORS 配置
+const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:4173',
+    'http://localhost:4242',
+    'https://love.saga4v.com',
+    'http://payment:4242'
+];
+
+app.use(cors({
+    origin: function(origin, callback) {
+        console.log('请求来源:', origin);
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('不允许的来源'));
+        }
+    },
+    methods: ['GET', 'POST', 'OPTIONS'],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Accept', 'Origin']
+}));
+
+app.use(express.json());
+
+// 健康检查路由
+app.get('/health', (req, res) => {
+    try {
+        const healthStatus = {
+            status: 'healthy',
+            timestamp: new Date().toISOString(),
+            path: req.path,
+            stripe: {
+                configured: !!process.env.STRIPE_SECRET_KEY,
+                mode: process.env.VITE_STRIPE_MODE
+            },
+            server: {
+                port: process.env.PORT,
+                env: process.env.NODE_ENV
+            }
+        };
+        console.log('健康状态:', healthStatus);
+        res.status(200).json(healthStatus);
+    } catch (error) {
+        console.error('健康检查失败:', error);
+        res.status(500).json({ status: 'unhealthy', error: error.message });
+    }
+});
+
+// 初始化 Stripe
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+// 启动服务器
+app.listen(port, '0.0.0.0', () => {
+    console.log(`Stripe 服务器运行在 http://0.0.0.0:${port}`);
+});
+EOF
+
+    # 5. 创建 package.json
+    log "创建支付服务器 package.json..."
+    cat > payment-server/package.json << 'EOF'
+{
+  "name": "payment-server",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "stripe": "^14.10.0"
+  }
+}
+EOF
+
+    # 6. 安装依赖
+    log "安装支付服务器依赖..."
+    cd payment-server
+    if npm install; then
+        success "支付服务器依赖安装完成"
+    else
+        error "支付服务器依赖安装失败"
+        cd ..
+        return 1
+    fi
+    cd ..
+
+    success "支付服务器设置完成"
+}
+
 # 更新主函数
 main() {
     log "开始一键部署流程..."
@@ -829,13 +990,16 @@ main() {
     check_dependencies
     check_env_file
     
-    # 4. 管理 SSL 证书
+    # 4. 设置支付服务器
+    setup_payment_server
+    
+    # 5. 管理 SSL 证书
     if ! manage_ssl_certificates; then
         error "SSL 证书管理失败"
         exit 1
     fi
     
-    # 5. 部署服务
+    # 6. 部署服务
     cleanup
     pre_deployment_checks
     deploy_services
