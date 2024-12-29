@@ -3,7 +3,6 @@ version: '3.8'
 services:
   nginx:
     image: nginx:latest
-    container_name: nginx
     ports:
       - "80:80"
       - "443:443"
@@ -12,10 +11,8 @@ services:
       - /etc/letsencrypt/live/love.saga4v.com/fullchain.pem:/etc/nginx/ssl/fullchain.pem:ro
       - /etc/letsencrypt/live/love.saga4v.com/privkey.pem:/etc/nginx/ssl/privkey.pem:ro
     depends_on:
-      frontend:
-        condition: service_healthy
-      payment:
-        condition: service_healthy
+      - frontend
+      - payment
     networks:
       - app_network
     restart: unless-stopped
@@ -26,7 +23,6 @@ services:
       dockerfile: Dockerfile
       args:
         - NODE_ENV=production
-    container_name: frontend
     ports:
       - "4173:4173"
     env_file:
@@ -67,10 +63,7 @@ services:
         npm run preview:prod
       "
     networks:
-      app_network:
-        aliases:
-          - frontend
-          - ai-chat-application-1113-main-frontend-1
+      - app_network
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:4173/health"]
@@ -83,7 +76,6 @@ services:
     build: 
       context: ./payment-server
       dockerfile: Dockerfile
-    container_name: payment
     ports:
       - "4242:4242"
     env_file:
@@ -107,10 +99,7 @@ services:
         npm start
       "
     networks:
-      app_network:
-        aliases:
-          - payment
-          - ai-chat-application-1113-main-payment-1
+      - app_network
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:4242/health"]
@@ -122,9 +111,3 @@ services:
 networks:
   app_network:
     driver: bridge
-    driver_opts:
-      com.docker.network.driver.mtu: 1450
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
-          gateway: 172.20.0.1
