@@ -144,13 +144,13 @@ check_dependencies() {
 
 # 检查环境变量文件
 check_env_file() {
-    log "🔍 检查环境变量配置..."
+    log "检查环境变量配置..."
 
     local env_file=".env.production"
     
     # 检查 .env.production 文件是否存在
     if [ ! -f "$env_file" ]; then
-        error "❌ 环境变量文件 $env_file 不存在！"
+        error "环境变量文件 $env_file 不存在！"
         return 1  # 阻止部署
     fi
 
@@ -226,7 +226,7 @@ check_env_file() {
 
     # 处理必要变量缺失情况
     if [ ${#required_missing[@]} -ne 0 ]; then
-        error "❌ 以下必要环境变量未定义，请添加："
+        error "以下必要环境变量未定义，请添加："
         for var in "${required_missing[@]}"; do
             echo "   - $var"
         done
@@ -240,7 +240,7 @@ check_env_file() {
 
     # 处理必要变量为空情况
     if [ ${#empty_required[@]} -ne 0 ]; then
-        error "❌ 以下必要环境变量为空，请设置值："
+        error "以下必要环境变量为空，请设置值："
         for var in "${empty_required[@]}"; do
             echo "   - $var"
         done
@@ -254,37 +254,37 @@ check_env_file() {
 
     # 处理可选变量缺失情况
     if [ ${#optional_missing[@]} -ne 0 ]; then
-        warning "⚠️ 以下可选环境变量未定义，可能影响部分功能："
+        warning "以下可选环境变量未定义，可能影响部分功能："
         for var in "${optional_missing[@]}"; do
             echo "   - $var"
         done
     fi
 
-    success "✅ 环境变量检查完成"
+    success "环境变量检查完成"
     return 0
 }
 
 # 部署服务前的最终检查
 pre_deployment_checks() {
-    log "🚦 开始部署前检查..."
+    log "开始部署前检查..."
 
     # 检查 Docker 和 Docker Compose 版本
     docker version > /dev/null 2>&1
     if [ $? -ne 0 ]; then
-        error "❌ Docker 未正确安装或运行"
+        error "Docker 未正确安装或运行"
         return 1
     fi
 
     docker-compose version > /dev/null 2>&1
     if [ $? -ne 0 ]; then
-        error "❌ Docker Compose 未正确安装"
+        error "Docker Compose 未正确安装"
         return 1
     fi
 
     # 检查环境变量
     check_env_file
     if [ $? -ne 0 ]; then
-        error "❌ 环境变量检查未通过，无法继续部署"
+        error "环境变量检查未通过，无法继续部署"
         return 1
     fi
 
@@ -297,12 +297,12 @@ pre_deployment_checks() {
 
     for file in "${required_files[@]}"; do
         if [ ! -f "$file" ]; then
-            error "❌ 缺少必要的配置文件: $file"
+            error "缺少必要的配置文件: $file"
             return 1
         fi
     done
 
-    success "✅ 所有部署前检查已通过"
+    success "所有部署前检查已通过"
     return 0
 }
 
@@ -546,7 +546,7 @@ show_token_guide() {
       - public_repo
       - repo:invite
    ✓ workflow (如果使用 GitHub Actions)
-8. 设��合适的过期时间（建议90天）
+8. 设置合适的过期时间（建议90天）
 9. 点击底部的 Generate token
 10. 立即复制生成的 token（它只显示一次！）
 
@@ -599,12 +599,12 @@ check_payment_service() {
 deploy_prod() {
     local log_file="${LOG_DIR}/deploy_prod_$(date +"%Y%m%d_%H%M%S").log"
     
-    echo "🚀 开始生产环境部署..."
-    echo "📅 部署时间: $(date '+%Y-%m-%d %H:%M:%S')"
+    echo "开始生产环境部署..."
+    echo "部署时间: $(date '+%Y-%m-%d %H:%M:%S')"
     
     # 检查必要的环境变量和配置文件
     if [ ! -f ".env.production" ]; then
-        echo "❌ 错误：未找到 .env.production 文件"
+        echo "错误：未找到 .env.production 文件"
         return 1
     fi
     
@@ -617,14 +617,14 @@ deploy_prod() {
     local deploy_status=${PIPESTATUS[0]}
     
     if [ $deploy_status -eq 0 ]; then
-        echo "✅ 生产环境部署成功！"
-        echo "📄 详细日志: $log_file"
+        echo "生产环境部署成功！"
+        echo "详细日志: $log_file"
     else
-        echo "❌ 生产环境部署失败！"
-        echo "📄 错误日志: $log_file"
+        echo "生产环境部署失败！"
+        echo "错误日志: $log_file"
         
         # 尝试回滚
-        echo "🔄 正在尝试回滚..."
+        echo "正在尝试回滚..."
         docker-compose -f docker-compose.prod.yml down
         
         return 1
@@ -633,82 +633,54 @@ deploy_prod() {
 
 # 管理 SSL 证书
 manage_ssl_certificates() {
-    log "检查和管理 SSL 证书..."
-    
-    local SSL_DIR="/etc/nginx/ssl"
-    local DOMAIN="love.saga4v.com"
-    
-    # 检查 SSL 目录
-    if [ ! -d "$SSL_DIR" ]; then
-        log "创建 SSL 证书目录..."
-        if ! sudo mkdir -p "$SSL_DIR"; then
-            error "创建 SSL 目录失败"
-            return 1
-        fi
-    fi
-    
-    # 检查证书文件
-    if [ ! -f "$SSL_DIR/$DOMAIN.crt" ] || [ ! -f "$SSL_DIR/$DOMAIN.key" ]; then
-        log "SSL 证书不存在，开始申请..."
+    log "开始管理 SSL 证书..."
+
+    # 检测操作系统并安装 Certbot
+    if [ -f /etc/redhat-release ]; then
+        log "检测到 CentOS/RHEL 系统，安装 Certbot..."
+        sudo yum install -y epel-release
+        sudo yum install -y certbot python3-certbot-nginx
         
-        # 检查 certbot 是否安装
-        if ! command -v certbot &> /dev/null; then
-            log "安装 certbot..."
-            # 针对 AWS Linux 2 的安装方式
-            if grep -q "Amazon Linux" /etc/os-release; then
-                log "检测到 AWS Linux，使用 EPEL 仓库安装 certbot..."
-                sudo yum install -y epel-release
-                sudo yum install -y certbot python3-certbot-nginx
-            elif [ -f /etc/debian_version ]; then
-                sudo apt-get update
-                sudo apt-get install -y certbot
-            elif [ -f /etc/redhat-release ]; then
-                sudo yum install -y certbot
-            else
-                error "不支持的操作系统，请手动安装 certbot"
-                return 1
-            fi
-        fi
+        # 配置防火墙规则（针对 CentOS/RHEL）
+        log "配置防火墙规则..."
+        sudo firewall-cmd --permanent --add-service=http
+        sudo firewall-cmd --permanent --add-service=https
+        sudo firewall-cmd --reload
         
-        # 申请证书
-        log "使用 certbot 申请证书..."
-        if ! sudo certbot certonly --standalone -d $DOMAIN --non-interactive --agree-tos --email admin@saga4v.com; then
-            error "证书申请失败"
-            return 1
-        fi
+    elif [ -f /etc/debian_version ]; then
+        log "检测到 Debian/Ubuntu 系统，安装 Certbot..."
+        sudo apt-get update
+        sudo apt-get install -y certbot python3-certbot-nginx
         
-        # 复制证书到 nginx ssl 目录
-        log "复制证书到 Nginx 目录..."
-        sudo cp /etc/letsencrypt/live/$DOMAIN/fullchain.pem $SSL_DIR/$DOMAIN.crt
-        sudo cp /etc/letsencrypt/live/$DOMAIN/privkey.pem $SSL_DIR/$DOMAIN.key
-        
-        # 设置权限
-        sudo chown -R root:root $SSL_DIR
-        sudo chmod 600 $SSL_DIR/$DOMAIN.key
-        sudo chmod 644 $SSL_DIR/$DOMAIN.crt
+        # Debian/Ubuntu 可能使用 ufw
+        log "配置防火墙规则..."
+        sudo ufw allow http
+        sudo ufw allow https
+        sudo ufw reload
     else
-        log "SSL 证书已存在，检查有效期..."
-        
-        # 检查证书有效期
-        local expiry_date=$(openssl x509 -enddate -noout -in "$SSL_DIR/$DOMAIN.crt" | cut -d= -f2)
-        local expiry_epoch=$(date -d "$expiry_date" +%s)
-        local current_epoch=$(date +%s)
-        local days_left=$(( ($expiry_epoch - $current_epoch) / 86400 ))
-        
-        if [ $days_left -lt 30 ]; then
-            warning "SSL 证书将在 $days_left 天后过期，尝试续期..."
-            if ! sudo certbot renew --quiet; then
-                error "证书续期失败"
-                return 1
-            fi
-            success "证书续期成功"
-        else
-            success "SSL 证书有效期充足，还有 $days_left 天"
-        fi
+        error "不支持的操作系统，无法配置防火墙"
+        return 1
     fi
-    
-    success "SSL 证书管理完成"
-    return 0
+
+    # 检查域名
+    DOMAIN="love.saga4v.com"
+
+    # 生成 SSL 证书
+    log "为 ${DOMAIN} 生成 SSL 证书..."
+    sudo certbot certonly --standalone -d "${DOMAIN}" --non-interactive --agree-tos --email admin@saga4v.com
+
+    # 检查证书生成状态
+    if [ $? -eq 0 ]; then
+        success "SSL 证书生成成功！"
+        
+        # 设置证书自动续期
+        (sudo crontab -l 2>/dev/null; echo "0 0,12 * * * python -c 'import random; import time; time.sleep(random.random() * 3600)' && certbot renew --quiet && docker restart nginx") | sudo crontab -
+        
+        success "已设置 SSL 证书自动续期"
+    else
+        error "SSL 证书生成失败！"
+        return 1
+    fi
 }
 
 # 更新 nginx 配置
@@ -716,19 +688,17 @@ update_nginx_config() {
     local NGINX_CONF="/etc/nginx/conf.d/love.conf"
     local TEMP_CONF="/tmp/nginx.conf.tmp"
     local DOMAIN="love.saga4v.com"
+    local DOCKER_NETWORK="ai-chat-application-1113-main_default"
     
-    log "��新 love.saga4v.com 的 Nginx 配置..."
+    log "更新 love.saga4v.com 的 Nginx 配置..."
+    
+    # 确保 Nginx 容器连接到正确的网络
+    if ! docker network connect $DOCKER_NETWORK nginx 2>/dev/null; then
+        warning "Nginx 已经连接到网络或网络不存在"
+    fi
     
     # 创建新的配置
     cat > $TEMP_CONF << EOF
-upstream frontend_servers {
-    server frontend:4173;
-}
-
-upstream payment_servers {
-    server payment:4242;
-}
-
 server {
     listen 80;
     listen [::]:80;
@@ -754,7 +724,7 @@ server {
     error_log /var/log/nginx/love.error.log debug;
     
     location / {
-        proxy_pass http://frontend_servers;
+        proxy_pass http://ai-chat-application-1113-main-frontend-1:4173;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -766,7 +736,7 @@ server {
     }
     
     location /api {
-        proxy_pass http://payment_servers;
+        proxy_pass http://ai-chat-application-1113-main-payment-1:4242;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection 'upgrade';
