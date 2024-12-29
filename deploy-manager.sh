@@ -725,14 +725,18 @@ update_nginx_config() {
     
     log "更新 love.saga4v.com 的 Nginx 配置..."
     
+    # 确保 nginx 容器在正确的网络中
+    docker network connect ai-chat-application-1113-main_app_network ai-chat-application-1113-main-nginx-1 2>/dev/null || true
+    
     # 创建新的配置
     cat > $TEMP_CONF << EOF
+# 添加 Docker DNS 解析
+resolver 127.0.0.11 valid=30s;
 server {
     listen 80;
     listen [::]:80;
     server_name $DOMAIN;
     
-    # 将 HTTP 重定向到 HTTPS
     location / {
         return 301 https://\$server_name\$request_uri;
     }
@@ -752,7 +756,9 @@ server {
     error_log /var/log/nginx/love.error.log debug;
     
     location / {
-        proxy_pass http://frontend:4173;
+        set \$frontend_upstream "http://ai-chat-application-1113-main-frontend-1:4173";
+        proxy_pass \$frontend_upstream;
+        
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -764,7 +770,9 @@ server {
     }
     
     location /api {
-        proxy_pass http://payment:4242;
+        set \$payment_upstream "http://ai-chat-application-1113-main-payment-1:4242";
+        proxy_pass \$payment_upstream;
+        
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection 'upgrade';
