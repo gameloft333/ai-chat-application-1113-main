@@ -3,6 +3,7 @@ version: '3.8'
 services:
   nginx:
     image: nginx:latest
+    container_name: nginx
     ports:
       - "80:80"
       - "443:443"
@@ -25,6 +26,7 @@ services:
       dockerfile: Dockerfile
       args:
         - NODE_ENV=production
+    container_name: frontend
     ports:
       - "4173:4173"
     env_file:
@@ -65,7 +67,7 @@ services:
         npm run preview:prod
       "
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4173/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:4173/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -77,6 +79,7 @@ services:
     build: 
       context: ./payment-server
       dockerfile: Dockerfile
+    container_name: payment
     ports:
       - "4242:4242"
     env_file:
@@ -93,7 +96,7 @@ services:
       # 添加 CORS 配置
       - ALLOWED_ORIGINS=https://love.saga4v.com
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4242/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:4242/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -113,3 +116,7 @@ networks:
     driver: bridge
     driver_opts:
       com.docker.network.driver.mtu: 1450
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+          gateway: 172.20.0.1
