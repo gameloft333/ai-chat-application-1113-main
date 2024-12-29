@@ -722,14 +722,8 @@ update_nginx_config() {
     local NGINX_CONF="/etc/nginx/conf.d/love.conf"
     local TEMP_CONF="/tmp/nginx.conf.tmp"
     local DOMAIN="love.saga4v.com"
-    local DOCKER_NETWORK="ai-chat-application-1113-main_default"
     
     log "更新 love.saga4v.com 的 Nginx 配置..."
-    
-    # 确保 Nginx 容器连接到正确的网络
-    if ! docker network connect $DOCKER_NETWORK nginx 2>/dev/null; then
-        warning "Nginx 已经连接到网络或网络不存在"
-    fi
     
     # 创建新的配置
     cat > $TEMP_CONF << EOF
@@ -758,7 +752,7 @@ server {
     error_log /var/log/nginx/love.error.log debug;
     
     location / {
-        proxy_pass http://ai-chat-application-1113-main-frontend-1:4173;
+        proxy_pass http://frontend:4173;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -770,7 +764,7 @@ server {
     }
     
     location /api {
-        proxy_pass http://ai-chat-application-1113-main-payment-1:4242;
+        proxy_pass http://payment:4242;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection 'upgrade';
