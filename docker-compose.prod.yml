@@ -66,14 +66,15 @@ services:
         echo ' Starting Preview Server...' &&
         npm run preview:prod
       "
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4173/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
     networks:
       - app_network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:4173/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   payment:
     build: 
@@ -95,11 +96,6 @@ services:
       - VITE_USE_HTTPS=true
       # 添加 CORS 配置
       - ALLOWED_ORIGINS=https://love.saga4v.com
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4242/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
     command: >
       sh -c "
         echo ' Starting Payment Service...' &&
@@ -110,6 +106,12 @@ services:
     networks:
       - app_network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:4242/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
 networks:
   app_network:
