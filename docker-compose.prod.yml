@@ -1,4 +1,4 @@
-version: '3'
+version: '3.8'
 
 services:
   nginx:
@@ -65,11 +65,10 @@ services:
         npm run preview:prod
       "
     healthcheck:
-      test: ["CMD-SHELL", "/healthcheck.sh"]
+      test: ["CMD", "curl", "-f", "http://localhost:4173/health"]
       interval: 30s
-      timeout: 20s
-      retries: 5
-      start_period: 120s
+      timeout: 10s
+      retries: 3
     networks:
       - app_network
     restart: unless-stopped
@@ -97,8 +96,7 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:4242/health"]
       interval: 30s
       timeout: 10s
-      retries: 5
-      start_period: 60s
+      retries: 3
     command: >
       sh -c "
         echo ' Starting Payment Service...' &&
@@ -113,3 +111,5 @@ services:
 networks:
   app_network:
     driver: bridge
+    driver_opts:
+      com.docker.network.driver.mtu: 1450
