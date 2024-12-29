@@ -635,52 +635,86 @@ deploy_prod() {
 manage_ssl_certificates() {
     log "开始管理 SSL 证书..."
 
-    # 检测操作系统并安装 Certbot
-    if [ -f /etc/redhat-release ]; then
-        log "检测到 CentOS/RHEL 系统，安装 Certbot..."
-        sudo yum install -y epel-release
-        sudo yum install -y certbot python3-certbot-nginx
-        
-        # 配置防火墙规则（针对 CentOS/RHEL）
-        log "配置防火墙规则..."
-        sudo firewall-cmd --permanent --add-service=http
-        sudo firewall-cmd --permanent --add-service=https
-        sudo firewall-cmd --reload
-        
+    # 更全面的操作系统检测
+    local OS_TYPE=""
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        OS_TYPE="${ID}"
+    elif [ -f /etc/redhat-release ]; then
+        OS_TYPE="rhel"
     elif [ -f /etc/debian_version ]; then
-        log "检测到 Debian/Ubuntu 系统，安装 Certbot..."
-        sudo apt-get update
-        sudo apt-get install -y certbot python3-certbot-nginx
-        
-        # Debian/Ubuntu 可能使用 ufw
-        log "配置防火墙规则..."
-        sudo ufw allow http
-        sudo ufw allow https
-        sudo ufw reload
+        OS_TYPE="debian"
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+        OS_TYPE="macos"
     else
-        error "不支持的操作系统，无法配置防火墙"
-        return 1
+        OS_TYPE="unknown"
     fi
+
+    log "检测到操作系统类型: ${OS_TYPE}"
+
+    # 安装 Certbot 和配置防火墙
+    case "${OS_TYPE}" in 
+        "rhel"|"centos"|"fedora")
+            log "检测到 RHEL 类系统，安装 Certbot..."
+            sudo yum install -y epel-release
+            sudo yum install -y certbot python3-certbot-nginx
+            
+            # 配置防火墙规则
+            log "配置防火墙规则..."
+            if command -v firewall-cmd &> /dev/null; then
+                sudo firewall-cmd --permanent --add-service=http
+                sudo firewall-cmd --permanent --add-service=https
+                sudo firewall-cmd --reload
+            else
+                warning "firewall-cmd 未找到，无法配置防火墙"
+            fi
+            ;;
+        
+        "ubuntu"|"debian")
+            log "检测到 Debian 类系统，安装 Certbot..."
+            sudo apt-get update
+            sudo apt-get install -y certbot python3-certbot-nginx
+            
+            # 配置防火墙规则
+            log "配置防火墙规则..."
+            if command -v ufw &> /dev/null; then
+                sudo ufw allow http
+                sudo ufw allow https
+                sudo ufw reload
+            elif command -v iptables &> /dev/null; then
+                sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+                sudo iptables -A INPUT -p tcp --dport 443 -j ACCEPT
+            else
+                warning "未找到 UFW 或 iptables，无法配置防火墙"
+            fi
+            ;;
+        
+        "macos")
+            warning "macOS 不支持自动防火墙配置"
+            ;;
+        
+        *)
+            warning "未知的操作系统，跳过防火墙配置"
+            ;;
+    esac
 
     # 检查域名
     DOMAIN="love.saga4v.com"
 
     # 生成 SSL 证书
     log "为 ${DOMAIN} 生成 SSL 证书..."
-    sudo certbot certonly --standalone -d "${DOMAIN}" --non-interactive --agree-tos --email admin@saga4v.com
-
-    # 检查证书生成状态
-    if [ $? -eq 0 ]; then
-        success "SSL 证书生成成功！"
-        
-        # 设置证书自动续期
-        (sudo crontab -l 2>/dev/null; echo "0 0,12 * * * python -c 'import random; import time; time.sleep(random.random() * 3600)' && certbot renew --quiet && docker restart nginx") | sudo crontab -
-        
-        success "已设置 SSL 证书自动续期"
-    else
+    if ! sudo certbot certonly --standalone -d "${DOMAIN}" --non-interactive --agree-tos --email admin@saga4v.com; then
         error "SSL 证书生成失败！"
         return 1
     fi
+
+    success "SSL 证书生成成功！"
+    
+    # 设置证书自动续期
+    (sudo crontab -l 2>/dev/null; echo "0 0,12 * * * python -c 'import random; import time; time.sleep(random.random() * 3600)' && certbot renew --quiet && docker restart nginx") | sudo crontab -
+    
+    success "已设置 SSL 证书自动续期"
+    return 0
 }
 
 # 更新 nginx 配置
