@@ -762,72 +762,47 @@ manage_ssl_certificates() {
 
 # 更新 Nginx 配置
 update_nginx_config() {
-    local NGINX_CONF="/etc/nginx/conf.d/love.conf"
-    local NGINX_MAIN_CONF="/etc/nginx/nginx.conf"
-    local TEMP_CONF="/tmp/nginx.conf.tmp"
-    local DOMAIN="love.saga4v.com"
+    log "更新 Nginx 配置..."
+    local LOCAL_CONF="./conf.d/love.conf"
+    local REMOTE_CONF="/etc/nginx/conf.d/love.conf"
+    local BACKUP_CONF="${REMOTE_CONF}.bak"
+    local SERVER_IP=$(dig +short love.saga4v.com) # 通过域名获取服务器IP地址
 
-    log "更新 love.saga4v.com 的 Nginx 配置..."
-
-    # 创建新的 love.conf 配置
-    cat > $TEMP_CONF << EOF
-server {
-    listen 80;
-    listen [::]:80;
-    server_name $DOMAIN;
-
-    location / {
-        return 301 https://$server_name$request_uri;
-    }
-}
-
-server {
-    listen 443 ssl;
-    listen [::]:443 ssl;
-    http2 on;
-    server_name $DOMAIN;
-
-    ssl_certificate /etc/nginx/ssl/fullchain.pem;
-    ssl_certificate_key /etc/nginx/ssl/privkey.pem;
-
-    resolver 127.0.0.11 valid=30s ipv6=off;
-
-    location / {
-        proxy_pass http://frontend; # 使用在nginx.conf中定义的upstream
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    location /api {
-        proxy_pass http://payment; # 使用在nginx.conf中定义的upstream
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-    }
-}
-EOF
-
-    # 应用新配置
-    sudo mv $TEMP_CONF $NGINX_CONF
-
-    # 测试配置
-    if ! sudo nginx -t; then
-        error "Nginx 配置测试失败"
-        return 1
+    # 备份现有配置文件
+    if [ -f "$REMOTE_CONF" ]; then
+        ssh $SERVER_IP "sudo cp '$REMOTE_CONF' '$BACKUP_CONF'"
+        if [ $? -ne 0 ]; then
+            error "备份现有 Nginx 配置文件失败!"
+            return 1
+        fi
+        log "已备份现有 Nginx 配置文件到 ${BACKUP_CONF} on $SERVER_IP"
     fi
 
-    # 重启 Nginx
-    sudo systemctl reload nginx || sudo systemctl restart nginx
+    # 复制新的配置文件
+    scp "$LOCAL_CONF" root@$SERVER_IP:"$REMOTE_CONF"
+    if [ $? -ne 0 ]; then
+        error "复制新的 Nginx 配置文件失败!"
+        return 1
+    fi
+    log "已将新的 Nginx 配置文件复制到 $REMOTE_CONF on $SERVER_IP"
 
-    success "love.saga4v.com Nginx 配置更新完成"
+    # 测试 Nginx 配置
+    ssh $SERVER_IP "sudo nginx -t"
+    if [ $? -ne 0 ]; then
+        error "Nginx 配置测试失败!"
+        return 1
+    fi
+    log "Nginx 配置测试成功"
+
+    # 重启 Nginx
+    ssh $SERVER_IP "sudo systemctl reload nginx"
+    if [ $? -ne 0 ]; then
+        error "重启 Nginx 失败!"
+        return 1
+    fi
+    log "已重启 Nginx 服务 on $SERVER_IP"
+
+    success "Nginx 配置更新完成"
     return 0
 }
 
