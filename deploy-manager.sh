@@ -766,41 +766,42 @@ update_nginx_config() {
     local LOCAL_CONF="./conf.d/love.conf"
     local REMOTE_CONF="/etc/nginx/conf.d/love.conf"
     local BACKUP_CONF="${REMOTE_CONF}.bak"
-    local SERVER_IP=$(dig +short love.saga4v.com) # 通过域名获取服务器IP地址
 
     # 备份现有配置文件
     if [ -f "$REMOTE_CONF" ]; then
-        ssh $SERVER_IP "sudo cp '$REMOTE_CONF' '$BACKUP_CONF'"
-        if [ $? -ne 0 ]; then
+        if ! sudo cp "$REMOTE_CONF" "$BACKUP_CONF"; then
             error "备份现有 Nginx 配置文件失败!"
             return 1
         fi
-        log "已备份现有 Nginx 配置文件到 ${BACKUP_CONF} on $SERVER_IP"
+        log "已备份现有 Nginx 配置文件到 ${BACKUP_CONF}"
+    else
+        log "原始 Nginx 配置文件不存在。"
     fi
 
     # 复制新的配置文件
-    scp "$LOCAL_CONF" root@$SERVER_IP:"$REMOTE_CONF"
-    if [ $? -ne 0 ]; then
+    if ! sudo cp "$LOCAL_CONF" "$REMOTE_CONF"; then
         error "复制新的 Nginx 配置文件失败!"
         return 1
     fi
-    log "已将新的 Nginx 配置文件复制到 $REMOTE_CONF on $SERVER_IP"
+    log "已将新的 Nginx 配置文件复制到 $REMOTE_CONF"
 
     # 测试 Nginx 配置
-    ssh $SERVER_IP "sudo nginx -t"
-    if [ $? -ne 0 ]; then
+    if ! sudo nginx -t; then
         error "Nginx 配置测试失败!"
         return 1
     fi
     log "Nginx 配置测试成功"
 
     # 重启 Nginx
-    ssh $SERVER_IP "sudo systemctl reload nginx"
-    if [ $? -ne 0 ]; then
-        error "重启 Nginx 失败!"
-        return 1
+    if ! sudo systemctl reload nginx; then
+        if ! sudo systemctl restart nginx; then
+            error "重启 Nginx 失败!"
+            return 1
+        fi
+        log "已重启 Nginx 服务 (使用 restart)"
+    else
+        log "已重新加载 Nginx 服务 (使用 reload)"
     fi
-    log "已重启 Nginx 服务 on $SERVER_IP"
 
     success "Nginx 配置更新完成"
     return 0
