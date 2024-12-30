@@ -725,13 +725,8 @@ update_nginx_config() {
     
     log "更新 love.saga4v.com 的 Nginx 配置..."
     
-    # 确保 nginx 容器在正确的网络中
-    docker network connect ai-chat-application-1113-main_app_network ai-chat-application-1113-main-nginx-1 2>/dev/null || true
-    
     # 创建新的配置
     cat > $TEMP_CONF << EOF
-# 添加 Docker DNS 解析
-resolver 127.0.0.11 valid=30s;
 server {
     listen 80;
     listen [::]:80;
@@ -755,9 +750,12 @@ server {
     access_log /var/log/nginx/love.access.log;
     error_log /var/log/nginx/love.error.log debug;
     
+    # 添加 Docker DNS 解析器
+    resolver 127.0.0.11 ipv6=off;
+    
     location / {
-        set \$frontend_upstream "http://ai-chat-application-1113-main-frontend-1:4173";
-        proxy_pass \$frontend_upstream;
+        set \$upstream_frontend "http://ai-chat-application-1113-main-frontend-1:4173";
+        proxy_pass \$upstream_frontend;
         
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
@@ -770,8 +768,8 @@ server {
     }
     
     location /api {
-        set \$payment_upstream "http://ai-chat-application-1113-main-payment-1:4242";
-        proxy_pass \$payment_upstream;
+        set \$upstream_payment "http://ai-chat-application-1113-main-payment-1:4242";
+        proxy_pass \$upstream_payment;
         
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
@@ -792,7 +790,7 @@ EOF
     fi
     
     # 重启 Nginx
-    sudo systemctl reload nginx
+    sudo systemctl reload nginx || sudo systemctl restart nginx
     
     success "love.saga4v.com Nginx 配置更新完成"
     return 0
