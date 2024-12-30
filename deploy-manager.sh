@@ -770,9 +770,6 @@ update_nginx_config() {
     
     # 创建新的配置
     cat > $TEMP_CONF << EOF
-# 添加 DNS 解析器配置
-resolver 127.0.0.11 valid=30s;
-
 server {
     listen 80;
     listen [::]:80;
@@ -792,9 +789,12 @@ server {
     ssl_certificate /etc/nginx/ssl/fullchain.pem;
     ssl_certificate_key /etc/nginx/ssl/privkey.pem;
     
+    # 添加 DNS 解析器配置
+    resolver 127.0.0.11 valid=30s ipv6=off;
+    
     location / {
-        set \$frontend_upstream "http://ai-chat-application-1113-main-frontend-1:4173";
-        proxy_pass \$frontend_upstream;
+        set \$frontend_host "ai-chat-application-1113-main-frontend-1";
+        proxy_pass http://\$frontend_host:4173;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -806,8 +806,8 @@ server {
     }
     
     location /api {
-        set \$payment_upstream "http://ai-chat-application-1113-main-payment-1:4242";
-        proxy_pass \$payment_upstream;
+        set \$payment_host "ai-chat-application-1113-main-payment-1";
+        proxy_pass http://\$payment_host:4242;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -819,6 +819,9 @@ EOF
 
     # 应用新配置
     sudo mv $TEMP_CONF $NGINX_CONF
+    
+    # 删除可能存在的 upstream 配置
+    sudo rm -f /etc/nginx/conf.d/upstream.conf
     
     # 测试配置
     if ! sudo nginx -t; then
