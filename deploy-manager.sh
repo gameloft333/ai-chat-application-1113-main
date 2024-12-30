@@ -762,28 +762,22 @@ manage_ssl_certificates() {
 
 # 更新 Nginx 配置
 update_nginx_config() {
-    log "更新 love.saga4v.com 的 Nginx 配置..."
     local NGINX_CONF="/etc/nginx/conf.d/love.conf"
-    local TEMP_CONF="/tmp/love.conf.bak"
-    local TEMP_FILE="/tmp/love.conf"
+    local NGINX_MAIN_CONF="/etc/nginx/nginx.conf"
+    local TEMP_CONF="/tmp/nginx.conf.tmp"
+    local DOMAIN="love.saga4v.com"
 
-    # 备份现有配置文件
-    if [ -f "$NGINX_CONF" ]; then
-        sudo cp "$NGINX_CONF" "$TEMP_CONF"
-        log "已备份现有 Nginx 配置文件到 $TEMP_CONF"
-    else
-        log "现有 Nginx 配置文件不存在"
-    fi
+    log "更新 love.saga4v.com 的 Nginx 配置..."
 
-    # 创建临时配置文件
-    cat > "$TEMP_FILE" << EOF
+    # 创建新的 love.conf 配置
+    cat > $TEMP_CONF << EOF
 server {
     listen 80;
     listen [::]:80;
-    server_name love.saga4v.com;
+    server_name $DOMAIN;
 
     location / {
-        return 301 https://$host$request_uri;
+        return 301 https://$server_name$request_uri;
     }
 }
 
@@ -791,7 +785,7 @@ server {
     listen 443 ssl;
     listen [::]:443 ssl;
     http2 on;
-    server_name love.saga4v.com;
+    server_name $DOMAIN;
 
     ssl_certificate /etc/nginx/ssl/fullchain.pem;
     ssl_certificate_key /etc/nginx/ssl/privkey.pem;
@@ -799,7 +793,7 @@ server {
     resolver 127.0.0.11 valid=30s ipv6=off;
 
     location / {
-        proxy_pass http://frontend;
+        proxy_pass http://frontend; # 使用在nginx.conf中定义的upstream
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -811,42 +805,27 @@ server {
     }
 
     location /api {
-        proxy_pass http://payment;
+        proxy_pass http://payment; # 使用在nginx.conf中定义的upstream
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
         proxy_set_header Host $host;
         proxy_cache_bypass $http_upgrade;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
     }
 }
 EOF
 
-    # 复制文件并处理错误
-    if ! sudo cp "$TEMP_FILE" "$NGINX_CONF"; then
-        error "复制 Nginx 配置文件失败！"
-        # 回滚到备份文件
-        if [ -f "$TEMP_CONF" ]; then
-            sudo cp "$TEMP_CONF" "$NGINX_CONF"
-            log "已将 Nginx 配置文件回滚到备份文件"
-        fi
+    # 应用新配置
+    sudo mv $TEMP_CONF $NGINX_CONF
+
+    # 测试配置
+    if ! sudo nginx -t; then
+        error "Nginx 配置测试失败"
         return 1
     fi
 
-    # 删除临时文件
-    sudo rm "$TEMP_FILE"
-
-    # 启动或重启 Nginx 服务
-    sudo systemctl start nginx
-    if ! sudo systemctl is-active nginx; then
-        sudo systemctl restart nginx
-        if ! sudo systemctl is-active nginx; then
-            error "Nginx 服务启动失败！"
-            return 1
-        fi
-    fi
+    # 重启 Nginx
+    sudo systemctl reload nginx || sudo systemctl restart nginx
 
     success "love.saga4v.com Nginx 配置更新完成"
     return 0
