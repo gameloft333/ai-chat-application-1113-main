@@ -127,8 +127,34 @@ check_and_install_node() {
 
 # 检查 docker 和 docker-compose
 check_dependencies() {
-    log "检查 Docker 依赖..."
+    log "检查依赖项..."
     
+    # 检查 npm 版本并升级
+    local current_npm_version=$(npm -v)
+    local latest_npm_version=$(npm view npm version 2>/dev/null)
+    
+    if [ $? -eq 0 ] && [ "$current_npm_version" != "$latest_npm_version" ]; then
+        log "检测到 npm 需要升级 (当前版本: $current_npm_version, 最新版本: $latest_npm_version)"
+        log "正在升级 npm..."
+        
+        if sudo npm install -g npm@latest; then
+            log "npm 升级成功"
+            # 清理 npm 缓存
+            log "清理 npm 缓存..."
+            if npm cache clean --force; then
+                success "npm 缓存清理完成"
+            else
+                warning "npm 缓存清理失败"
+            fi
+        else
+            error "npm 升级失败"
+            return 1
+        fi
+    else
+        success "npm 版本检查通过 (当前版本: $current_npm_version)"
+    fi
+    
+    # 检查 Docker 依赖
     if ! command -v docker &> /dev/null; then
         error "未找到 docker，请先安装 docker"
         exit 1
@@ -139,7 +165,8 @@ check_dependencies() {
         exit 1
     fi
     
-    success "Docker 依赖检查通过"
+    success "所有依赖项检查完成"
+    return 0
 }
 
 # 检查环境变量文件
@@ -743,20 +770,11 @@ server {
     http2 on;
     server_name $DOMAIN;
     
-    ssl_certificate /etc/nginx/ssl/$DOMAIN.crt;
-    ssl_certificate_key /etc/nginx/ssl/$DOMAIN.key;
-    ssl_protocols TLSv1.2 TLSv1.3;
-    
-    access_log /var/log/nginx/love.access.log;
-    error_log /var/log/nginx/love.error.log debug;
-    
-    # 添加 Docker DNS 解析器
-    resolver 127.0.0.11 ipv6=off;
+    ssl_certificate /etc/nginx/ssl/fullchain.pem;
+    ssl_certificate_key /etc/nginx/ssl/privkey.pem;
     
     location / {
-        set \$upstream_frontend "http://ai-chat-application-1113-main-frontend-1:4173";
-        proxy_pass \$upstream_frontend;
-        
+        proxy_pass http://ai-chat-application-1113-main-frontend-1:4173;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -768,9 +786,7 @@ server {
     }
     
     location /api {
-        set \$upstream_payment "http://ai-chat-application-1113-main-payment-1:4242";
-        proxy_pass \$upstream_payment;
-        
+        proxy_pass http://ai-chat-application-1113-main-payment-1:4242;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection 'upgrade';
