@@ -129,32 +129,48 @@ check_and_install_node() {
 check_dependencies() {
     log "检查依赖项..."
     
-    # 检查 npm 版本并升级
-    local current_npm_version=$(npm -v)
-    local latest_npm_version=$(npm view npm version 2>/dev/null)
+    # 检查 Node.js 版本
+    local node_version=$(node -v | cut -d 'v' -f2)
     
-    if [ $? -eq 0 ] && [ "$current_npm_version" != "$latest_npm_version" ]; then
-        log "检测到 npm 需要升级 (当前版本: $current_npm_version, 最新版本: $latest_npm_version)"
-        log "正在升级 npm..."
-        
-        if sudo npm install -g npm@latest; then
-            log "npm 升级成功"
-            # 清理 npm 缓存
-            log "清理 npm 缓存..."
-            if npm cache clean --force; then
-                success "npm 缓存清理完成"
+    # 检查 npm 版本并根据 Node.js 版本决定是否升级
+    local current_npm_version=$(npm -v)
+    
+    if [[ "${node_version}" < "20.17.0" ]]; then
+        # 如果 Node.js 版本低于 20.17.0，则使用兼容的 npm 版本
+        if [[ "${current_npm_version}" != "10.2.4" ]]; then
+            log "安装与 Node.js v${node_version} 兼容的 npm 版本 (10.2.4)..."
+            if sudo npm install -g npm@10.2.4; then
+                log "npm 升级成功"
+                # 清理 npm 缓存
+                log "清理 npm 缓存..."
+                if npm cache clean --force; then
+                    success "npm 缓存清理完成"
+                else
+                    warning "npm 缓存清理失败"
+                fi
             else
-                warning "npm 缓存清理失败"
+                error "npm 升级失败"
+                return 1
             fi
         else
-            error "npm 升级失败"
-            return 1
+            success "npm 版本检查通过 (当前版本: $current_npm_version)"
         fi
     else
-        success "npm 版本检查通过 (当前版本: $current_npm_version)"
+        # Node.js 20.17.0 或更高版本可以使用最新的 npm
+        local latest_npm_version=$(npm view npm version 2>/dev/null)
+        if [ $? -eq 0 ] && [ "$current_npm_version" != "$latest_npm_version" ]; then
+            log "升级 npm 到最新版本..."
+            if sudo npm install -g npm@latest; then
+                log "npm 升级成功"
+                npm cache clean --force
+            else
+                error "npm 升级失败"
+                return 1
+            fi
+        fi
     fi
     
-    # 检查 Docker 依赖
+    # 检查其他依赖项...
     if ! command -v docker &> /dev/null; then
         error "未找到 docker，请先安装 docker"
         exit 1
