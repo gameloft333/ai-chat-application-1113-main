@@ -837,8 +837,16 @@ EOF
 
     # 删除临时文件
     sudo rm "$TEMP_FILE"
-    # 重启 Nginx
-    sudo systemctl reload nginx || sudo systemctl restart nginx
+
+    # 启动或重启 Nginx 服务
+    sudo systemctl start nginx
+    if ! sudo systemctl is-active nginx; then
+        sudo systemctl restart nginx
+        if ! sudo systemctl is-active nginx; then
+            error "Nginx 服务启动失败！"
+            return 1
+        fi
+    fi
 
     success "love.saga4v.com Nginx 配置更新完成"
     return 0
