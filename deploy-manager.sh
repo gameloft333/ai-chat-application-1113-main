@@ -770,6 +770,9 @@ update_nginx_config() {
     
     # 创建新的配置
     cat > $TEMP_CONF << EOF
+# 添加 DNS 解析器配置
+resolver 127.0.0.11 valid=30s;
+
 server {
     listen 80;
     listen [::]:80;
@@ -790,7 +793,8 @@ server {
     ssl_certificate_key /etc/nginx/ssl/privkey.pem;
     
     location / {
-        proxy_pass http://ai-chat-application-1113-main-frontend-1:4173;
+        set \$frontend_upstream "http://ai-chat-application-1113-main-frontend-1:4173";
+        proxy_pass \$frontend_upstream;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -802,7 +806,8 @@ server {
     }
     
     location /api {
-        proxy_pass http://ai-chat-application-1113-main-payment-1:4242;
+        set \$payment_upstream "http://ai-chat-application-1113-main-payment-1:4242";
+        proxy_pass \$payment_upstream;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection 'upgrade';
