@@ -26,10 +26,16 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 // console.log('Stripe模式:', process.env.VITE_STRIPE_MODE);
 
 app.use(cors({
-    origin: ['http://localhost:5173', 'http://localhost:4173', 'http://localhost:4242'],
-    methods: ['GET', 'POST', 'OPTIONS'],
-    credentials: true,
-    allowedHeaders: ['Content-Type', 'Accept', 'Origin']
+  origin: [
+    'http://localhost:5173', 
+    'http://localhost:4173', 
+    'http://localhost:4242',
+    'http://payment:4242',
+    'http://localhost:4243'
+  ],
+  methods: ['GET', 'POST', 'OPTIONS'],
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'Accept', 'Origin', 'Authorization']
 }));
 app.use(express.json());
 
@@ -59,10 +65,18 @@ app.post('/api/stripe/create-payment-intent', async (req, res) => {
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: ['http://localhost:5173', 'http://localhost:4173', 'http://localhost:4242'],
-    methods: ['GET', 'POST'],
-    credentials: true
-  }
+    origin: [
+      'http://localhost:5173', 
+      'http://localhost:4173', 
+      'http://localhost:4242',
+      'http://payment:4242',
+      'http://localhost:4243'
+    ],
+    methods: ['GET', 'POST', 'OPTIONS'],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Accept', 'Origin', 'Authorization']
+  },
+  transports: ['websocket', 'polling']
 });
 
 // 跑马灯消息存储

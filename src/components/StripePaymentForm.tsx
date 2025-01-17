@@ -241,7 +241,7 @@ export const StripePaymentForm: React.FC<StripePaymentFormProps> = ({
               </>
             ) : (
               <>
-                <span>{t('payment.pay')}</span>
+                <span>{t('payment.payAction')}</span>
                 <span className="font-medium">
                   {t('payment.amount', { amount, currency })}
                 </span>
