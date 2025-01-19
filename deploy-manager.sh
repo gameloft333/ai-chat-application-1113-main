@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# 加载环境变量
+if [ -f .env.production ]; then
+    export $(grep -v '^#' .env.production | xargs)
+fi
+
 # 设置错误时退出
 set -e
 
