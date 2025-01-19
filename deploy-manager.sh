@@ -55,6 +55,8 @@ setup_environment() {
         source ~/.bashrc
     else
         log "GitHub 凭证已存在"
+    fi
+
     # 检查 Stripe 环境变量
     if [ -z "$STRIPE_SECRET_KEY" ]; then
         error "未设置 STRIPE_SECRET_KEY 环境变量"
@@ -63,6 +65,7 @@ setup_environment() {
         export STRIPE_SECRET_KEY="${stripe_key}"
     fi
     
+    # 检查 VITE_STRIPE_MODE
     if [ -z "$VITE_STRIPE_MODE" ]; then
         log "设置 Stripe 模式为生产环境..."
         echo "export VITE_STRIPE_MODE='live'" >> ~/.bashrc
