@@ -988,6 +988,24 @@ EOF
     success "支付服务器设置完成"
 }
 
+# 检查并创建 Docker 网络
+check_and_create_network() {
+    local network_name="app_network"
+    
+    # 检查网络是否存在
+    if ! docker network ls | grep -q "$network_name"; then
+        log "网络 $network_name 不存在，正在创建..."
+        if docker network create "$network_name"; then
+            success "网络 $network_name 创建成功"
+        else
+            error "网络 $network_name 创建失败"
+            exit 1
+        fi
+    else
+        log "网络 $network_name 已存在，跳过创建"
+    fi
+}
+
 # 更新主函数
 main() {
     log "开始一键部署流程..."
@@ -995,24 +1013,27 @@ main() {
     # 1. 配置环境变量
     setup_environment
     
-    # 2. 配置 Git 并更新代码
+    # 2. 检查并创建网络
+    check_and_create_network
+    
+    # 3. 配置 Git 并更新代码
     setup_git_credentials
     
-    # 3. 检查基础环境
+    # 4. 检查基础环境
     check_and_install_node
     check_dependencies
     check_env_file
     
-    # 4. 设置支付服务器
+    # 5. 设置支付服务器
     setup_payment_server
     
-    # 5. 管理 SSL 证书
+    # 6. 管理 SSL 证书
     if ! manage_ssl_certificates; then
         error "SSL 证书管理失败"
         exit 1
     fi
     
-    # 6. 部署服务
+    # 7. 部署服务
     cleanup
     pre_deployment_checks
     deploy_services
