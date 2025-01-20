@@ -978,9 +978,18 @@ EOF
     cd payment-server
     if npm install; then
         success "支付服务器依赖安装完成"
+        
+        # 检查并修复依赖问题
+        if npm audit | grep -q 'vulnerabilities'; then
+            log "发现依赖问题，正在执行 npm audit fix..."
+            npm audit fix
+            success "依赖问题已修复"
+        else
+            log "没有发现依赖问题，跳过修复"
+        fi
     else
         error "支付服务器依赖安装失败"
-        cd ..
+        cd .. 
         return 1
     fi
     cd ..
@@ -1036,6 +1045,10 @@ main() {
     # 7. 部署服务
     cleanup
     pre_deployment_checks
+    
+    # 确保网络存在
+    check_and_create_network
+    
     deploy_services
     check_health
     show_status

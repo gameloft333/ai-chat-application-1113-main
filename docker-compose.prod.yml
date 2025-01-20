@@ -1,4 +1,4 @@
-# version: '3.8'
+version: '3.8'
 
 services:
   # nginx:
@@ -110,4 +110,4 @@ services:
 
 networks:
   app_network:
-    external: true  # 使用外部网络
+    external: true  # 确保这里声明为外部网络
