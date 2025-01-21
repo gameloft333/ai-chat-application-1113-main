@@ -114,3 +114,12 @@ app.use((err, req, res, next) => {
 app.listen(port, '0.0.0.0', () => {
   console.log(`Stripe 服务器运行在 http://0.0.0.0:${port}`);
 });
+
+const io = require('socket.io')(server, {
+    path: '/socket.io/',
+    cors: {
+        origin: "https://love.saga4v.com",
+        methods: ["GET", "POST"],
+        credentials: true
+    }
+});

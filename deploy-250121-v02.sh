@@ -323,6 +323,17 @@ check_payment_server() {
     return 1
 }
 
+# 检查 Nginx 配置
+check_nginx_config() {
+    log "检查 Nginx 配置..."
+    if ! docker exec ai-chat-application-1113-main-nginx-1 nginx -t; then
+        error "Nginx 配置检查失败"
+        return 1
+    fi
+    success "Nginx 配置检查通过"
+    return 0
+}
+
 # 主函数
 main() {
     log "开始部署流程..."
@@ -378,6 +389,11 @@ main() {
         exit 1
     fi
     success "Nginx服务启动成功"
+    
+    # 检查 Nginx 配置
+    if ! check_nginx_config; then
+        exit 1
+    fi
     
     check_services
     
