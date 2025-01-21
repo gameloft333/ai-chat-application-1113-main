@@ -150,6 +150,68 @@ ensure_network() {
     fi
 }
 
+# 添加新的端口检查函数
+check_port() {
+    local port=$1
+    log "检查端口 $port 是否被占用..."
+    
+    if lsof -i :$port > /dev/null 2>&1; then
+        log "端口 $port 被占用，尝试释放..."
+        
+        # 如果是 nginx 占用的端口，先尝试停止 nginx 服务
+        if lsof -i :$port | grep -q nginx; then
+            log "检测到 Nginx 服务，尝试停止..."
+            systemctl stop nginx 2>/dev/null
+            sleep 2
+            
+            # 如果还有 nginx 进程在运行，尝试终止它们
+            if pgrep nginx >/dev/null; then
+                log "终止残留的 Nginx 进程..."
+                killall nginx 2>/dev/null
+                sleep 2
+                
+                # 如果进程仍然存在，强制终止
+                if pgrep nginx >/dev/null; then
+                    log "强制终止 Nginx 进程..."
+                    killall -9 nginx 2>/dev/null
+                    sleep 1
+                fi
+            fi
+        fi
+        
+        # 获取占用端口的所有进程 PID
+        local pids=$(lsof -t -i :$port)
+        
+        # 如果还有其他进程占用端口，尝试终止它们
+        if [ ! -z "$pids" ]; then
+            log "停止占用端口 $port 的进程: $pids"
+            for pid in $pids; do
+                kill -15 $pid 2>/dev/null
+            done
+            sleep 2
+            
+            # 检查是否还有进程存活，如果有则强制终止
+            pids=$(lsof -t -i :$port)
+            if [ ! -z "$pids" ]; then
+                log "强制终止剩余进程..."
+                for pid in $pids; do
+                    kill -9 $pid 2>/dev/null
+                done
+                sleep 1
+            fi
+        fi
+    fi
+    
+    # 最后检查端口
+    if lsof -i :$port > /dev/null 2>&1; then
+        error "无法释放端口 $port"
+        return 1
+    fi
+    
+    success "端口 $port 可用"
+    return 0
+}
+
 # 8. 构建和启动服务
 deploy_services() {
     log "开始部署服务..."
@@ -230,7 +292,18 @@ main() {
     fi
     success "主服务启动成功"
     
-    # 启动Nginx服务
+    # 启动 Nginx 服务前检查端口
+    if ! check_port 443; then
+        error "无法启动 Nginx：端口 443 被占用"
+        exit 1
+    fi
+    
+    if ! check_port 80; then
+        error "无法启动 Nginx：端口 80 被占用"
+        exit 1
+    }
+    
+    # 启动 Nginx 服务
     if ! docker-compose -f docker-compose.nginx.yml up -d; then
         error "Nginx服务启动失败"
         exit 1
