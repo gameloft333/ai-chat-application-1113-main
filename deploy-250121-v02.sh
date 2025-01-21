@@ -259,34 +259,45 @@ check_services() {
 # 检查 payment-server 是否就绪
 check_payment_server() {
     log "检查 payment-server 状态..."
-    local max_attempts=5
+    local start_period=90  # 与 docker-compose.yml 中的 start_period 一致
+    local check_interval=30  # 与 docker-compose.yml 中的 interval 一致
+    local max_attempts=$((start_period / check_interval + 3))  # 允许完整的启动周期加上额外检查次数
     local attempt=1
     
+    log "等待服务启动 (最长等待 ${start_period} 秒)..."
+    sleep 10  # 给容器一个初始启动时间
+    
     while [ $attempt -le $max_attempts ]; do
-        # 1. 首先检查容器是否运行
-        if ! docker ps -q -f name="${PROJECT_NAME}-payment-server-1" > /dev/null; then
-            log "payment-server 容器未运行"
-            sleep 5
-            ((attempt++))
-            continue
-        fi
+        # 获取容器状态
+        local container_status=$(docker inspect --format='{{.State.Health.Status}}' "${PROJECT_NAME}-payment-server-1" 2>/dev/null || echo "unknown")
+        log "当前容器状态: $container_status (${attempt}/${max_attempts})"
         
-        # 2. 检查健康状态
-        local status=$(docker inspect --format='{{.State.Health.Status}}' "${PROJECT_NAME}-payment-server-1")
-        if [ "$status" = "healthy" ]; then
-            # 3. 验证服务是否响应
-            if curl -s http://localhost:4242/health > /dev/null; then
+        case "$container_status" in
+            "healthy")
                 success "payment-server 运行正常"
                 return 0
-            fi
-        fi
+                ;;
+            "starting")
+                log "容器正在启动中..."
+                ;;
+            "unhealthy")
+                error "容器健康检查失败"
+                break
+                ;;
+            *)
+                log "等待容器状态更新..."
+                ;;
+        esac
         
-        log "等待 payment-server 就绪... (${attempt}/${max_attempts})"
-        sleep 5
+        sleep $check_interval
         ((attempt++))
     done
     
-    error "payment-server 未能正常启动，查看日志："
+    # 如果到这里还没有返回，说明服务没有正常启动
+    error "payment-server 未能在预期时间内启动"
+    log "容器详细状态："
+    docker inspect "${PROJECT_NAME}-payment-server-1" | grep -A 10 "Health"
+    log "容器日志："
     docker logs "${PROJECT_NAME}-payment-server-1"
     return 1
 }
