@@ -7,7 +7,7 @@ rem 启用延迟变量扩展
 setlocal EnableDelayedExpansion
 
 rem 版本信息
-set VERSION=1.1.0
+set VERSION=1.3.5
 
 rem 颜色代码
 set RED=[91m]

@@ -257,16 +257,24 @@ check_services() {
     
     # 检查 Nginx 日志
     if docker logs "${PROJECT_NAME}-nginx-1" 2>&1 | grep -i error; then
-        warning "Nginx 日志中发现错误"
+        warning "Nginx 日志中发现错误："
+        docker logs "${PROJECT_NAME}-nginx-1" 2>&1 | grep -i error
     fi
     
-    # 检查网站访问
-    if curl -s -f https://love.saga4v.com > /dev/null; then
-        success "网站可以访问"
-    else
-        error "网站无法访问"
-        error "请检查 Nginx 配置和日志"
-    fi
+    # 检查各个端点
+    local endpoints=(
+        "https://love.saga4v.com"
+        "https://love.saga4v.com/api/health"
+    )
+    
+    for endpoint in "${endpoints[@]}"; do
+        if curl -s -f "$endpoint" > /dev/null; then
+            success "端点可访问: $endpoint"
+        else
+            error "端点无法访问: $endpoint"
+            error "HTTP 状态码: $(curl -s -o /dev/null -w "%{http_code}" "$endpoint")"
+        fi
+    done
 }
 
 # 检查 payment-server 是否就绪
