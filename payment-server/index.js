@@ -116,13 +116,13 @@ app.listen(port, '0.0.0.0', () => {
 });
 
 const io = require('socket.io')(server, {
-    path: '/socket.io/',
+    path: '/socket.io',
     cors: {
-        origin: process.env.CORS_ORIGIN || "https://love.saga4v.com",
+        origin: ["https://love.saga4v.com", "http://localhost:4173"],
         methods: ["GET", "POST", "OPTIONS"],
         credentials: true
     },
-    transports: ['websocket'],
+    transports: ['websocket', 'polling'],
     pingTimeout: 60000,
     pingInterval: 25000
 });
@@ -130,7 +130,14 @@ const io = require('socket.io')(server, {
 // 添加连接日志
 io.on('connection', (socket) => {
     console.log('Client connected:', socket.id);
-    socket.on('error', (error) => console.error('Socket error:', error));
+    
+    socket.on('error', (error) => {
+        console.error('Socket error:', error);
+    });
+    
+    socket.on('disconnect', (reason) => {
+        console.log('Client disconnected:', socket.id, reason);
+    });
 });
 
 // 添加服务器错误处理

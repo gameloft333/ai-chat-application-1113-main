@@ -60,7 +60,18 @@ export default defineConfig(({ mode }) => {
       host: '0.0.0.0',
       port: 4173,
       strictPort: true,
-      open: false
+      open: false,
+      proxy: {
+        '/socket.io': {
+          target: 'wss://love.saga4v.com',
+          ws: true,
+          changeOrigin: true
+        },
+        '/api': {
+          target: 'https://love.saga4v.com',
+          changeOrigin: true
+        }
+      }
     },
     resolve: {
       alias: {
@@ -77,6 +88,17 @@ export default defineConfig(({ mode }) => {
         info: console.log,
         warn: console.warn,
         error: console.error
+      },
+      proxy: {
+        '/socket.io': {
+          target: 'wss://love.saga4v.com',
+          ws: true,
+          changeOrigin: true
+        },
+        '/api': {
+          target: 'https://love.saga4v.com',
+          changeOrigin: true
+        }
       }
     }
   }
