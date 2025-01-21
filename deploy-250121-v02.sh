@@ -194,12 +194,12 @@ main() {
     log "开始部署流程..."
     
     stop_current_services
+    ensure_network
     check_git_updates
     check_node
     check_docker
     check_env_files
     cleanup_environment
-    ensure_network
     deploy_services
     check_services
     
