@@ -8,7 +8,15 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 4242;
+const server = createServer(app);
+const io = new Server(server, {
+    cors: {
+        origin: process.env.CORS_ORIGIN,
+        methods: ["GET", "POST"],
+        credentials: true
+    },
+    path: '/socket.io/'
+});
 
 // 添加错误处理中间件
 process.on('uncaughtException', (err) => {
@@ -113,33 +121,17 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(port, '0.0.0.0', () => {
-  console.log(`Stripe 服务器运行在 http://0.0.0.0:${port}`);
-});
-
-const io = new Server(server, {
-  cors: {
-    origin: process.env.CORS_ORIGIN,
-    methods: ["GET", "POST"],
-    credentials: true
-  },
-  path: '/socket.io/'
-});
-
-// 添加连接日志
+// WebSocket 事件处理
 io.on('connection', (socket) => {
     console.log('Client connected:', socket.id);
     
-    socket.on('error', (error) => {
-        console.error('Socket error:', error);
-    });
-    
-    socket.on('disconnect', (reason) => {
-        console.log('Client disconnected:', socket.id, reason);
+    socket.on('disconnect', () => {
+        console.log('Client disconnected:', socket.id);
     });
 });
 
-// 添加服务器错误处理
-server.on('error', (error) => {
-    console.error('Server error:', error);
+// 启动服务器
+const PORT = process.env.PORT || 4242;
+server.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on port ${PORT}`);
 });
