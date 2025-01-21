@@ -296,23 +296,23 @@ check_services() {
 check_nginx_config() {
     log "检查 Nginx 配置..."
     
-    # 检查配置文件是否存在
-    if ! docker exec "${PROJECT_NAME}-nginx-1" test -f /etc/nginx/nginx.conf; then
-        error "Nginx 配置文件不存在"
-        return 1
-    fi
+    # 检查证书目录权限
+    log "检查证书目录权限..."
+    ls -la /etc/letsencrypt/live/love.saga4v.com/ || true
     
-    # 检查配置文件权限
-    log "检查配置文件权限..."
-    docker exec "${PROJECT_NAME}-nginx-1" ls -l /etc/nginx/nginx.conf || true
+    # 检查 nginx 用户权限
+    log "检查 nginx 用户权限..."
+    docker exec "${PROJECT_NAME}-nginx-1" id nginx || true
     
-    # 检查 SSL 证书文件权限
-    log "检查 SSL 证书权限..."
-    docker exec "${PROJECT_NAME}-nginx-1" ls -l /etc/nginx/ssl/love/ || true
+    # 检查 nginx.conf 内容
+    log "检查 nginx.conf 内容..."
+    cat nginx.conf || true
     
-    # 验证 Nginx 配置
+    # 在容器内验证配置
     if ! docker exec "${PROJECT_NAME}-nginx-1" nginx -t; then
         error "Nginx 配置验证失败"
+        # 输出错误日志
+        docker logs "${PROJECT_NAME}-nginx-1"
         return 1
     fi
     
