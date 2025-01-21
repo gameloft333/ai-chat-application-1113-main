@@ -266,11 +266,7 @@ check_services() {
    
     # 检查 WebSocket 连接
     log "检查 WebSocket 连接..."
-    if curl -v -H "Connection: Upgrade" \
-           -H "Upgrade: websocket" \
-           -H "Host: love.saga4v.com" \
-           -H "Origin: https://love.saga4v.com" \
-           "https://love.saga4v.com/socket.io/?EIO=4&transport=websocket" 2>&1 | grep -q "101 Switching Protocols"; then
+    if check_websocket; then
         success "WebSocket 连接正常"
     else
         error "WebSocket 连接异常"
@@ -410,6 +406,41 @@ redeploy_services() {
     
     # 检查服务状态
     check_services
+}
+
+# 检查 WebSocket 连接
+check_websocket() {
+    log "检查 WebSocket 连接..."
+    local ws_url="wss://love.saga4v.com/socket.io/?EIO=4&transport=websocket"
+    
+    # 先检查 DNS 解析
+    if ! host love.saga4v.com > /dev/null; then
+        error "DNS 解析失败"
+        return 1
+    fi
+    
+    # 检查 TCP 连接
+    if ! nc -zv love.saga4v.com 443 2>/dev/null; then
+        error "无法建立 TCP 连接"
+        return 1
+    }
+    
+    # 检查 WebSocket 握手
+    local response=$(curl -sS -i -N \
+        -H "Connection: Upgrade" \
+        -H "Upgrade: websocket" \
+        -H "Host: love.saga4v.com" \
+        -H "Origin: https://love.saga4v.com" \
+        "$ws_url")
+    
+    if echo "$response" | grep -q "101 Switching Protocols"; then
+        success "WebSocket 连接正常"
+        return 0
+    else
+        error "WebSocket 握手失败"
+        error "响应内容: $response"
+        return 1
+    fi
 }
 
 # 主函数

@@ -8,7 +8,7 @@ services:
     ports:
       - "4173:4173"
     environment:
-      - VITE_SOCKET_URL=wss://love.saga4v.com
+      - VITE_SOCKET_URL=wss://love.saga4v.com/socket.io
       - VITE_PAYMENT_URL=https://love.saga4v.com/api
       - NODE_ENV=production
     networks:
