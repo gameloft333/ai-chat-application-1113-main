@@ -26,7 +26,8 @@ set "MENU_5=5) 强制推送到远程"
 set "MENU_6=6) 拉取远程最新代码"
 set "MENU_7=7) 退出"
 set "MENU_8=8) 管理 Git 代理设置"
-set "MENU_CHOICE=请选择操作 (1-8): "
+set "MENU_9=9) 管理远程仓库地址"
+set "MENU_CHOICE=请选择操作 (1-9): "
 
 rem 检查Git
 where git >nul 2>nul || (
@@ -55,9 +56,10 @@ echo %MENU_5%
 echo %MENU_6%
 echo %MENU_7%
 echo %MENU_8%
+echo %MENU_9%
 echo ==========================
 
-choice /c 12345678 /n /m "%MENU_CHOICE%"
+choice /c 123456789 /n /m "%MENU_CHOICE%"
 set choice=%errorlevel%
 
 if %choice%==1 (
@@ -80,6 +82,7 @@ if %choice%==5 goto :force_push
 if %choice%==6 goto :pull_latest
 if %choice%==7 exit /b 0
 if %choice%==8 goto :manage_proxy
+if %choice%==9 goto :manage_remote
 
 echo %RED%无效的选择%NC%
 timeout /t 2 >nul
@@ -255,35 +258,52 @@ goto :menu
 cls
 echo === Git 代理管理 ===
 echo 1) 查看当前代理设置
-echo 2) 设置代理
-echo 3) 删除代理设置
-echo 4) 返回主菜单
+echo 2) 设置代理 (本地代理)
+echo 3) 设置代理 (云服务器代理)
+echo 4) 删除代理设置
+echo 5) 返回主菜单
 echo ==========================
 
-choice /c 1234 /n /m "请选择操作 (1-4): "
+choice /c 12345 /n /m "请选择操作 (1-5): "
 set proxy_choice=%errorlevel%
 
-if %proxy_choice%==1 (
-    echo.
-    echo 当前 HTTP 代理设置:
-    git config --global --get http.proxy
-    echo 当前 HTTPS 代理设置:
-    git config --global --get https.proxy
-    echo.
-    pause
-    goto :manage_proxy
-)
-
 if %proxy_choice%==2 (
-    set /p proxy_addr="请输入代理地址 (例如: http://127.0.0.1:7890): "
-    git config --global http.proxy !proxy_addr!
-    git config --global https.proxy !proxy_addr!
-    echo %GREEN%代理设置已更新%NC%
+    echo 选择代理类型:
+    echo 1) HTTP 代理 (http://127.0.0.1:7890)
+    echo 2) SOCKS5 代理 (socks5://127.0.0.1:7890)
+    choice /c 12 /n /m "请选择 (1-2): "
+    if !errorlevel!==1 (
+        git config --global http.proxy http://127.0.0.1:7890
+        git config --global https.proxy http://127.0.0.1:7890
+    ) else (
+        git config --global http.proxy socks5://127.0.0.1:7890
+        git config --global https.proxy socks5://127.0.0.1:7890
+    )
+    echo %GREEN%本地代理设置已更新%NC%
     timeout /t 2 >nul
     goto :manage_proxy
 )
 
 if %proxy_choice%==3 (
+    echo 选择代理类型:
+    echo 1) HTTP 代理
+    echo 2) SOCKS5 代理
+    choice /c 12 /n /m "请选择 (1-2): "
+    set /p proxy_ip="请输入代理服务器 IP: "
+    set /p proxy_port="请输入代理端口: "
+    if !errorlevel!==1 (
+        git config --global http.proxy http://!proxy_ip!:!proxy_port!
+        git config --global https.proxy http://!proxy_ip!:!proxy_port!
+    ) else (
+        git config --global http.proxy socks5://!proxy_ip!:!proxy_port!
+        git config --global https.proxy socks5://!proxy_ip!:!proxy_port!
+    )
+    echo %GREEN%云服务器代理设置已更新%NC%
+    timeout /t 2 >nul
+    goto :manage_proxy
+)
+
+if %proxy_choice%==4 (
     git config --global --unset http.proxy
     git config --global --unset https.proxy
     echo %GREEN%代理设置已删除%NC%
@@ -291,8 +311,55 @@ if %proxy_choice%==3 (
     goto :manage_proxy
 )
 
-if %proxy_choice%==4 goto :menu
+if %proxy_choice%==5 goto :menu
 
 goto :manage_proxy
+
+:manage_remote
+cls
+echo === Git 远程仓库管理 ===
+echo 1) 查看当前远程地址
+echo 2) 切换到 HTTPS 地址
+echo 3) 切换到备用 HTTPS 地址
+echo 4) 切换到 SSH 地址
+echo 5) 返回主菜单
+echo ==========================
+
+choice /c 12345 /n /m "请选择操作 (1-5): "
+set remote_choice=%errorlevel%
+
+if %remote_choice%==1 (
+    echo.
+    echo 当前远程仓库地址:
+    git remote -v
+    echo.
+    pause
+    goto :manage_remote
+)
+
+if %remote_choice%==2 (
+    git remote set-url origin https://github.com/gameloft333/ai-chat-application-1113-main.git
+    echo %GREEN%已切换到 HTTPS 地址%NC%
+    timeout /t 2 >nul
+    goto :manage_remote
+)
+
+if %remote_choice%==3 (
+    git remote set-url origin https://gitee.com/gameloft333/ai-chat-application-1113-main.git
+    echo %GREEN%已切换到备用 HTTPS 地址%NC%
+    timeout /t 2 >nul
+    goto :manage_remote
+)
+
+if %remote_choice%==4 (
+    git remote set-url origin git@github.com:gameloft333/ai-chat-application-1113-main.git
+    echo %GREEN%已切换到 SSH 地址%NC%
+    timeout /t 2 >nul
+    goto :manage_remote
+)
+
+if %remote_choice%==5 goto :menu
+
+goto :manage_remote
 
 rem ... 其他代码保持不变 ...
