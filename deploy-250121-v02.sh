@@ -263,7 +263,7 @@ check_payment_server() {
     local attempt=1
     
     while [ $attempt -le $max_attempts ]; do
-        if docker ps | grep -q "${PROJECT_NAME}-payment-server.*healthy"; then
+        if docker ps --format "{{.Names}} {{.Status}}" | grep "${PROJECT_NAME}-payment-server-1" | grep -q "healthy"; then
             success "payment-server 运行正常"
             return 0
         fi
@@ -272,7 +272,8 @@ check_payment_server() {
         ((attempt++))
     done
     
-    error "payment-server 未能正常启动"
+    error "payment-server 未能正常启动，查看日志："
+    docker logs "${PROJECT_NAME}-payment-server-1"
     return 1
 }
 
