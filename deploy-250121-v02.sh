@@ -256,6 +256,26 @@ check_services() {
     fi
 }
 
+# 检查 payment-server 是否就绪
+check_payment_server() {
+    log "检查 payment-server 状态..."
+    local max_attempts=5
+    local attempt=1
+    
+    while [ $attempt -le $max_attempts ]; do
+        if docker ps | grep -q "${PROJECT_NAME}-payment-server.*healthy"; then
+            success "payment-server 运行正常"
+            return 0
+        fi
+        log "等待 payment-server 就绪... (${attempt}/${max_attempts})"
+        sleep 5
+        ((attempt++))
+    done
+    
+    error "payment-server 未能正常启动"
+    return 1
+}
+
 # 主函数
 main() {
     log "开始部署流程..."
@@ -283,13 +303,25 @@ main() {
     fi
     success "主服务启动成功"
     
-    # 等待 payment-server 完全启动
-    log "等待 payment-server 启动..."
-    sleep 15
+    # 检查 payment-server
+    if ! check_payment_server; then
+        exit 1
+    fi
     
-    # 检查 payment-server 是否就绪
-    if ! docker-compose -f docker-compose.yml ps | grep -q "payment.*healthy"; then
-        error "payment-server 未能正常启动"
+    # 检查 SSL 证书
+    if ! check_ssl_certificates; then
+        error "SSL 证书检查失败，无法启动 Nginx"
+        exit 1
+    fi
+    
+    # 检查端口
+    if ! check_port 443; then
+        error "无法启动 Nginx：端口 443 被占用"
+        exit 1
+    fi
+    
+    if ! check_port 80; then
+        error "无法启动 Nginx：端口 80 被占用"
         exit 1
     fi
     
