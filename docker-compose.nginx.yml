@@ -12,6 +12,7 @@ services:
       - /etc/letsencrypt/live/love.saga4v.com/privkey.pem:/etc/nginx/ssl/love/privkey.pem:ro
       - /etc/letsencrypt/live/play.saga4v.com/fullchain.pem:/etc/nginx/ssl/play/fullchain.pem:ro
       - /etc/letsencrypt/live/play.saga4v.com/privkey.pem:/etc/nginx/ssl/play/privkey.pem:ro
+      - /var/www/certbot:/var/www/certbot:ro
     networks:
       - app_network
     restart: unless-stopped
