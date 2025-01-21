@@ -155,41 +155,29 @@ check_port() {
     local port=$1
     log "检查端口 $port 是否被占用..."
     
-    if lsof -i :$port > /dev/null 2>&1; then
-        log "端口 $port 被占用，尝试释放..."
-        
-        # 只处理我们项目的 Docker 容器
-        local container_id=$(docker ps | grep "${PROJECT_NAME}.*nginx" | awk '{print $1}')
-        if [ ! -z "$container_id" ]; then
-            log "停止项目相关的 Nginx 容器..."
-            docker stop $container_id 2>/dev/null
-            docker rm $container_id 2>/dev/null
-            sleep 2
+    # 使用 netstat 来检查端口占用情况
+    if ! netstat -tuln | grep ":$port " > /dev/null 2>&1; then
+        success "端口 $port 可用于项目使用"
+        return 0
+    else
+        local pid=$(lsof -t -i:$port 2>/dev/null)
+        if [ ! -z "$pid" ]; then
+            error "端口 $port 被进程 $pid 占用"
+            return 1
+        else
+            # 如果 lsof 没有显示结果但 netstat 显示端口被占用
+            # 可能是因为权限问题或进程已经释放但端口还在 TIME_WAIT 状态
+            log "端口 $port 可能处于 TIME_WAIT 状态，等待释放..."
+            sleep 5
+            if ! netstat -tuln | grep ":$port " > /dev/null 2>&1; then
+                success "端口 $port 已释放，可以使用"
+                return 0
+            else
+                error "端口 $port 仍然被占用"
+                return 1
+            fi
         fi
-        
-        # 检查端口是否被我们的项目占用
-        local project_pid=$(lsof -i :$port | grep "${PROJECT_NAME}" | awk '{print $2}')
-        if [ ! -z "$project_pid" ]; then
-            log "停止项目相关的端口占用进程: $project_pid"
-            kill -15 $project_pid 2>/dev/null
-            sleep 2
-        fi
     fi
-    
-    # 最后检查端口
-    if lsof -i :$port | grep -q "${PROJECT_NAME}"; then
-        error "无法释放项目占用的端口 $port"
-        return 1
-    fi
-    
-    # 如果端口被其他程序占用，给出提示但不强制终止
-    if lsof -i :$port > /dev/null 2>&1; then
-        error "端口 $port 被其他程序占用，请手动处理"
-        return 1
-    fi
-    
-    success "端口 $port 可用于项目使用"
-    return 0
 }
 
 # 在 check_port 函数后添加新函数
