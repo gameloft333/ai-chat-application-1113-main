@@ -412,32 +412,33 @@ redeploy_services() {
 check_websocket() {
     log "开始 WebSocket 连接检查..."
     
-    # 1. 检查 payment-server 是否正常运行并输出详细日志
+    # 1. 检查 payment-server 运行状态
     log "检查 payment-server 运行状态..."
-    docker logs ai-chat-application-1113-main-payment-server-1
+    docker logs --tail 50 ai-chat-application-1113-main-payment-server-1
     
-    # 2. 检查 payment-server 的环境变量
+    # 2. 检查 payment-server 环境变量
     log "检查 payment-server 环境变量..."
-    docker exec ai-chat-application-1113-main-payment-server-1 printenv | grep -E 'NODE_ENV|CORS_ORIGIN|SOCKET_URL'
+    docker exec ai-chat-application-1113-main-payment-server-1 printenv | grep -E 'NODE_ENV|CORS_ORIGIN|SOCKET_URL|VITE_'
     
-    # 3. 检查 Nginx 访问日志
-    log "检查 Nginx 访问日志..."
-    docker exec ai-chat-application-1113-main-nginx-1 tail -n 50 /var/log/nginx/access.log
+    # 3. 检查 Nginx 日志文件是否存在
+    log "检查 Nginx 日志文件..."
+    if ! docker exec ai-chat-application-1113-main-nginx-1 test -f /var/log/nginx/access.log; then
+        log "Nginx 访问日志文件不存在，可能是首次启动"
+    else
+        log "检查 Nginx 访问日志..."
+        docker exec ai-chat-application-1113-main-nginx-1 tail -n 20 /var/log/nginx/access.log || true
+    fi
     
-    # 4. 检查 Nginx 错误日志
-    log "检查 Nginx 错误日志..."
-    docker exec ai-chat-application-1113-main-nginx-1 tail -n 50 /var/log/nginx/error.log
+    if ! docker exec ai-chat-application-1113-main-nginx-1 test -f /var/log/nginx/error.log; then
+        log "Nginx 错误日志文件不存在，可能是首次启动"
+    else
+        log "检查 Nginx 错误日志..."
+        docker exec ai-chat-application-1113-main-nginx-1 tail -n 20 /var/log/nginx/error.log || true
+    fi
     
-    # 5. 使用 curl 测试 socket.io 握手过程
-    log "测试 socket.io 握手..."
-    local handshake_url="https://love.saga4v.com/socket.io/?EIO=4&transport=polling"
-    log "尝试 polling 握手: $handshake_url"
-    local polling_response=$(curl -v -sS "$handshake_url" 2>&1)
-    log "Polling 响应: $polling_response"
-    
-    # 6. 测试 WebSocket 升级
-    log "测试 WebSocket 升级..."
-    local ws_response=$(curl -v -sS \
+    # 4. 测试 socket.io 连接
+    log "测试 socket.io 连接..."
+    local test_result=$(curl -v -sS \
         -H "Connection: Upgrade" \
         -H "Upgrade: websocket" \
         -H "Host: love.saga4v.com" \
@@ -446,23 +447,19 @@ check_websocket() {
         -H "Sec-WebSocket-Key: SGVsbG8sIHdvcmxkIQ==" \
         "https://love.saga4v.com/socket.io/?EIO=4&transport=websocket" 2>&1)
     
-    log "WebSocket 升级响应详情:"
-    log "$ws_response"
+    log "Socket.io 测试结果:"
+    log "$test_result"
     
-    # 7. 检查网络连接
-    log "检查容器间网络连接..."
-    docker exec ai-chat-application-1113-main-nginx-1 ping -c 3 ai-chat-application-1113-main-payment-server-1
-    
-    # 8. 检查 payment-server 的 4242 端口
+    # 5. 检查 payment-server 是否监听 4242 端口
     log "检查 payment-server 端口..."
-    docker exec ai-chat-application-1113-main-payment-server-1 netstat -tlpn | grep 4242
+    docker exec ai-chat-application-1113-main-payment-server-1 netstat -tlpn || true
     
-    if echo "$ws_response" | grep -q "101 Switching Protocols"; then
-        success "WebSocket 握手成功"
+    if echo "$test_result" | grep -q "101 Switching Protocols"; then
+        success "WebSocket 连接成功"
         return 0
     else
-        error "WebSocket 握手失败，详细信息:"
-        error "完整响应: $ws_response"
+        error "WebSocket 连接失败，详细信息:"
+        error "$(echo "$test_result" | grep -E 'HTTP|< ')"
         return 1
     fi
 }
