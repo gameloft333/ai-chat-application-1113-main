@@ -126,9 +126,20 @@ check_env_files() {
 cleanup_environment() {
     log "清理环境..."
     
-    # 清理Docker资源
-    docker system prune -f
-    docker volume prune -f
+    # 停止并删除所有相关容器
+    docker-compose -f docker-compose.yml down --remove-orphans
+    docker-compose -f docker-compose.nginx.yml down --remove-orphans
+    
+    # 清理特定的孤立容器
+    local orphans=$(docker ps -a | grep "${PROJECT_NAME}" | awk '{print $1}')
+    if [ ! -z "$orphans" ]; then
+        log "清理孤立容器..."
+        docker rm -f $orphans
+    fi
+    
+    # 清理未使用的网络
+    log "清理未使用的网络..."
+    docker network prune -f
     
     # 清理构建缓存
     rm -rf dist
@@ -206,26 +217,52 @@ check_ssl_certificates() {
 deploy_services() {
     log "开始部署服务..."
     
-    # 构建服务
-    if ! docker-compose -f docker-compose.yml build; then
-        error "服务构建失败"
+    # 确保清理环境
+    cleanup_environment
+    
+    # 确保网络存在
+    ensure_network
+    
+    # 构建并启动前端服务
+    log "构建并启动前端服务..."
+    if ! docker-compose -f docker-compose.yml up -d --build frontend; then
+        error "前端服务启动失败"
         exit 1
     fi
-    success "服务构建成功"
     
-    # 启动主服务
-    if ! docker-compose -f docker-compose.yml up -d; then
-        error "主服务启动失败"
+    # 等待前端服务健康检查
+    log "等待前端服务就绪..."
+    local max_attempts=30
+    local attempt=1
+    while [ $attempt -le $max_attempts ]; do
+        if docker ps --filter "name=${PROJECT_NAME}-frontend" --filter "health=healthy" | grep -q "${PROJECT_NAME}-frontend"; then
+            success "前端服务就绪"
+            break
+        fi
+        log "等待前端服务就绪 ($attempt/$max_attempts)..."
+        sleep 2
+        ((attempt++))
+    done
+    
+    if [ $attempt -gt $max_attempts ]; then
+        error "前端服务启动超时"
         exit 1
     fi
-    success "主服务启动成功"
     
-    # 启动Nginx服务
+    # 启动 Nginx 服务
+    log "启动 Nginx 服务..."
     if ! docker-compose -f docker-compose.nginx.yml up -d; then
-        error "Nginx服务启动失败"
+        error "Nginx 服务启动失败"
         exit 1
     fi
-    success "Nginx服务启动成功"
+    
+    # 检查 Nginx 配置
+    if ! check_nginx_config; then
+        error "Nginx 配置检查失败"
+        exit 1
+    fi
+    
+    success "所有服务部署完成"
 }
 
 # 9. 检查服务状态
@@ -328,7 +365,23 @@ redeploy_services() {
     check_services
 }
 
-# 检查 WebSocket 连接
+# 检查端点可访问性
+check_endpoint() {
+    local url=$1
+    log "检查端点可访问: $url"
+    
+    # 使用 curl 检查端点，设置超时和重试
+    if curl -k -s -f -m 10 --retry 3 --retry-delay 2 "$url" > /dev/null; then
+        success "端点可访问: $url"
+        return 0
+    else
+        error "端点不可访问: $url"
+        # 检查 Nginx 日志
+        log "检查 Nginx 错误日志..."
+        docker exec ai-chat-application-1113-main-nginx-1 tail -n 50 /var/log/nginx/error.log || true
+        return 1
+    fi
+}
 
 # 主函数
 main() {
