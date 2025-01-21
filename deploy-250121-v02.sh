@@ -26,8 +26,8 @@ error() {
 # 1. 停止当前服务
 stop_current_services() {
     log "停止当前运行的服务..."
-    docker-compose -f docker-compose.yml down 2>/dev/null || true
-    docker-compose -f docker-compose.nginx.yml down 2>/dev/null || true
+    docker-compose -f docker-compose.yml down --remove-orphans 2>/dev/null || true
+    docker-compose -f docker-compose.nginx.yml down --remove-orphans 2>/dev/null || true
     
     # 强制停止相关容器
     CONTAINERS=$(docker ps -a | grep "${PROJECT_NAME}" | awk '{print $1}')
@@ -158,57 +158,59 @@ check_port() {
     if lsof -i :$port > /dev/null 2>&1; then
         log "端口 $port 被占用，尝试释放..."
         
-        # 如果是 nginx 占用的端口，先尝试停止 nginx 服务
-        if lsof -i :$port | grep -q nginx; then
-            log "检测到 Nginx 服务，尝试停止..."
-            systemctl stop nginx 2>/dev/null
+        # 只处理我们项目的 Docker 容器
+        local container_id=$(docker ps | grep "${PROJECT_NAME}.*nginx" | awk '{print $1}')
+        if [ ! -z "$container_id" ]; then
+            log "停止项目相关的 Nginx 容器..."
+            docker stop $container_id 2>/dev/null
+            docker rm $container_id 2>/dev/null
             sleep 2
-            
-            # 如果还有 nginx 进程在运行，尝试终止它们
-            if pgrep nginx >/dev/null; then
-                log "终止残留的 Nginx 进程..."
-                killall nginx 2>/dev/null
-                sleep 2
-                
-                # 如果进程仍然存在，强制终止
-                if pgrep nginx >/dev/null; then
-                    log "强制终止 Nginx 进程..."
-                    killall -9 nginx 2>/dev/null
-                    sleep 1
-                fi
-            fi
         fi
         
-        # 获取占用端口的所有进程 PID
-        local pids=$(lsof -t -i :$port)
-        
-        # 如果还有其他进程占用端口，尝试终止它们
-        if [ ! -z "$pids" ]; then
-            log "停止占用端口 $port 的进程: $pids"
-            for pid in $pids; do
-                kill -15 $pid 2>/dev/null
-            done
+        # 检查端口是否被我们的项目占用
+        local project_pid=$(lsof -i :$port | grep "${PROJECT_NAME}" | awk '{print $2}')
+        if [ ! -z "$project_pid" ]; then
+            log "停止项目相关的端口占用进程: $project_pid"
+            kill -15 $project_pid 2>/dev/null
             sleep 2
-            
-            # 检查是否还有进程存活，如果有则强制终止
-            pids=$(lsof -t -i :$port)
-            if [ ! -z "$pids" ]; then
-                log "强制终止剩余进程..."
-                for pid in $pids; do
-                    kill -9 $pid 2>/dev/null
-                done
-                sleep 1
-            fi
         fi
     fi
     
     # 最后检查端口
-    if lsof -i :$port > /dev/null 2>&1; then
-        error "无法释放端口 $port"
+    if lsof -i :$port | grep -q "${PROJECT_NAME}"; then
+        error "无法释放项目占用的端口 $port"
         return 1
     fi
     
-    success "端口 $port 可用"
+    # 如果端口被其他程序占用，给出提示但不强制终止
+    if lsof -i :$port > /dev/null 2>&1; then
+        error "端口 $port 被其他程序占用，请手动处理"
+        return 1
+    fi
+    
+    success "端口 $port 可用于项目使用"
+    return 0
+}
+
+# 在 check_port 函数后添加新函数
+check_ssl_certificates() {
+    log "检查 SSL 证书..."
+    
+    local cert_paths=(
+        "/etc/letsencrypt/live/love.saga4v.com/fullchain.pem"
+        "/etc/letsencrypt/live/love.saga4v.com/privkey.pem"
+        "/etc/letsencrypt/live/play.saga4v.com/fullchain.pem"
+        "/etc/letsencrypt/live/play.saga4v.com/privkey.pem"
+    )
+    
+    for cert_path in "${cert_paths[@]}"; do
+        if [ ! -f "$cert_path" ]; then
+            error "SSL 证书文件不存在: $cert_path"
+            return 1
+        fi
+    done
+    
+    success "SSL 证书检查通过"
     return 0
 }
 
@@ -274,37 +276,25 @@ main() {
     # 4. 部署服务
     log "开始部署服务..."
     
-    # 构建服务（使用 --no-cache 确保完全重新构建）
-    if ! docker-compose -f docker-compose.yml build; then
-        error "服务构建失败"
-        exit 1
-    fi
-    success "服务构建成功"
-    
-    # 启动主服务（确保网络已存在）
-    if ! docker network ls | grep -q app_network; then
-        docker network create app_network
-    fi
-    
-    if ! docker-compose -f docker-compose.yml up -d; then
+    # 先启动主服务（包括 payment-server）
+    if ! docker-compose -f docker-compose.yml up -d --remove-orphans; then
         error "主服务启动失败"
         exit 1
     fi
     success "主服务启动成功"
     
-    # 启动 Nginx 服务前检查端口
-    if ! check_port 443; then
-        error "无法启动 Nginx：端口 443 被占用"
+    # 等待 payment-server 完全启动
+    log "等待 payment-server 启动..."
+    sleep 15
+    
+    # 检查 payment-server 是否就绪
+    if ! docker-compose -f docker-compose.yml ps | grep -q "payment.*healthy"; then
+        error "payment-server 未能正常启动"
         exit 1
     fi
     
-    if ! check_port 80; then
-        error "无法启动 Nginx：端口 80 被占用"
-        exit 1
-    fi
-    
-    # 启动 Nginx 服务
-    if ! docker-compose -f docker-compose.nginx.yml up -d; then
+    # 然后再启动 Nginx
+    if ! docker-compose -f docker-compose.nginx.yml up -d --remove-orphans; then
         error "Nginx服务启动失败"
         exit 1
     fi
