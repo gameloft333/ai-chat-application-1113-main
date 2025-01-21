@@ -23,10 +23,12 @@ services:
       - "4242:4242"
     environment:
       - NODE_ENV=production
-      - SOCKET_URL=wss://love.saga4v.com/socket.io
+      - SOCKET_URL=wss://love.saga4v.com
       - CORS_ORIGIN=https://love.saga4v.com
       - STRIPE_PUBLIC_KEY=${STRIPE_PUBLIC_KEY}
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - VITE_SOCKET_URL=wss://love.saga4v.com
+      - VITE_PAYMENT_URL=https://love.saga4v.com/api
     env_file:
       - .env.production
     networks:

@@ -118,8 +118,22 @@ app.listen(port, '0.0.0.0', () => {
 const io = require('socket.io')(server, {
     path: '/socket.io/',
     cors: {
-        origin: "https://love.saga4v.com",
-        methods: ["GET", "POST"],
+        origin: process.env.CORS_ORIGIN || "https://love.saga4v.com",
+        methods: ["GET", "POST", "OPTIONS"],
         credentials: true
-    }
+    },
+    transports: ['websocket'],
+    pingTimeout: 60000,
+    pingInterval: 25000
+});
+
+// 添加连接日志
+io.on('connection', (socket) => {
+    console.log('Client connected:', socket.id);
+    socket.on('error', (error) => console.error('Socket error:', error));
+});
+
+// 添加服务器错误处理
+server.on('error', (error) => {
+    console.error('Server error:', error);
 });

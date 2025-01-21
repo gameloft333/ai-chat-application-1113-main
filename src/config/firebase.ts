@@ -1,4 +1,4 @@
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApps } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { getAnalytics } from 'firebase/analytics';
@@ -13,8 +13,8 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-// 初始化 Firebase
-const app = initializeApp(firebaseConfig);
+// 防止重复初始化
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
 
 // 获取 Analytics 实例
 export const analytics = getAnalytics(app);
