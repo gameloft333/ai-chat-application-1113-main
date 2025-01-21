@@ -423,7 +423,7 @@ check_websocket() {
     if ! nc -zv love.saga4v.com 443 2>/dev/null; then
         error "无法建立 TCP 连接"
         return 1
-    }
+    fi
     
     # 检查 WebSocket 握手
     local response=$(curl -sS -i -N \
