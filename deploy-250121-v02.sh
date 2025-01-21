@@ -411,55 +411,58 @@ redeploy_services() {
 # 检查 WebSocket 连接
 check_websocket() {
     log "开始 WebSocket 连接检查..."
-    local ws_url="https://love.saga4v.com/socket.io/?EIO=4&transport=websocket"
     
-    # 1. DNS 检查
-    log "正在检查 DNS 解析..."
-    if host love.saga4v.com > /dev/null 2>&1; then
-        success "DNS 解析成功"
-    else
-        error "DNS 解析失败: $(host love.saga4v.com 2>&1)"
-        return 1
-    fi
+    # 1. 检查 payment-server 是否正常运行并输出详细日志
+    log "检查 payment-server 运行状态..."
+    docker logs ai-chat-application-1113-main-payment-server-1
     
-    # 2. TCP 连接检查
-    log "正在检查 TCP 连接..."
-    if nc -zv love.saga4v.com 443 2>&1; then
-        success "TCP 连接成功"
-    else
-        error "TCP 连接失败: $(nc -zv love.saga4v.com 443 2>&1)"
-        return 1
-    fi
+    # 2. 检查 payment-server 的环境变量
+    log "检查 payment-server 环境变量..."
+    docker exec ai-chat-application-1113-main-payment-server-1 printenv | grep -E 'NODE_ENV|CORS_ORIGIN|SOCKET_URL'
     
-    # 3. HTTP 升级请求检查
-    log "正在进行 WebSocket 握手..."
-    local response=$(curl -v -sS \
+    # 3. 检查 Nginx 访问日志
+    log "检查 Nginx 访问日志..."
+    docker exec ai-chat-application-1113-main-nginx-1 tail -n 50 /var/log/nginx/access.log
+    
+    # 4. 检查 Nginx 错误日志
+    log "检查 Nginx 错误日志..."
+    docker exec ai-chat-application-1113-main-nginx-1 tail -n 50 /var/log/nginx/error.log
+    
+    # 5. 使用 curl 测试 socket.io 握手过程
+    log "测试 socket.io 握手..."
+    local handshake_url="https://love.saga4v.com/socket.io/?EIO=4&transport=polling"
+    log "尝试 polling 握手: $handshake_url"
+    local polling_response=$(curl -v -sS "$handshake_url" 2>&1)
+    log "Polling 响应: $polling_response"
+    
+    # 6. 测试 WebSocket 升级
+    log "测试 WebSocket 升级..."
+    local ws_response=$(curl -v -sS \
         -H "Connection: Upgrade" \
         -H "Upgrade: websocket" \
         -H "Host: love.saga4v.com" \
         -H "Origin: https://love.saga4v.com" \
         -H "Sec-WebSocket-Version: 13" \
         -H "Sec-WebSocket-Key: SGVsbG8sIHdvcmxkIQ==" \
-        "$ws_url" 2>&1)
+        "https://love.saga4v.com/socket.io/?EIO=4&transport=websocket" 2>&1)
     
-    log "WebSocket 握手响应:"
-    log "$response"
+    log "WebSocket 升级响应详情:"
+    log "$ws_response"
     
-    # 4. 检查 Nginx WebSocket 配置
-    log "检查 Nginx WebSocket 配置..."
-    docker exec ai-chat-application-1113-main-nginx-1 nginx -T | grep -A 10 "location /socket.io/"
+    # 7. 检查网络连接
+    log "检查容器间网络连接..."
+    docker exec ai-chat-application-1113-main-nginx-1 ping -c 3 ai-chat-application-1113-main-payment-server-1
     
-    # 5. 检查 payment-server 日志
-    log "检查 payment-server WebSocket 日志..."
-    docker logs ai-chat-application-1113-main-payment-server-1 | grep -i "socket"
+    # 8. 检查 payment-server 的 4242 端口
+    log "检查 payment-server 端口..."
+    docker exec ai-chat-application-1113-main-payment-server-1 netstat -tlpn | grep 4242
     
-    if echo "$response" | grep -q "101 Switching Protocols"; then
+    if echo "$ws_response" | grep -q "101 Switching Protocols"; then
         success "WebSocket 握手成功"
         return 0
     else
         error "WebSocket 握手失败，详细信息:"
-        error "状态码: $(echo "$response" | grep "< HTTP" || echo "未获取到状态码")"
-        error "响应头: $(echo "$response" | grep -i "< " || echo "未获取到响应头")"
+        error "完整响应: $ws_response"
         return 1
     fi
 }
