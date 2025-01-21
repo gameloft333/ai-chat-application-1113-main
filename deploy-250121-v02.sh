@@ -346,32 +346,55 @@ check_nginx_config() {
     return 0
 }
 
-# 主函数
-main() {
-    log "开始部署流程..."
+# 检查服务是否已经运行
+check_running_services() {
+    log "检查现有服务状态..."
     
-    # 1. 首先停止现有服务
-    stop_current_services
+    local services=(
+        "${PROJECT_NAME}-frontend-1"
+        "${PROJECT_NAME}-payment-server-1"
+        "${PROJECT_NAME}-nginx-1"
+    )
     
-    # 2. 确保网络存在（移到最前面）
-    ensure_network
+    local running_count=0
+    for service in "${services[@]}"; do
+        if docker ps --format '{{.Names}}' | grep -q "^${service}$"; then
+            log "服务 ${service} 正在运行"
+            ((running_count++))
+        fi
+    done
     
-    # 3. 其他检查
-    check_git_updates
-    check_node
-    check_docker
-    check_env_files
+    if [ $running_count -gt 0 ]; then
+        log "检测到 ${running_count} 个服务正在运行，执行重新部署流程"
+        return 0
+    else
+        log "未检测到运行中的服务，执行首次部署流程"
+        return 1
+    fi
+}
+
+# 重新部署服务
+redeploy_services() {
+    log "开始重新部署服务..."
+    
+    # 停止并移除现有服务
+    log "停止现有服务..."
+    docker-compose -f docker-compose.yml down
+    docker-compose -f docker-compose.nginx.yml down
+    
+    # 清理旧容器和网络
     cleanup_environment
     
-    # 4. 部署服务
-    log "开始部署服务..."
+    # 确保网络存在
+    ensure_network
     
-    # 先启动主服务（包括 payment-server）
-    if ! docker-compose -f docker-compose.yml up -d ; then
-        error "主服务启动失败"
+    # 重新构建和启动服务
+    log "重新构建和启动服务..."
+    if ! docker-compose -f docker-compose.yml up -d --build; then
+        error "主服务重新部署失败"
         exit 1
     fi
-    success "主服务启动成功"
+    success "主服务重新部署成功"
     
     # 检查 payment-server
     if ! check_payment_server; then
@@ -385,29 +408,40 @@ main() {
     fi
     
     # 检查端口
-    if ! check_port 443; then
-        error "无法启动 Nginx：端口 443 被占用"
+    if ! check_port 443 || ! check_port 80; then
+        error "端口检查失败"
         exit 1
     fi
     
-    if ! check_port 80; then
-        error "无法启动 Nginx：端口 80 被占用"
+    # 启动 Nginx
+    if ! docker-compose -f docker-compose.nginx.yml up -d; then
+        error "Nginx 服务重新部署失败"
         exit 1
     fi
+    success "Nginx 服务重新部署成功"
     
-    # 然后再启动 Nginx
-    if ! docker-compose -f docker-compose.nginx.yml up -d ; then
-        error "Nginx服务启动失败"
-        exit 1
-    fi
-    success "Nginx服务启动成功"
-    
-    # 检查 Nginx 配置
-    if ! check_nginx_config; then
-        exit 1
-    fi
-    
+    # 检查服务状态
     check_services
+}
+
+# 主函数
+main() {
+    log "开始部署流程..."
+    
+    # 检查是否需要重新部署
+    if check_running_services; then
+        redeploy_services
+    else
+        # 首次部署流程
+        check_git_updates
+        check_node
+        check_docker
+        check_env_files
+        cleanup_environment
+        ensure_network
+        deploy_services
+        check_services
+    fi
     
     success "部署完成!"
 }
