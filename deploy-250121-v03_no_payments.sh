@@ -269,26 +269,53 @@ deploy_services() {
 check_services() {
     log "检查服务状态..."
     
-    # 检查前端服务状态
-    log "前端服务状态："
+    # 检查前端服务状态和日志
+    log "前端服务状态和日志："
     docker ps --filter "name=${PROJECT_NAME}-frontend"
+    docker logs --tail 50 "${PROJECT_NAME}-frontend-1" || true
     
-    # 检查 Nginx 服务状态
-    log "Nginx 服务状态："
+    # 检查 Nginx 状态和配置
+    log "Nginx 状态和配置："
     docker ps --filter "name=${PROJECT_NAME}-nginx"
+    docker inspect "${PROJECT_NAME}-nginx-1" || true
+    
+    # 检查 Nginx 日志目录
+    log "检查 Nginx 日志目录..."
+    docker exec "${PROJECT_NAME}-nginx-1" ls -la /var/log/nginx/ || true
+    
+    # 检查 Nginx 配置文件
+    log "检查 Nginx 配置文件..."
+    docker exec "${PROJECT_NAME}-nginx-1" cat /etc/nginx/nginx.conf || true
     
     # 检查端点可访问性
     log "检查端点可访问性..."
-    check_endpoint "https://love.saga4v.com"
+    curl -v -k https://love.saga4v.com 2>&1 || true
 }
 
 # 检查 Nginx 配置
 check_nginx_config() {
     log "检查 Nginx 配置..."
-    if ! docker exec ai-chat-application-1113-main-nginx-1 nginx -t; then
-        error "Nginx 配置检查失败"
+    
+    # 检查配置文件是否存在
+    if ! docker exec "${PROJECT_NAME}-nginx-1" test -f /etc/nginx/nginx.conf; then
+        error "Nginx 配置文件不存在"
         return 1
     fi
+    
+    # 检查配置文件权限
+    log "检查配置文件权限..."
+    docker exec "${PROJECT_NAME}-nginx-1" ls -l /etc/nginx/nginx.conf || true
+    
+    # 检查 SSL 证书文件权限
+    log "检查 SSL 证书权限..."
+    docker exec "${PROJECT_NAME}-nginx-1" ls -l /etc/nginx/ssl/love/ || true
+    
+    # 验证 Nginx 配置
+    if ! docker exec "${PROJECT_NAME}-nginx-1" nginx -t; then
+        error "Nginx 配置验证失败"
+        return 1
+    fi
+    
     success "Nginx 配置检查通过"
     return 0
 }
