@@ -263,10 +263,24 @@ check_payment_server() {
     local attempt=1
     
     while [ $attempt -le $max_attempts ]; do
-        if docker ps --format "{{.Names}} {{.Status}}" | grep "${PROJECT_NAME}-payment-server-1" | grep -q "healthy"; then
-            success "payment-server 运行正常"
-            return 0
+        # 1. 首先检查容器是否运行
+        if ! docker ps -q -f name="${PROJECT_NAME}-payment-server-1" > /dev/null; then
+            log "payment-server 容器未运行"
+            sleep 5
+            ((attempt++))
+            continue
         fi
+        
+        # 2. 检查健康状态
+        local status=$(docker inspect --format='{{.State.Health.Status}}' "${PROJECT_NAME}-payment-server-1")
+        if [ "$status" = "healthy" ]; then
+            # 3. 验证服务是否响应
+            if curl -s http://localhost:4242/health > /dev/null; then
+                success "payment-server 运行正常"
+                return 0
+            fi
+        fi
+        
         log "等待 payment-server 就绪... (${attempt}/${max_attempts})"
         sleep 5
         ((attempt++))
