@@ -1,13 +1,13 @@
 @echo off
 rem 设置代码页为 UTF-8
 chcp 65001 >nul
-rem 设置控制台字体为 Consolas
+rem 设置控制台字体为 Consolas 或 新宋体
 reg add "HKEY_CURRENT_USER\Console" /v "FaceName" /t REG_SZ /d "Consolas" /f >nul
 rem 启用延迟变量扩展
 setlocal EnableDelayedExpansion
 
 rem 版本信息
-set VERSION=1.1.0
+set VERSION=1.0.9
 
 rem 颜色代码
 set RED=[91m]
@@ -22,10 +22,8 @@ set "MENU_1=1) 提交到当前分支"
 set "MENU_2=2) 创建新分支"
 set "MENU_3=3) 切换分支"
 set "MENU_4=4) 合并到主分支"
-set "MENU_5=5) 强制推送到远程"
-set "MENU_6=6) 拉取远程最新代码"
-set "MENU_7=7) 退出"
-set "MENU_CHOICE=请选择操作 (1-7): "
+set "MENU_5=5) 退出"
+set "MENU_CHOICE=请选择操作 (1-5): "
 
 rem 检查Git
 where git >nul 2>nul || (
@@ -51,11 +49,9 @@ echo %MENU_2%
 echo %MENU_3%
 echo %MENU_4%
 echo %MENU_5%
-echo %MENU_6%
-echo %MENU_7%
 echo ==========================
 
-choice /c 1234567 /n /m "%MENU_CHOICE%"
+choice /c 12345 /n /m "%MENU_CHOICE%"
 set choice=%errorlevel%
 
 if %choice%==1 (
@@ -74,9 +70,7 @@ if %choice%==1 (
 if %choice%==2 goto :create_branch
 if %choice%==3 goto :switch_branch
 if %choice%==4 goto :merge_main
-if %choice%==5 goto :force_push
-if %choice%==6 goto :pull_latest
-if %choice%==7 exit /b 0
+if %choice%==5 exit /b 0
 
 echo %RED%无效的选择%NC%
 timeout /t 2 >nul
@@ -220,32 +214,6 @@ if !errorlevel! neq 0 (
     echo %RED%合并分支失败%NC%
     timeout /t 2 >nul
 )
-goto :menu
-
-:force_push
-echo %YELLOW%警告：强制推送将覆盖远程代码，确定要继续吗？%NC%
-choice /c YN /n /m "确认强制推送 (Y/N)? "
-if !errorlevel!==2 goto :menu
-
-git push origin %current_branch% --force
-if !errorlevel! neq 0 (
-    echo %RED%强制推送失败%NC%
-) else (
-    echo %GREEN%强制推送成功%NC%
-)
-pause
-goto :menu
-
-:pull_latest
-echo %YELLOW%正在拉取最新代码...%NC%
-git fetch origin
-git reset --hard origin/%current_branch%
-if !errorlevel! neq 0 (
-    echo %RED%拉取失败%NC%
-) else (
-    echo %GREEN%已更新到最新代码%NC%
-)
-pause
 goto :menu
 
 rem ... 其他代码保持不变 ...
