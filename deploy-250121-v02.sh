@@ -275,6 +275,18 @@ check_services() {
             error "HTTP 状态码: $(curl -s -o /dev/null -w "%{http_code}" "$endpoint")"
         fi
     done
+   
+    # 检查 WebSocket 连接
+    log "检查 WebSocket 连接..."
+    if curl -v -H "Connection: Upgrade" \
+           -H "Upgrade: websocket" \
+           -H "Host: love.saga4v.com" \
+           -H "Origin: https://love.saga4v.com" \
+           "https://love.saga4v.com/socket.io/?EIO=4&transport=websocket" 2>&1 | grep -q "101 Switching Protocols"; then
+        success "WebSocket 连接正常"
+    else
+        error "WebSocket 连接异常"
+    fi
 }
 
 # 检查 payment-server 是否就绪

@@ -23,6 +23,8 @@ services:
       - "4242:4242"
     environment:
       - NODE_ENV=production
+      - SOCKET_URL=wss://love.saga4v.com
+      - CORS_ORIGIN=https://love.saga4v.com
     env_file:
       - .env.production
     networks:
