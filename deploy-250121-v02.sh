@@ -245,14 +245,27 @@ check_services() {
     log "检查服务状态..."
     sleep 30  # 等待服务完全启动
     
-    docker-compose -f docker-compose.yml ps
-    docker-compose -f docker-compose.nginx.yml ps
+    # 检查所有容器状态
+    log "前端服务状态："
+    docker ps --filter "name=${PROJECT_NAME}-frontend"
     
-    # 检查服务健康状态
+    log "支付服务状态："
+    docker ps --filter "name=${PROJECT_NAME}-payment-server"
+    
+    log "Nginx 服务状态："
+    docker ps --filter "name=${PROJECT_NAME}-nginx"
+    
+    # 检查 Nginx 日志
+    if docker logs "${PROJECT_NAME}-nginx-1" 2>&1 | grep -i error; then
+        warning "Nginx 日志中发现错误"
+    fi
+    
+    # 检查网站访问
     if curl -s -f https://love.saga4v.com > /dev/null; then
         success "网站可以访问"
     else
         error "网站无法访问"
+        error "请检查 Nginx 配置和日志"
     fi
 }
 
@@ -323,7 +336,7 @@ main() {
     log "开始部署服务..."
     
     # 先启动主服务（包括 payment-server）
-    if ! docker-compose -f docker-compose.yml up -d --remove-orphans; then
+    if ! docker-compose -f docker-compose.yml up -d ; then
         error "主服务启动失败"
         exit 1
     fi
@@ -352,7 +365,7 @@ main() {
     fi
     
     # 然后再启动 Nginx
-    if ! docker-compose -f docker-compose.nginx.yml up -d --remove-orphans; then
+    if ! docker-compose -f docker-compose.nginx.yml up -d ; then
         error "Nginx服务启动失败"
         exit 1
     fi
