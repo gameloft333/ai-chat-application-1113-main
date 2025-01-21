@@ -140,8 +140,11 @@ cleanup_environment() {
 ensure_network() {
     log "确保网络存在..."
     if ! docker network ls | grep -q app_network; then
-        docker network create app_network
-        success "创建 app_network 网络"
+        if ! docker network create app_network; then
+            error "创建 app_network 网络失败"
+            exit 1
+        fi
+        success "创建 app_network 网络成功"
     else
         log "app_network 网络已存在"
     fi
@@ -152,7 +155,7 @@ deploy_services() {
     log "开始部署服务..."
     
     # 构建服务
-    if ! docker-compose -f docker-compose.prod.yml build --no-cache; then
+    if ! docker-compose -f docker-compose.prod.yml build; then
         error "服务构建失败"
         exit 1
     fi
@@ -193,14 +196,47 @@ check_services() {
 main() {
     log "开始部署流程..."
     
+    # 1. 首先停止现有服务
     stop_current_services
+    
+    # 2. 确保网络存在（移到最前面）
     ensure_network
+    
+    # 3. 其他检查
     check_git_updates
     check_node
     check_docker
     check_env_files
     cleanup_environment
-    deploy_services
+    
+    # 4. 部署服务
+    log "开始部署服务..."
+    
+    # 构建服务（使用 --no-cache 确保完全重新构建）
+    if ! docker-compose -f docker-compose.prod.yml build; then
+        error "服务构建失败"
+        exit 1
+    fi
+    success "服务构建成功"
+    
+    # 启动主服务（确保网络已存在）
+    if ! docker network ls | grep -q app_network; then
+        docker network create app_network
+    fi
+    
+    if ! docker-compose -f docker-compose.prod.yml up -d; then
+        error "主服务启动失败"
+        exit 1
+    fi
+    success "主服务启动成功"
+    
+    # 启动Nginx服务
+    if ! docker-compose -f docker-compose.nginx.yml up -d; then
+        error "Nginx服务启动失败"
+        exit 1
+    fi
+    success "Nginx服务启动成功"
+    
     check_services
     
     success "部署完成!"
