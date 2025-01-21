@@ -25,7 +25,8 @@ set "MENU_4=4) 合并到主分支"
 set "MENU_5=5) 强制推送到远程"
 set "MENU_6=6) 拉取远程最新代码"
 set "MENU_7=7) 退出"
-set "MENU_CHOICE=请选择操作 (1-7): "
+set "MENU_8=8) 管理 Git 代理设置"
+set "MENU_CHOICE=请选择操作 (1-8): "
 
 rem 检查Git
 where git >nul 2>nul || (
@@ -53,9 +54,10 @@ echo %MENU_4%
 echo %MENU_5%
 echo %MENU_6%
 echo %MENU_7%
+echo %MENU_8%
 echo ==========================
 
-choice /c 1234567 /n /m "%MENU_CHOICE%"
+choice /c 12345678 /n /m "%MENU_CHOICE%"
 set choice=%errorlevel%
 
 if %choice%==1 (
@@ -77,6 +79,7 @@ if %choice%==4 goto :merge_main
 if %choice%==5 goto :force_push
 if %choice%==6 goto :pull_latest
 if %choice%==7 exit /b 0
+if %choice%==8 goto :manage_proxy
 
 echo %RED%无效的选择%NC%
 timeout /t 2 >nul
@@ -247,5 +250,49 @@ if !errorlevel! neq 0 (
 )
 pause
 goto :menu
+
+:manage_proxy
+cls
+echo === Git 代理管理 ===
+echo 1) 查看当前代理设置
+echo 2) 设置代理
+echo 3) 删除代理设置
+echo 4) 返回主菜单
+echo ==========================
+
+choice /c 1234 /n /m "请选择操作 (1-4): "
+set proxy_choice=%errorlevel%
+
+if %proxy_choice%==1 (
+    echo.
+    echo 当前 HTTP 代理设置:
+    git config --global --get http.proxy
+    echo 当前 HTTPS 代理设置:
+    git config --global --get https.proxy
+    echo.
+    pause
+    goto :manage_proxy
+)
+
+if %proxy_choice%==2 (
+    set /p proxy_addr="请输入代理地址 (例如: http://127.0.0.1:7890): "
+    git config --global http.proxy !proxy_addr!
+    git config --global https.proxy !proxy_addr!
+    echo %GREEN%代理设置已更新%NC%
+    timeout /t 2 >nul
+    goto :manage_proxy
+)
+
+if %proxy_choice%==3 (
+    git config --global --unset http.proxy
+    git config --global --unset https.proxy
+    echo %GREEN%代理设置已删除%NC%
+    timeout /t 2 >nul
+    goto :manage_proxy
+)
+
+if %proxy_choice%==4 goto :menu
+
+goto :manage_proxy
 
 rem ... 其他代码保持不变 ...
