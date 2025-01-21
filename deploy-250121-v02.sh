@@ -26,7 +26,7 @@ error() {
 # 1. 停止当前服务
 stop_current_services() {
     log "停止当前运行的服务..."
-    docker-compose -f docker-compose.prod.yml down 2>/dev/null || true
+    docker-compose -f docker-compose.yml down 2>/dev/null || true
     docker-compose -f docker-compose.nginx.yml down 2>/dev/null || true
     
     # 强制停止相关容器
@@ -155,14 +155,14 @@ deploy_services() {
     log "开始部署服务..."
     
     # 构建服务
-    if ! docker-compose -f docker-compose.prod.yml build; then
+    if ! docker-compose -f docker-compose.yml build; then
         error "服务构建失败"
         exit 1
     fi
     success "服务构建成功"
     
     # 启动主服务
-    if ! docker-compose -f docker-compose.prod.yml up -d; then
+    if ! docker-compose -f docker-compose.yml up -d; then
         error "主服务启动失败"
         exit 1
     fi
@@ -181,7 +181,7 @@ check_services() {
     log "检查服务状态..."
     sleep 30  # 等待服务完全启动
     
-    docker-compose -f docker-compose.prod.yml ps
+    docker-compose -f docker-compose.yml ps
     docker-compose -f docker-compose.nginx.yml ps
     
     # 检查服务健康状态
@@ -213,7 +213,7 @@ main() {
     log "开始部署服务..."
     
     # 构建服务（使用 --no-cache 确保完全重新构建）
-    if ! docker-compose -f docker-compose.prod.yml build; then
+    if ! docker-compose -f docker-compose.yml build; then
         error "服务构建失败"
         exit 1
     fi
@@ -224,7 +224,7 @@ main() {
         docker network create app_network
     fi
     
-    if ! docker-compose -f docker-compose.prod.yml up -d; then
+    if ! docker-compose -f docker-compose.yml up -d; then
         error "主服务启动失败"
         exit 1
     fi
