@@ -410,35 +410,56 @@ redeploy_services() {
 
 # 检查 WebSocket 连接
 check_websocket() {
-    log "检查 WebSocket 连接..."
-    local ws_url="wss://love.saga4v.com/socket.io/?EIO=4&transport=websocket"
+    log "开始 WebSocket 连接检查..."
+    local ws_url="https://love.saga4v.com/socket.io/?EIO=4&transport=websocket"
     
-    # 先检查 DNS 解析
-    if ! host love.saga4v.com > /dev/null; then
-        error "DNS 解析失败"
+    # 1. DNS 检查
+    log "正在检查 DNS 解析..."
+    if host love.saga4v.com > /dev/null 2>&1; then
+        success "DNS 解析成功"
+    else
+        error "DNS 解析失败: $(host love.saga4v.com 2>&1)"
         return 1
     fi
     
-    # 检查 TCP 连接
-    if ! nc -zv love.saga4v.com 443 2>/dev/null; then
-        error "无法建立 TCP 连接"
+    # 2. TCP 连接检查
+    log "正在检查 TCP 连接..."
+    if nc -zv love.saga4v.com 443 2>&1; then
+        success "TCP 连接成功"
+    else
+        error "TCP 连接失败: $(nc -zv love.saga4v.com 443 2>&1)"
         return 1
     fi
     
-    # 检查 WebSocket 握手
-    local response=$(curl -sS -i -N \
+    # 3. HTTP 升级请求检查
+    log "正在进行 WebSocket 握手..."
+    local response=$(curl -v -sS \
         -H "Connection: Upgrade" \
         -H "Upgrade: websocket" \
         -H "Host: love.saga4v.com" \
         -H "Origin: https://love.saga4v.com" \
-        "$ws_url")
+        -H "Sec-WebSocket-Version: 13" \
+        -H "Sec-WebSocket-Key: SGVsbG8sIHdvcmxkIQ==" \
+        "$ws_url" 2>&1)
+    
+    log "WebSocket 握手响应:"
+    log "$response"
+    
+    # 4. 检查 Nginx WebSocket 配置
+    log "检查 Nginx WebSocket 配置..."
+    docker exec ai-chat-application-1113-main-nginx-1 nginx -T | grep -A 10 "location /socket.io/"
+    
+    # 5. 检查 payment-server 日志
+    log "检查 payment-server WebSocket 日志..."
+    docker logs ai-chat-application-1113-main-payment-server-1 | grep -i "socket"
     
     if echo "$response" | grep -q "101 Switching Protocols"; then
-        success "WebSocket 连接正常"
+        success "WebSocket 握手成功"
         return 0
     else
-        error "WebSocket 握手失败"
-        error "响应内容: $response"
+        error "WebSocket 握手失败，详细信息:"
+        error "状态码: $(echo "$response" | grep "< HTTP" || echo "未获取到状态码")"
+        error "响应头: $(echo "$response" | grep -i "< " || echo "未获取到响应头")"
         return 1
     fi
 }
