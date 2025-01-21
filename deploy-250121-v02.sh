@@ -301,7 +301,8 @@ main() {
     if ! check_port 80; then
         error "无法启动 Nginx：端口 80 被占用"
         exit 1
-        
+    fi
+    
     # 启动 Nginx 服务
     if ! docker-compose -f docker-compose.nginx.yml up -d; then
         error "Nginx服务启动失败"
