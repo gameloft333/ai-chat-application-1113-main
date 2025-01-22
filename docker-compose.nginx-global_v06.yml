@@ -38,7 +38,10 @@ services:
   # Love Project - Replace IP and Port with your actual deployment details
   love_app:
     # REPLACE: Use your actual container image or build configuration
-    image: ai-chat-application-1113-main-frontend-1:latest
+    # image: ai-chat-application-1113-main-frontend-1:latest
+    build: 
+      context: .  # Current project directory
+      dockerfile: ai-chat-application-1113-main/Dockerfile
     container_name: ai-chat-application-1113-main-frontend-1
     networks:
       - saga4v_network
