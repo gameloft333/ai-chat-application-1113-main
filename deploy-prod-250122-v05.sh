@@ -129,6 +129,7 @@ main() {
 
     pre_deployment_check
     pull_latest_code
+    create_external_network  # Add network creation before deployment
     build_images
     deploy_containers
     check_deployment
