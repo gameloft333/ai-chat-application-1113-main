@@ -1,0 +1,45 @@
+# version: '3.8'
+
+services:
+  app:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: companion-app
+    restart: unless-stopped
+    env_file: 
+      - .env.production
+    ports:
+      - "4173:4173"
+    volumes:
+      - ./logs:/app/logs
+      - ./backups:/app/backups
+    healthcheck:
+      test: ["CMD", "/healthcheck.sh"]
+      interval: 30s
+      timeout: 20s
+      retries: 5
+      start_period: 120s
+    networks:
+      - app_network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # Optional: Add monitoring or logging service
+  monitoring:
+    image: grafana/grafana
+    container_name: companion-monitoring
+    ports:
+      - "3000:3000"
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    external: true # Use the same external network as Nginx
