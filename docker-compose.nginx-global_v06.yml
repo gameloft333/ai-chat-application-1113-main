@@ -42,6 +42,8 @@ services:
     build: 
       context: .  # Current project directory
       dockerfile: ai-chat-application-1113-main/Dockerfile
+      args: # Add additional build arguments or files if needed
+        - ENV_FILE=ai-chat-application-1113-main/.env.production
     container_name: ai-chat-application-1113-main-frontend-1
     networks:
       - saga4v_network

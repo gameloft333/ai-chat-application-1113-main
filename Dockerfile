@@ -18,7 +18,9 @@ RUN npm install --include=dev
 COPY . .
 
 # 确保环境变量文件存在
-COPY .env.production .env
+# COPY .env.production .env
+# Modify COPY command in Dockerfile
+COPY ai-chat-application-1113-main/.env.production .env
 
 # 构建项目
 RUN npm run build:prod
