@@ -79,5 +79,5 @@ services:
 
 networks:
   saga4v_network:
-    driver: bridge
+    external: true
     name: saga4v_network
