@@ -9,8 +9,8 @@ services:
       - "443:443"
     volumes:
       # Replace with your actual Nginx configuration path
-      # - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - /etc/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx.global.250122.conf:/etc/nginx/nginx.conf:ro
+      # - /etc/nginx/conf.d:/etc/nginx/conf.d:ro
       
       # SSL Certificates - love.saga4v.com
       - /etc/letsencrypt/live/love.saga4v.com/fullchain.pem:/etc/nginx/ssl/love/fullchain.pem:ro

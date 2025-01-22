@@ -52,7 +52,7 @@ stop_existing_containers() {
     echo -e "${GREEN}[PRE-DEPLOYMENT] Checking for existing containers${NC}"
     
     # List of services to check and stop
-    local services=("ai-chat-application-1113-main-frontend-1" "nginx")
+    local services=("ai-chat-application-1113-main-frontend-1")
     
     for service in "${services[@]}"; do
         # Check if container exists
