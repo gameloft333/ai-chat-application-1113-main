@@ -21,7 +21,7 @@ services:
       retries: 5
       start_period: 120s
     networks:
-      - app_network # When both Docker Compose files use driver: bridge for the same network name (app_network), Docker Compose will create a shared bridge network that allows containers from both compose files to communicate.
+      - saga4v_network # When both Docker Compose files use driver: bridge for the same network name (saga4v_network), Docker Compose will create a shared bridge network that allows containers from both compose files to communicate.
     deploy:
       resources:
         limits:
@@ -39,9 +39,9 @@ services:
   #   ports:
   #     - "3000:3000"
   #   networks:
-  #     - app_network
+  #     - saga4v_network
 
 networks:
-  app_network: 
-    # external: true # Use the same external network as Nginx
-    driver: bridge
+  saga4v_network: 
+    external: true  # Use the same external network as Nginx. Important: tells Docker this network is created externally.
+    # driver: bridge

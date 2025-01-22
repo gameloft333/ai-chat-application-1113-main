@@ -1,0 +1,83 @@
+# version: '3.8'
+
+services:
+  nginx:
+    image: nginx:latest
+    container_name: saga4v-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Replace with your actual Nginx configuration path
+      # - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - /etc/nginx/conf.d:/etc/nginx/conf.d:ro
+      
+      # SSL Certificates - love.saga4v.com
+      - /etc/letsencrypt/live/love.saga4v.com/fullchain.pem:/etc/nginx/ssl/love/fullchain.pem:ro
+      - /etc/letsencrypt/live/love.saga4v.com/privkey.pem:/etc/nginx/ssl/love/privkey.pem:ro
+      
+      # SSL Certificates - play.saga4v.com
+      - /etc/letsencrypt/live/play.saga4v.com/fullchain.pem:/etc/nginx/ssl/play/fullchain.pem:ro
+      - /etc/letsencrypt/live/play.saga4v.com/privkey.pem:/etc/nginx/ssl/play/privkey.pem:ro
+      
+      # Certbot challenge directory
+      - /var/www/certbot:/var/www/certbot:ro
+
+    networks:
+      - saga4v_network
+    
+    restart: unless-stopped
+
+    # Optional: Health check
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Love Project - Replace IP and Port with your actual deployment details
+  love_app:
+    # REPLACE: Use your actual container image or build configuration
+    image: ai-chat-application-1113-main-frontend-1:latest
+    container_name: ai-chat-application-1113-main-frontend-1
+    networks:
+      - saga4v_network
+    
+    # REPLACE: Set your actual internal IP and port
+    ports:
+      - "ai-chat-application-1113-main-frontend-1:4173"
+    
+    restart: unless-stopped
+
+  # Placeholder for other projects - You can uncomment and modify as needed
+  # play_app:
+  #   image: play-app-image:latest
+  #   container_name: play-app
+  #   networks:
+  #     - saga4v_network
+  #   ports:
+  #     - "127.0.0.1:XXXX:XXXX"
+  #   restart: unless-stopped
+
+  # kitty_app:
+  #   image: kitty-app-image:latest
+  #   container_name: kitty-app
+  #   networks:
+  #     - saga4v_network
+  #   ports:
+  #     - "127.0.0.1:YYYY:YYYY"
+  #   restart: unless-stopped
+
+  # chat_app:
+  #   image: chat-app-image:latest
+  #   container_name: chat-app
+  #   networks:
+  #     - saga4v_network
+  #   ports:
+  #     - "127.0.0.1:ZZZZ:ZZZZ"
+  #   restart: unless-stopped
+
+networks:
+  saga4v_network:
+    driver: bridge
+    name: saga4v_network

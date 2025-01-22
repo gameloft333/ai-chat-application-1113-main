@@ -77,13 +77,13 @@ stop_existing_containers() {
 create_external_network() {
     echo -e "${GREEN}[STEP 3/7] Creating External Network${NC}"
     # Check if network already exists before creating
-    if ! docker network inspect app_network &> /dev/null; then
-        docker network create app_network || {
-            echo -e "${RED}Failed to create app_network${NC}"
+    if ! docker network inspect saga4v_network &> /dev/null; then
+        docker network create saga4v_network || {
+            echo -e "${RED}Failed to create saga4v_network${NC}"
             exit 1
         }
     else
-        echo -e "${YELLOW}Network app_network already exists${NC}"
+        echo -e "${YELLOW}Network saga4v_network already exists${NC}"
     fi
 }
 
