@@ -36,23 +36,23 @@ services:
       retries: 3
 
   # Love Project - Replace IP and Port with your actual deployment details
-  love_app:
+  # love_app:
     # REPLACE: Use your actual container image or build configuration
     # image: ai-chat-application-1113-main-frontend-1:latest
-    build: 
-      context: .  # Current project directory
-      dockerfile: ai-chat-application-1113-main/Dockerfile
-      args: # Add additional build arguments or files if needed
-        - ENV_FILE=ai-chat-application-1113-main/.env.production
-    container_name: ai-chat-application-1113-main-frontend-1
-    networks:
-      - saga4v_network
+  #  build: 
+  #    context: .  # Current project directory
+  #    dockerfile: ai-chat-application-1113-main/Dockerfile
+  #    args: # Add additional build arguments or files if needed
+  #      - ENV_FILE=ai-chat-application-1113-main/.env.production
+  #  container_name: ai-chat-application-1113-main-frontend-1
+  #  networks:
+  #   - saga4v_network
     
     # REPLACE: Set your actual internal IP and port
-    ports:
-      - "4173:4173" # Changed from the incorrect format
+  #  ports:
+  #    - "4173:4173" # Changed from the incorrect format
     
-    restart: unless-stopped
+  #  restart: unless-stopped
 
   # Placeholder for other projects - You can uncomment and modify as needed
   # play_app:
