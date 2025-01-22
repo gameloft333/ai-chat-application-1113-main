@@ -5,7 +5,7 @@ services:
     build: 
       context: .
       dockerfile: Dockerfile
-    container_name: companion-app
+    container_name: ai-chat-application-1113-main-frontend-1
     restart: unless-stopped
     env_file: 
       - .env.production

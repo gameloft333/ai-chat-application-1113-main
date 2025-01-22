@@ -26,7 +26,7 @@ AWS_INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id ||
 
 # Pre-deployment checks
 pre_deployment_check() {
-    echo -e "${GREEN}[STEP 1/6] Pre-deployment Checks${NC}"
+    echo -e "${GREEN}[STEP 1/7] Pre-deployment Checks${NC}"
     
     # Check Docker installation
     if ! command -v docker &> /dev/null; then
@@ -43,7 +43,7 @@ pre_deployment_check() {
 
 # Pull latest code
 pull_latest_code() {
-    echo -e "${GREEN}[STEP 2/6] Pulling Latest Code${NC}"
+    echo -e "${GREEN}[STEP 2/7] Pulling Latest Code${NC}"
     git pull origin main
 }
 
@@ -52,7 +52,7 @@ stop_existing_containers() {
     echo -e "${GREEN}[PRE-DEPLOYMENT] Checking for existing containers${NC}"
     
     # List of services to check and stop
-    local services=("companion-app" "nginx")
+    local services=("ai-chat-application-1113-main-frontend-1" "nginx")
     
     for service in "${services[@]}"; do
         # Check if container exists
@@ -73,28 +73,43 @@ stop_existing_containers() {
     docker system prune -f || echo -e "${YELLOW}Warning: Docker system prune encountered an issue${NC}"
 }
 
+# Create the external network
+create_external_network() {
+    echo -e "${GREEN}[STEP 3/7] Creating External Network${NC}"
+    # Check if network already exists before creating
+    if ! docker network inspect app_network &> /dev/null; then
+        docker network create app_network || {
+            echo -e "${RED}Failed to create app_network${NC}"
+            exit 1
+        }
+    else
+        echo -e "${YELLOW}Network app_network already exists${NC}"
+    fi
+}
+
 # Build Docker images
 build_images() {
-    echo -e "${GREEN}[STEP 3/6] Building Docker Images${NC}"
+    echo -e "${GREEN}[STEP 4/7] Building Docker Images${NC}"
     docker-compose -f docker-compose.prod.yml build --no-cache
 }
 
 # Deploy containers
 deploy_containers() {
-    echo -e "${GREEN}[STEP 4/6] Deploying Containers${NC}"
-    docker-compose -f docker-compose.prod.yml up -d --remove-orphans
+    echo -e "${GREEN}[STEP 5/7] Deploying Containers${NC}"
+    # docker-compose -f docker-compose.prod.yml up -d --remove-orphans
+    docker-compose -f docker-compose.prod.yml up -d
 }
 
 # Health check
 check_deployment() {
-    echo -e "${GREEN}[STEP 5/6] Checking Deployment Health${NC}"
+    echo -e "${GREEN}[STEP 6/7] Checking Deployment Health${NC}"
     docker-compose -f docker-compose.prod.yml ps
     docker-compose -f docker-compose.prod.yml logs --tail=50
 }
 
 # Cleanup
 cleanup() {
-    echo -e "${GREEN}[STEP 6/6] Cleanup${NC}"
+    echo -e "${GREEN}[STEP 6/7] Cleanup${NC}"
     docker system prune -f
 }
 
