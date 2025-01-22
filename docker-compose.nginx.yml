@@ -18,5 +18,6 @@ services:
     restart: unless-stopped
 
 networks:
-  app_network:
-    external: true  # 使用外部网络
+  app_network: # When both Docker Compose files use driver: bridge for the same network name (app_network), Docker Compose will create a shared bridge network that allows containers from both compose files to communicate.
+    # external: true  # 使用外部网络
+    driver: bridge
