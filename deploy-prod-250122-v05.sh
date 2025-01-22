@@ -13,10 +13,10 @@ RED='\033[0;31m'
 NC='\033[0m'
 
 # Deployment Configuration
-PROJECT_NAME="companion"
-REPO_URL="your-git-repo-url"
-AWS_REGION="your-aws-region"
-AWS_INSTANCE_ID="your-instance-id"
+PROJECT_NAME=$(basename $(git rev-parse --show-toplevel))
+REPO_URL=$(git config --get remote.origin.url)
+AWS_REGION=$(curl -s http://169.254.169.254/latest/meta-data/placement/region)
+AWS_INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
 
 # Pre-deployment checks
 pre_deployment_check() {
@@ -39,6 +39,32 @@ pre_deployment_check() {
 pull_latest_code() {
     echo -e "${GREEN}[STEP 2/6] Pulling Latest Code${NC}"
     git pull origin main
+}
+
+# Function to check and stop existing containers
+stop_existing_containers() {
+    echo -e "${GREEN}[PRE-DEPLOYMENT] Checking for existing containers${NC}"
+    
+    # List of services to check and stop
+    local services=("companion-app" "nginx")
+    
+    for service in "${services[@]}"; do
+        # Check if container exists
+        if docker ps -a --format '{{.Names}}' | grep -q "^${service}$"; then
+            echo -e "${YELLOW}Stopping and removing existing ${service} container${NC}"
+            
+            # Stop the container
+            docker stop "${service}" || true
+            
+            # Remove the container
+            docker rm "${service}" || true
+        else
+            echo -e "${GREEN}No existing ${service} container found${NC}"
+        fi
+    done
+    
+    # Optional: Prune unused containers, networks, and volumes
+    docker system prune -f
 }
 
 # Build Docker images
@@ -76,6 +102,9 @@ rollback() {
 # Main deployment function
 main() {
     trap rollback ERR
+
+    # Add container stop check before deployment
+    stop_existing_containers
 
     pre_deployment_check
     pull_latest_code
