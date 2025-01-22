@@ -82,7 +82,7 @@ build_images() {
 # Deploy containers
 deploy_containers() {
     echo -e "${GREEN}[STEP 4/6] Deploying Containers${NC}"
-    docker-compose -f docker-compose.prod.yml up -d
+    docker-compose -f docker-compose.prod.yml up -d --remove-orphans
 }
 
 # Health check
