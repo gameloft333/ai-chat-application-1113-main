@@ -45,7 +45,7 @@ services:
     
     # REPLACE: Set your actual internal IP and port
     ports:
-      - "ai-chat-application-1113-main-frontend-1:4173"
+      - "4173:4173" # Changed from the incorrect format
     
     restart: unless-stopped
 
