@@ -3,6 +3,12 @@
 # Strict mode
 set -euo pipefail
 
+# Color codes
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
 # Logging
 LOG_FILE="deployment_$(date +%Y%m%d_%H%M%S).log"
 exec > >(tee -a "$LOG_FILE") 2>&1
@@ -15,8 +21,8 @@ NC='\033[0m'
 # Deployment Configuration
 PROJECT_NAME=$(basename $(git rev-parse --show-toplevel))
 REPO_URL=$(git config --get remote.origin.url)
-AWS_REGION=$(curl -s http://169.254.169.254/latest/meta-data/placement/region)
-AWS_INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
+AWS_REGION=$(curl -s http://169.254.169.254/latest/meta-data/placement/region || echo "unknown")
+AWS_INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id || echo "unknown")
 
 # Pre-deployment checks
 pre_deployment_check() {
@@ -54,17 +60,17 @@ stop_existing_containers() {
             echo -e "${YELLOW}Stopping and removing existing ${service} container${NC}"
             
             # Stop the container
-            docker stop "${service}" || true
+            docker stop "${service}" || echo -e "${RED}Failed to stop ${service} container${NC}"
             
             # Remove the container
-            docker rm "${service}" || true
+            docker rm "${service}" || echo -e "${RED}Failed to remove ${service} container${NC}"
         else
             echo -e "${GREEN}No existing ${service} container found${NC}"
         fi
     done
     
     # Optional: Prune unused containers, networks, and volumes
-    docker system prune -f
+    docker system prune -f || echo -e "${YELLOW}Warning: Docker system prune encountered an issue${NC}"
 }
 
 # Build Docker images
