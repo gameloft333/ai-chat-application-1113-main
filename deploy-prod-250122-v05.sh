@@ -32,7 +32,7 @@ pre_deployment_check() {
     if ! command -v docker-compose &> /dev/null; then
         echo -e "${RED}Docker Compose is not installed. Please install Docker Compose.${NC}"
         exit 1
-    }
+    fi
 }
 
 # Pull latest code
