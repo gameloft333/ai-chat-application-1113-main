@@ -41,56 +41,80 @@ const allowedOrigins = [
     'http://localhost:4173',
     'http://localhost:4242',
     'https://love.saga4v.com',
-    'http://payment:4242'
+    'http://payment:4242',
+    'https://payment.saga4v.com'
 ];
 
 app.use(cors({
     origin: function(origin, callback) {
-        console.log('请求来源:', origin);
-        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+        console.log('支付服务收到请求，来源:', origin);
+        if (!origin || allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
-            console.warn('不允许的来源:', origin);
+            console.error('不允许的来源:', origin);
             callback(new Error('不允许的来源'));
         }
     },
     methods: ['GET', 'POST', 'OPTIONS'],
     credentials: true,
-    allowedHeaders: ['Content-Type', 'Accept', 'Origin']
+    allowedHeaders: ['Content-Type', 'Accept', 'Origin', 'Authorization']
 }));
 app.use(express.json());
 
 app.options('*', cors());
 
-app.post('/api/stripe/create-payment-intent', async (req, res) => {
-  try {
-    const { amount, currency } = req.body;
-    console.log('创建支付意向，详细信息:', { 
-      amount, 
-      currency,
-      amountInCents: Math.round(amount * 100),
-      timestamp: new Date().toISOString()
+// 请求日志中间件
+app.use((req, res, next) => {
+    console.log('收到请求:', {
+        method: req.method,
+        path: req.path,
+        origin: req.headers.origin,
+        headers: req.headers,
+        body: req.body,
+        timestamp: new Date().toISOString()
     });
-    
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(amount * 100),
-      currency: currency.toLowerCase(),
-    });
+    next();
+});
 
-    console.log('支付意向创建成功:', {
-      clientSecret: paymentIntent.client_secret,
-      status: paymentIntent.status,
-      id: paymentIntent.id
+app.post('/api/stripe/create-payment-intent', async (req, res) => {
+    console.log('开始处理支付请求:', {
+        body: req.body,
+        headers: req.headers,
+        timestamp: new Date().toISOString()
     });
     
-    res.json({ clientSecret: paymentIntent.client_secret });
-  } catch (error) {
-    console.error('创建支付意向失败:', error);
-    res.status(500).json({ 
-      error: '支付服务出错',
-      details: error.message 
-    });
-  }
+    try {
+        const { amount, currency } = req.body;
+        console.log('创建支付意向，参数:', { 
+            amount, 
+            currency,
+            amountInCents: Math.round(amount * 100)
+        });
+        
+        const paymentIntent = await stripe.paymentIntents.create({
+          amount: Math.round(amount * 100),
+          currency: currency.toLowerCase(),
+        });
+
+        console.log('支付意向创建成功:', {
+          clientSecret: paymentIntent.client_secret,
+          status: paymentIntent.status,
+          id: paymentIntent.id
+        });
+        
+        res.json({ clientSecret: paymentIntent.client_secret });
+    } catch (error) {
+        console.error('支付意向创建失败:', {
+            error: error.message,
+            stack: error.stack,
+            timestamp: new Date().toISOString()
+        });
+        res.status(500).json({ 
+            error: '支付服务出错',
+            details: error.message,
+            timestamp: new Date().toISOString()
+        });
+    }
 });
 
 // 统一的健康检查路由

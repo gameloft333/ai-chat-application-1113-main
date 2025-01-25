@@ -118,18 +118,13 @@ stop_existing_containers() {
             found_containers=true
             echo -e "${YELLOW}发现运行中的容器: ${service}${NC}"
             
-            # Ask user for confirmation before stopping
-            read -p "是否停止并移除该容器？[Y/n] " stop_container
-            if [[ ! "$stop_container" =~ ^[Nn]$ ]]; then
-                echo -e "${YELLOW}正在停止并移除容器 ${service}...${NC}"
-                # Stop the container
-                docker stop "${service}" || echo -e "${RED}停止 ${service} 失败${NC}"
-                # Remove the container
-                docker rm "${service}" || echo -e "${RED}移除 ${service} 失败${NC}"
-                echo -e "${GREEN}容器 ${service} 已成功停止和移除${NC}"
-            else
-                echo -e "${YELLOW}跳过停止容器 ${service}${NC}"
-            fi
+            # 直接停止并移除容器，无需用户确认
+            echo -e "${YELLOW}正在停止并移除容器 ${service}...${NC}"
+            # Stop the container
+            docker stop "${service}" || echo -e "${RED}停止 ${service} 失败${NC}"
+            # Remove the container
+            docker rm "${service}" || echo -e "${RED}移除 ${service} 失败${NC}"
+            echo -e "${GREEN}容器 ${service} 已成功停止和移除${NC}"
         else
             echo -e "${GREEN}未发现运行中的容器: ${service}${NC}"
         fi
@@ -313,15 +308,20 @@ check_env_variables() {
 }
 
 check_payment_service() {
-    echo -e "${GREEN}[CHECK] 验证支付服务状态${NC}"
+    echo -e "${GREEN}[CHECK] 验证支付服务配置${NC}"
     
-    # 等待服务启动
-    sleep 10
+    # 检查环境变量
+    if [ -z "$STRIPE_SECRET_KEY" ]; then
+        echo -e "${RED}错误: 未设置 STRIPE_SECRET_KEY${NC}"
+        return 1
+    fi
     
-    # 检查服务健康状态
-    if curl -s http://localhost:4242/health > /dev/null; then
+    # 检查支付服务健康状态
+    local health_check_url="https://payment.saga4v.com/health"
+    echo "检查支付服务健康状态: $health_check_url"
+    
+    if curl -s "$health_check_url" | grep -q "healthy"; then
         echo -e "${GREEN}支付服务运行正常${NC}"
-        return 0
     else
         echo -e "${RED}支付服务异常${NC}"
         docker-compose -f docker-compose.prod.yml logs payment
