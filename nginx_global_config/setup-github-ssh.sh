@@ -231,7 +231,7 @@ check_and_setup_ssh_agent() {
     if [[ ! -f ~/.ssh/id_ed25519 ]]; then
         error "未找到 SSH 密钥文件"
         return 1
-    }
+    fi
     
     # 检查密钥是否有密码保护
     # 尝试不输入密码读取私钥
