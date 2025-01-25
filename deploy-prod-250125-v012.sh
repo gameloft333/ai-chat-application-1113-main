@@ -10,7 +10,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Logging
-LOG_FILE="deployment_$(date +%Y%m%d_%H%M%S).log"
+LOG_FILE="development_log/deployment_$(date +%Y%m%d_%H%M%S).log"
 exec > >(tee -a "$LOG_FILE") 2>&1
 
 # Color codes
