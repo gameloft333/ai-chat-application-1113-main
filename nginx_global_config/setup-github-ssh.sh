@@ -92,7 +92,7 @@ generate_ssh_key() {
     if ! ssh-add ~/.ssh/id_ed25519; then
         error "添加SSH私钥失败"
         return 1
-    }
+    fi
     
     return 0
 }
