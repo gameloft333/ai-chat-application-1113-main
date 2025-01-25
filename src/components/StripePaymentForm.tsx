@@ -9,18 +9,52 @@ import { useTranslation } from 'react-i18next';
 import { PAYMENT_CONFIG } from '../config/payment-config';
 
 interface StripePaymentFormProps {
+  /** Stripe支付意向密钥，用于确认支付 */
+  clientSecret: string;
+  
+  /** 支付金额 */
   amount: number;
+  
+  /** 货币类型 (例如: 'USD', 'CNY') */
   currency: string;
+  
+  /** 订阅计划ID (例如: 'basic', 'pro', 'premium') */
   planId: string;
+  
+  /** 订阅时长 (例如: '1month', '12months', '24months') */
   duration: string;
+  
+  /** 用户ID，用于创建支付记录 */
   userId: string;
+  
+  /** 用户邮箱，用于支付账单信息 */
   userEmail: string;
+  
+  /** 支付成功回调函数 */
   onSuccess: () => void;
+  
+  /** 支付错误回调函数，参数为错误信息 */
   onError: (error: string) => void;
+  
+  /** 关闭支付表单回调函数 */
   onClose: () => void;
+  
+  /** UI主题色，用于按钮等样式 */
   themeColor: string;
 }
 
+/**
+ * Stripe支付表单组件
+ * 
+ * 用于处理信用卡支付流程，包括：
+ * 1. 显示卡片输入界面
+ * 2. 处理支付验证
+ * 3. 创建支付记录
+ * 4. 处理支付状态回调
+ * 
+ * @param props - 支付表单属性
+ * @returns React组件
+ */
 export const StripePaymentForm: React.FC<StripePaymentFormProps> = ({
   clientSecret,
   amount,
@@ -122,20 +156,65 @@ export const StripePaymentForm: React.FC<StripePaymentFormProps> = ({
 
         if (paymentIntent.status === 'succeeded') {
           console.log('支付成功，创建支付记录...');
-          await PaymentRecordService.createPaymentRecord({
-            uid: userId,
-            userEmail,
-            planId,
-            duration,
-            orderId: paymentIntent.id,
-            amount,
-            currency,
-            status: 'completed',
-            createdAt: new Date(),
-            expiredAt: calculateExpiryDate(duration),
-            paymentChannel: 'stripe',
-            paymentAccount: userEmail
-          });
+          try {
+            // 支付记录创建
+            await PaymentRecordService.createPaymentRecord({
+              uid: userId,
+              userEmail,
+              planId,
+              duration,
+              orderId: paymentIntent.id,
+              amount,
+              currency,
+              status: 'completed',
+              createdAt: new Date(),
+              expiredAt: calculateExpiryDate(duration),
+              paymentChannel: 'stripe',
+              paymentAccount: userEmail
+            });
+            
+            console.log('支付记录创建成功，订单ID:', paymentIntent.id);
+          } catch (error) {
+            console.error('支付记录创建失败:', {
+              error,
+              userId,
+              paymentIntentId: paymentIntent.id,
+              timestamp: new Date().toISOString()
+            });
+            
+            // 添加重试机制
+            let retryCount = 0;
+            const maxRetries = 3;
+            
+            while (retryCount < maxRetries) {
+              try {
+                await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+                await PaymentRecordService.createPaymentRecord({
+                  uid: userId,
+                  userEmail,
+                  planId,
+                  duration,
+                  orderId: paymentIntent.id,
+                  amount,
+                  currency,
+                  status: 'completed',
+                  createdAt: new Date(),
+                  expiredAt: calculateExpiryDate(duration),
+                  paymentChannel: 'stripe',
+                  paymentAccount: userEmail
+                });
+                console.log('支付记录重试创建成功');
+                break;
+              } catch (retryError) {
+                retryCount++;
+                console.error(`支付记录重试失败 (${retryCount}/${maxRetries}):`, retryError);
+                if (retryCount === maxRetries) {
+                  // 达到最大重试次数，记录错误但不中断支付流程
+                  console.error('支付记录创建达到最大重试次数，将继续处理支付流程');
+                }
+              }
+            }
+          }
           
           console.log('支付记录创建成功，调用成功回调...');
           onSuccess();

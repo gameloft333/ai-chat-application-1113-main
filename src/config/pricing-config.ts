@@ -1,9 +1,9 @@
-// 货币配置
+// 货币配置：定义支持的货币类型及其显示规则
 export const currencyConfig = {
   CNY: {
-    symbol: '¥',
-    code: 'CNY',
-    position: 'before'
+    symbol: '¥',    // 货币符号
+    code: 'CNY',    // 货币代码
+    position: 'before'  // 货币符号显示位置：before=符号在前，after=符号在后
   },
   USD: {
     symbol: '$',
@@ -17,39 +17,48 @@ export const currencyConfig = {
   }
 };
 
-// 当前使用的货币，只需修改这里即可切换货币
+// 当前使用的货币配置，修改这里可以切换默认货币
 export const currentCurrency = currencyConfig.USD;
 
 export const pricingPlans = {
+  // 可选的订阅时长配置
   durations: [
-    { id: 'test', name: 'Test' },
-    { id: '1week', name: '1 Week' },
-    { id: '24months', name: '24 Months' },
-    { id: '12months', name: '12 Months' },
-    { id: '1month', name: '1 Month' }
+    { id: 'test', name: 'Test' },          // 测试计划
+    { id: '1week', name: '1 Week' },       // 一周计划
+    { id: '24months', name: '24 Months' }, // 24个月计划
+    { id: '12months', name: '12 Months' }, // 12个月计划
+    { id: '1month', name: '1 Month' }      // 1个月计划
   ],
+
+  // 试用计划配置
   trialPlan: {
     id: 'trial',
-    name: 'subscription.trial',
-    description: 'subscription.trialDesc',
+    name: 'subscription.trial',           // 多语言key
+    description: 'subscription.trialDesc', // 多语言key
     prices: {
-      '1week': { price: 9.90, save: 0, extraMonths: 0 }
+      // 价格配置：
+      // price: 价格金额 - 这里控制显示的价格
+      // save: 相比原价的节省百分比
+      // extraMonths: 赠送的额外月份数
+      '1week': { price: 9.9, save: 0, extraMonths: 0 }  // 这里的 9.90 就是显示的价格
     },
-    features: [
+    features: [  // 功能列表，使用多语言key
       'subscription.features.unlimitedChat',
       'subscription.features.basicCharacters',
-      // 'subscription.features.basicVoice'
+      // 'subscription.features.basicVoice' // 已注释的功能表示暂未开放
     ]
   },
+
+  // 正式订阅计划列表
   plans: [
     {
-      id: 'basic',
+      id: 'basic',  // 基础版
       name: 'memberLevel.basic',
       description: 'subscription.basicDesc',
       prices: {
-        '24months': { price: 19.00, save: 50, extraMonths: 2 },
-        '12months': { price: 29.00, save: 45, extraMonths: 1 },
-        '1month': { price: 39.00, save: 0, extraMonths: 0 }
+        '24months': { price: 19.00, save: 50, extraMonths: 2 }, // 24个月方案
+        '12months': { price: 29.00, save: 45, extraMonths: 1 }, // 12个月方案
+        '1month': { price: 39.00, save: 0, extraMonths: 0 }     // 1个月方案
       },
       features: [
         'subscription.features.unlimitedChat',
@@ -59,10 +68,10 @@ export const pricingPlans = {
       ]
     },
     {
-      id: 'pro',
+      id: 'pro',    // 专业版
       name: 'memberLevel.pro',
       description: 'subscription.proDesc',
-      popular: true,
+      popular: true,  // 标记为推荐方案
       prices: {
         '24months': { price: 25.00, save: 70, extraMonths: 4 },
         '12months': { price: 35.00, save: 55, extraMonths: 2 },
@@ -79,7 +88,7 @@ export const pricingPlans = {
       ]
     },
     {
-      id: 'premium',
+      id: 'premium', // 高级版
       name: 'memberLevel.premium',
       description: 'subscription.premiumDesc',
       prices: {
@@ -99,6 +108,8 @@ export const pricingPlans = {
       ]
     }
   ],
+
+  // 测试计划配置
   testPlan: {
     id: 'test',
     name: 'Test Plan',
@@ -110,9 +121,9 @@ export const pricingPlans = {
     ],
     prices: {
       test: {
-        price: 9.90,
-        save: 0,
-        extraMonths: 0
+        price: 9.90,    // 测试价格
+        save: 0,        // 无折扣
+        extraMonths: 0  // 无赠送月份
       }
     }
   }

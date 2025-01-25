@@ -1,10 +1,10 @@
 export default {
     common: {
         selectCharacter: 'Please select your companion',
-        copyright: ' 2024 Companions. All rights reserved.',
+        copyright: ' 2025 AILove - Companions. All rights reserved.',
         testMode: 'Note: In test mode, chat history will be cleared on server restart.',
         back: 'Back',
-        welcome: 'Welcome to Companions',
+        welcome: 'Welcome to AILove - Companions',
         welcomeDescription: 'Login to start chatting with companions',
         cancel: 'Cancel',
         submit: 'Submit',

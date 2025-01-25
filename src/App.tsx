@@ -505,7 +505,7 @@ const AppContent: React.FC<AppRoutesProps> = ({ themeColor }) => {
               <div className="flex items-center space-x-3">
                 <MessageCircle className="w-8 h-8" style={{ color: themeColor }} />
                 <h1 className="text-xl font-semibold text-gray-900 dark:text-white md:block hidden">
-                  Companions
+                  AILove - Companions
                 </h1>
               </div>
               {/* 在移动端隐藏性别选择器 */}

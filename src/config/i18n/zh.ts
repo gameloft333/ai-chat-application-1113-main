@@ -1,10 +1,10 @@
 export default {
     common: {
         selectCharacter: '请选择您想要交谈的AI伴侣',
-        copyright: ' 2024 Companions. All rights reserved.',
+        copyright: ' 2025 Companions. All rights reserved.',
         testMode: '注意: 现在处于测试模式，服务器重启时会清空聊天记录哦。',
         back: '返回',
-        welcome: '欢迎使用 Companions',
+        welcome: '欢迎使用 AILove - Companions',
         welcomeDescription: '登录后开始与 AI 伴侣聊天',
         cancel: '取消',
         submit: '提交',

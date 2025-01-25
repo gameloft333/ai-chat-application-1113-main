@@ -195,6 +195,76 @@ rollback() {
     # Optional: Restore from backup
 }
 
+# 生成部署报告
+generate_deployment_report() {
+    echo -e "\n${GREEN}[部署报告] 生成部署信息报告...${NC}"
+    
+    # 创建报告文件
+    local report_file="deployment_report_$(date +%Y%m%d_%H%M%S).log"
+    
+    {
+        echo "==================== 部署报告 ===================="
+        echo "部署时间: $(date '+%Y-%m-%d %H:%M:%S')"
+        echo "部署环境: $(uname -a)"
+        echo "AWS实例ID: $(curl -s http://169.254.169.254/latest/meta-data/instance-id || echo 'N/A')"
+        echo "AWS区域: $(curl -s http://169.254.169.254/latest/meta-data/placement/region || echo 'N/A')"
+        echo -e "\n---------- Docker 容器状态 ----------"
+        docker ps --format "表格: {{.Names}}\n状态: {{.Status}}\n端口: {{.Ports}}\n镜像: {{.Image}}\n"
+        
+        echo -e "\n---------- 系统资源使用情况 ----------"
+        echo "CPU使用率:"
+        top -bn1 | grep "Cpu(s)" | awk '{print $2}'
+        echo "内存使用情况:"
+        free -h
+        echo "磁盘使用情况:"
+        df -h
+        
+        echo -e "\n---------- Docker 资源使用情况 ----------"
+        echo "Docker镜像大小:"
+        docker images --format "{{.Repository}}:{{.Tag}} - {{.Size}}"
+        echo -e "\nDocker容器资源使用:"
+        docker stats --no-stream --format "容器: {{.Name}}\nCPU使用率: {{.CPUPerc}}\n内存使用: {{.MemUsage}}"
+        
+        echo -e "\n---------- 网络状态 ----------"
+        echo "Docker网络列表:"
+        docker network ls
+        echo -e "\n已暴露的端口:"
+        netstat -tulpn | grep LISTEN
+        
+        echo -e "\n---------- 环境检查 ----------"
+        echo "Docker版本: $(docker --version)"
+        echo "Docker Compose版本: $(docker-compose --version)"
+        
+        echo -e "\n---------- 部署配置信息 ----------"
+        echo "项目名称: ${PROJECT_NAME}"
+        echo "Git仓库: ${REPO_URL}"
+        echo "部署分支: $(git rev-parse --abbrev-ref HEAD)"
+        echo "最新提交: $(git log -1 --pretty=format:'%h - %s (%cr)')"
+        
+        echo -e "\n---------- 健康检查结果 ----------"
+        for service in $(docker ps --format "{{.Names}}"); do
+            echo "服务: $service"
+            docker inspect --format "{{.State.Health.Status}}" $service 2>/dev/null || echo "无健康检查配置"
+        done
+        
+        echo -e "\n---------- 重要提醒 ----------"
+        echo "1. 请检查所有服务是否正常运行"
+        echo "2. 确认所有端口是否正确暴露"
+        echo "3. 验证服务间网络连接是否正常"
+        echo "4. 检查日志中是否有异常信息"
+        
+        echo -e "\n==================== 报告结束 ===================="
+    } | tee -a "$report_file"
+    
+    echo -e "${GREEN}部署报告已生成: ${report_file}${NC}"
+    
+    # 可选：将报告保存到特定位置或发送到指定邮箱
+    if [ -n "${REPORT_EMAIL}" ]; then
+        echo -e "${YELLOW}正在发送报告到 ${REPORT_EMAIL}...${NC}"
+        # 添加发送邮件的逻辑（需要配置邮件服务）
+    fi
+}
+
 # Main deployment function
 main() {
     trap rollback ERR
@@ -209,6 +279,9 @@ main() {
     deploy_containers
     check_deployment
     cleanup
+
+    # 生成部署报告
+    generate_deployment_report
 
     echo -e "${GREEN}Deployment Successful!${NC}"
 }
