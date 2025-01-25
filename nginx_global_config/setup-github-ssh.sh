@@ -33,14 +33,14 @@ get_git_info() {
     if ! git rev-parse --is-inside-work-tree &> /dev/null; then
         error "当前目录不是Git仓库"
         return 1
-    }
+    fi
     
     # 获取远程仓库URL
     REPO_URL=$(git config --get remote.origin.url)
     if [[ -z "$REPO_URL" ]]; then
         error "未找到远程仓库URL"
         return 1
-    }
+    fi
     
     # 获取当前用户名
     GIT_USERNAME=$(git config --get user.name)
