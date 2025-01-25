@@ -52,7 +52,7 @@ stop_existing_containers() {
     echo -e "${GREEN}[PRE-DEPLOYMENT] Checking for existing containers${NC}"
     
     # List of services to check and stop
-    local services=("ai-chat-application-1113-main-frontend-1")
+    local services=("ai-chat-application-1113-main-frontend-1" "ai-chat-application-1113-main-payment-server-1")
     
     for service in "${services[@]}"; do
         # Check if container exists
@@ -140,3 +140,43 @@ main() {
 
 # Execute main function
 main
+
+check_env_variables() {
+    echo -e "${GREEN}[CHECK] 验证环境变量配置${NC}"
+    
+    # 检查必要的环境变量
+    required_vars=(
+        "STRIPE_SECRET_KEY"
+        "STRIPE_PUBLISHABLE_KEY"
+        "STRIPE_WEBHOOK_SECRET"
+    )
+    
+    missing_vars=0
+    for var in "${required_vars[@]}"; do
+        if ! grep -q "^${var}=" .env.production; then
+            echo -e "${RED}错误: 缺少环境变量 ${var}${NC}"
+            missing_vars=1
+        fi
+    done
+    
+    if [ $missing_vars -eq 1 ]; then
+        exit 1
+    fi
+}
+
+check_payment_service() {
+    echo -e "${GREEN}[CHECK] 验证支付服务状态${NC}"
+    
+    # 等待服务启动
+    sleep 10
+    
+    # 检查服务健康状态
+    if curl -s http://localhost:4242/health > /dev/null; then
+        echo -e "${GREEN}支付服务运行正常${NC}"
+        return 0
+    else
+        echo -e "${RED}支付服务异常${NC}"
+        docker-compose -f docker-compose.prod.yml logs payment
+        return 1
+    fi
+}
