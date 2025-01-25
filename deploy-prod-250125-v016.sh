@@ -9,9 +9,23 @@ RED='\033[0;31m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+# 检查并创建必要的目录
+for dir in "development_log" "deployment_reports"; do
+    if [ ! -d "$dir" ]; then
+        echo -e "${YELLOW}[INIT] 目录不存在，创建: ${dir}${NC}"
+        mkdir -p "$dir"
+        echo -e "${GREEN}[INIT] 目录创建成功: ${dir}${NC}"
+    else
+        echo -e "${GREEN}[INIT] 目录已存在: ${dir}${NC}"
+    fi
+done
+
 # Logging
 LOG_FILE="development_log/deployment_$(date +%Y%m%d_%H%M%S).log"
 exec > >(tee -a "$LOG_FILE") 2>&1
+
+echo -e "${GREEN}[INIT] 创建日志目录: development_log${NC}"
+echo -e "${GREEN}[INIT] 创建部署报告目录: deployment_reports${NC}"
 
 # Color codes
 GREEN='\033[0;32m'
@@ -131,13 +145,10 @@ stop_existing_containers() {
     done
     
     if [ "$found_containers" = true ]; then
-        # Optional: Prune unused containers, networks, and volumes
-        read -p "是否清理未使用的 Docker 资源？[Y/n] " prune_resources
-        if [[ ! "$prune_resources" =~ ^[Nn]$ ]]; then
-            echo -e "${YELLOW}正在清理未使用的 Docker 资源...${NC}"
-            docker system prune -f || echo -e "${YELLOW}警告: Docker 资源清理遇到问题${NC}"
-            echo -e "${GREEN}Docker 资源清理完成${NC}"
-        fi
+        # 自动执行资源清理，无需用户确认
+        echo -e "${YELLOW}正在清理未使用的 Docker 资源...${NC}"
+        docker system prune -f || echo -e "${YELLOW}警告: Docker 资源清理遇到问题${NC}"
+        echo -e "${GREEN}Docker 资源清理完成${NC}"
     else
         echo -e "${GREEN}没有需要停止的容器，继续部署流程${NC}"
     fi

@@ -38,9 +38,11 @@ export class StripeService {
             await this.ensureInitialized();
             console.log('Stripe 初始化完成');
             
-            const API_URL = import.meta.env.PROD 
-                ? 'https://payment.love.saga4v.com'  // 生产环境使用HTTPS
-                : 'http://localhost:4242';           // 开发环境使用HTTP
+            const API_URL = import.meta.env.VITE_PAYMENT_API_URL || (
+                import.meta.env.PROD 
+                    ? 'https://payment.saga4v.com'  // 生产环境默认值
+                    : 'http://localhost:4242'       // 开发环境默认值
+            );
             console.log('请求支付服务:', API_URL);
             
             const response = await fetch(`${API_URL}/api/stripe/create-payment-intent`, {
