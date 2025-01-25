@@ -276,19 +276,83 @@ generate_deployment_report() {
     fi
 }
 
+# 将函数定义移到脚本开头
+check_env_variables() {
+    echo -e "${GREEN}[CHECK] 验证环境变量配置${NC}"
+    
+    # 检查 .env.production 文件是否存在
+    if [ ! -f ".env.production" ]; then
+        echo -e "${YELLOW}警告: .env.production 文件不存在${NC}"
+        echo -e "是否要从 .env.example 创建？[Y/n] "
+        read -r create_env
+        if [[ ! "$create_env" =~ ^[Nn]$ ]]; then
+            cp .env.example .env.production
+            echo -e "${GREEN}已创建 .env.production 文件，请配置必要的环境变量${NC}"
+            exit 1
+        fi
+    fi
+    
+    # 检查必要的环境变量
+    required_vars=(
+        "STRIPE_SECRET_KEY"
+        "STRIPE_PUBLISHABLE_KEY"
+        "STRIPE_WEBHOOK_SECRET"
+    )
+    
+    missing_vars=0
+    for var in "${required_vars[@]}"; do
+        if ! grep -q "^${var}=" .env.production; then
+            echo -e "${YELLOW}警告: 缺少环境变量 ${var}${NC}"
+            missing_vars=1
+        fi
+    done
+    
+    if [ $missing_vars -eq 1 ]; then
+        echo -e "${YELLOW}是否继续部署？[y/N] ${NC}"
+        read -r continue_deploy
+        if [[ ! "$continue_deploy" =~ ^[Yy]$ ]]; then
+            echo -e "${YELLOW}部署已取消，请配置必要的环境变量后重试${NC}"
+            exit 1
+        else
+            echo -e "${YELLOW}继续部署，但某些功能可能无法正常工作${NC}"
+        fi
+    fi
+    
+    return 0
+}
+
 # Main deployment function
 main() {
     trap rollback ERR
-
+    
     # 添加容器停止检查
-    stop_existing_containers
+    stop_existing_containers || {
+        echo -e "${YELLOW}容器停止过程中出现问题，是否继续？[y/N] ${NC}"
+        read -r continue_deploy
+        if [[ ! "$continue_deploy" =~ ^[Yy]$ ]]; then
+            echo -e "${YELLOW}部署已取消${NC}"
+            exit 1
+        fi
+    }
 
-    pre_deployment_check
+    pre_deployment_check || {
+        echo -e "${YELLOW}预部署检查失败，是否继续？[y/N] ${NC}"
+        read -r continue_deploy
+        if [[ ! "$continue_deploy" =~ ^[Yy]$ ]]; then
+            echo -e "${YELLOW}部署已取消${NC}"
+            exit 1
+        fi
+    }
     
     # 添加环境变量检查
     check_env_variables || {
-        echo -e "${RED}环境变量验证失败${NC}"
-        exit 1
+        echo -e "${YELLOW}环境变量检查失败，是否继续部署？[y/N] ${NC}"
+        read -r continue_deploy
+        if [[ ! "$continue_deploy" =~ ^[Yy]$ ]]; then
+            echo -e "${YELLOW}部署已取消，请检查环境变量配置${NC}"
+            exit 1
+        fi
+        echo -e "${YELLOW}继续部署，但某些功能可能无法正常工作${NC}"
     }
     
     pull_latest_code
@@ -317,29 +381,6 @@ main() {
 
 # Execute main function
 main
-
-check_env_variables() {
-    echo -e "${GREEN}[CHECK] 验证环境变量配置${NC}"
-    
-    # 检查必要的环境变量
-    required_vars=(
-        "STRIPE_SECRET_KEY"
-        "STRIPE_PUBLISHABLE_KEY"
-        "STRIPE_WEBHOOK_SECRET"
-    )
-    
-    missing_vars=0
-    for var in "${required_vars[@]}"; do
-        if ! grep -q "^${var}=" .env.production; then
-            echo -e "${RED}错误: 缺少环境变量 ${var}${NC}"
-            missing_vars=1
-        fi
-    done
-    
-    if [ $missing_vars -eq 1 ]; then
-        exit 1
-    fi
-}
 
 check_payment_service() {
     echo -e "${GREEN}[CHECK] 验证支付服务配置${NC}"
