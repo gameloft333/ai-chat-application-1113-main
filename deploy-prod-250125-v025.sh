@@ -283,27 +283,25 @@ check_env_variables() {
     # 检查 .env.production 文件是否存在
     if [ ! -f ".env.production" ]; then
         echo -e "${YELLOW}警告: .env.production 文件不存在${NC}"
-        echo -e "是否要从 .env.example 创建？[Y/n] "
-        read -r create_env
-        if [[ ! "$create_env" =~ ^[Nn]$ ]]; then
-            cp .env.example .env.production
-            echo -e "${GREEN}已创建 .env.production 文件，请配置必要的环境变量${NC}"
-            exit 1
-        fi
+        return 1
     fi
     
-    # 检查必要的环境变量
-    required_vars=(
-        "STRIPE_SECRET_KEY"
-        "STRIPE_PUBLISHABLE_KEY"
-        "STRIPE_WEBHOOK_SECRET"
-    )
+    # 从文件中读取 Stripe 相关的变量
+    stripe_vars=($(grep -E "^(VITE_)?STRIPE_" .env.production | cut -d'=' -f1))
+    
+    if [ ${#stripe_vars[@]} -eq 0 ]; then
+        echo -e "${YELLOW}警告: 未找到任何 Stripe 相关配置${NC}"
+        return 1
+    fi
     
     missing_vars=0
-    for var in "${required_vars[@]}"; do
-        if ! grep -q "^${var}=" .env.production; then
-            echo -e "${YELLOW}警告: 缺少环境变量 ${var}${NC}"
+    for var in "${stripe_vars[@]}"; do
+        value=$(grep "^${var}=" .env.production | cut -d'=' -f2)
+        if [ -z "$value" ]; then
+            echo -e "${YELLOW}警告: 环境变量 ${var} 值为空${NC}"
             missing_vars=1
+        else
+            echo -e "${GREEN}✓ 环境变量 ${var} 已配置${NC}"
         fi
     done
     
@@ -311,11 +309,10 @@ check_env_variables() {
         echo -e "${YELLOW}是否继续部署？[y/N] ${NC}"
         read -r continue_deploy
         if [[ ! "$continue_deploy" =~ ^[Yy]$ ]]; then
-            echo -e "${YELLOW}部署已取消，请配置必要的环境变量后重试${NC}"
-            exit 1
-        else
-            echo -e "${YELLOW}继续部署，但某些功能可能无法正常工作${NC}"
+            echo -e "${YELLOW}部署已取消，请检查环境变量配置${NC}"
+            return 1
         fi
+        echo -e "${YELLOW}继续部署，但某些功能可能无法正常工作${NC}"
     fi
     
     return 0
