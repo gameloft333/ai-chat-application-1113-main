@@ -52,12 +52,17 @@ check_and_install_docker() {
     if ! groups | grep -q docker; then
         echo -e "${YELLOW}将当前用户添加到 docker 组...${NC}"
         sudo usermod -aG docker $USER
-        echo -e "${GREEN}请注意：您需要重新登录以使组成员身份生效${NC}"
-        echo -e "${YELLOW}是否现在就重新登录？[Y/n]${NC}"
-        read -r relogin
-        if [[ ! "$relogin" =~ ^[Nn]$ ]]; then
-            echo -e "${GREEN}执行 newgrp docker 来更新组成员身份...${NC}"
-            exec newgrp docker
+        echo -e "${RED}重要：您需要重新登录以使 docker 组成员身份生效${NC}"
+        echo -e "${YELLOW}请在脚本执行完成后，执行以下操作：${NC}"
+        echo -e "1. 退出当前会话：exit"
+        echo -e "2. 重新登录"
+        echo -e "3. 重新运行部署脚本"
+        
+        # 询问是否继续
+        read -p "是否继续执行部署？[y/N] " continue_deploy
+        if [[ ! "$continue_deploy" =~ ^[Yy]$ ]]; then
+            echo -e "${YELLOW}部署已取消，请重新登录后再次运行脚本${NC}"
+            exit 0
         fi
     fi
     
@@ -101,28 +106,46 @@ pull_latest_code() {
 
 # Function to check and stop existing containers
 stop_existing_containers() {
-    echo -e "${GREEN}[PRE-DEPLOYMENT] Checking for existing containers${NC}"
+    echo -e "${GREEN}[PRE-DEPLOYMENT] 检查现有容器${NC}"
     
     # List of services to check and stop
     local services=("ai-chat-application-1113-main-frontend-1" "ai-chat-application-1113-main-payment-server-1")
+    local found_containers=false
     
     for service in "${services[@]}"; do
-        # Check if container exists
+        # Check if container exists and is running
         if docker ps -a --format '{{.Names}}' | grep -q "^${service}$"; then
-            echo -e "${YELLOW}Stopping and removing existing ${service} container${NC}"
+            found_containers=true
+            echo -e "${YELLOW}发现运行中的容器: ${service}${NC}"
             
-            # Stop the container
-            docker stop "${service}" || echo -e "${RED}Failed to stop ${service} container${NC}"
-            
-            # Remove the container
-            docker rm "${service}" || echo -e "${RED}Failed to remove ${service} container${NC}"
+            # Ask user for confirmation before stopping
+            read -p "是否停止并移除该容器？[Y/n] " stop_container
+            if [[ ! "$stop_container" =~ ^[Nn]$ ]]; then
+                echo -e "${YELLOW}正在停止并移除容器 ${service}...${NC}"
+                # Stop the container
+                docker stop "${service}" || echo -e "${RED}停止 ${service} 失败${NC}"
+                # Remove the container
+                docker rm "${service}" || echo -e "${RED}移除 ${service} 失败${NC}"
+                echo -e "${GREEN}容器 ${service} 已成功停止和移除${NC}"
+            else
+                echo -e "${YELLOW}跳过停止容器 ${service}${NC}"
+            fi
         else
-            echo -e "${GREEN}No existing ${service} container found${NC}"
+            echo -e "${GREEN}未发现运行中的容器: ${service}${NC}"
         fi
     done
     
-    # Optional: Prune unused containers, networks, and volumes
-    docker system prune -f || echo -e "${YELLOW}Warning: Docker system prune encountered an issue${NC}"
+    if [ "$found_containers" = true ]; then
+        # Optional: Prune unused containers, networks, and volumes
+        read -p "是否清理未使用的 Docker 资源？[Y/n] " prune_resources
+        if [[ ! "$prune_resources" =~ ^[Nn]$ ]]; then
+            echo -e "${YELLOW}正在清理未使用的 Docker 资源...${NC}"
+            docker system prune -f || echo -e "${YELLOW}警告: Docker 资源清理遇到问题${NC}"
+            echo -e "${GREEN}Docker 资源清理完成${NC}"
+        fi
+    else
+        echo -e "${GREEN}没有需要停止的容器，继续部署流程${NC}"
+    fi
 }
 
 # Create the external network
