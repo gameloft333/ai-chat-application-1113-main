@@ -24,21 +24,73 @@ REPO_URL=$(git config --get remote.origin.url)
 AWS_REGION=$(curl -s http://169.254.169.254/latest/meta-data/placement/region || echo "unknown")
 AWS_INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id || echo "unknown")
 
-# Pre-deployment checks
+# 检查并安装 Docker
+check_and_install_docker() {
+    echo -e "${GREEN}[CHECK] 检查 Docker 环境...${NC}"
+    
+    # 检查 Docker 是否已安装
+    if ! command -v docker &> /dev/null; then
+        echo -e "${YELLOW}Docker 未安装，是否要安装 Docker？[Y/n]${NC}"
+        read -r install_docker
+        if [[ ! "$install_docker" =~ ^[Nn]$ ]]; then
+            echo -e "${GREEN}正在安装 Docker...${NC}"
+            sudo yum install -y docker
+        else
+            echo -e "${RED}Docker 是必需的，无法继续部署${NC}"
+            exit 1
+        fi
+    fi
+    
+    # 检查 Docker 服务状态
+    if ! systemctl is-active --quiet docker; then
+        echo -e "${YELLOW}Docker 服务未运行，正在启动...${NC}"
+        sudo systemctl start docker
+        sudo systemctl enable docker
+    fi
+    
+    # 检查当前用户是否在 docker 组中
+    if ! groups | grep -q docker; then
+        echo -e "${YELLOW}将当前用户添加到 docker 组...${NC}"
+        sudo usermod -aG docker $USER
+        echo -e "${GREEN}请注意：您需要重新登录以使组成员身份生效${NC}"
+        echo -e "${YELLOW}是否现在就重新登录？[Y/n]${NC}"
+        read -r relogin
+        if [[ ! "$relogin" =~ ^[Nn]$ ]]; then
+            echo -e "${GREEN}执行 newgrp docker 来更新组成员身份...${NC}"
+            exec newgrp docker
+        fi
+    fi
+    
+    echo -e "${GREEN}Docker 环境检查完成${NC}"
+    return 0
+}
+
+# 修改 pre_deployment_check 函数
 pre_deployment_check() {
     echo -e "${GREEN}[STEP 1/7] Pre-deployment Checks${NC}"
     
-    # Check Docker installation
-    if ! command -v docker &> /dev/null; then
-        echo -e "${RED}Docker is not installed. Please install Docker first.${NC}"
+    # 检查并安装 Docker
+    if ! check_and_install_docker; then
+        error "Docker 环境配置失败"
         exit 1
     fi
-
-    # Check Docker Compose
+    
+    # 检查 Docker Compose
     if ! command -v docker-compose &> /dev/null; then
-        echo -e "${RED}Docker Compose is not installed. Please install Docker Compose.${NC}"
-        exit 1
+        echo -e "${YELLOW}Docker Compose 未安装，是否要安装？[Y/n]${NC}"
+        read -r install_compose
+        if [[ ! "$install_compose" =~ ^[Nn]$ ]]; then
+            echo -e "${GREEN}正在安装 Docker Compose...${NC}"
+            sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+            sudo chmod +x /usr/local/bin/docker-compose
+        else
+            echo -e "${RED}Docker Compose 是必需的，无法继续部署${NC}"
+            exit 1
+        fi
     fi
+    
+    echo -e "${GREEN}所有必要组件检查完成${NC}"
+    return 0
 }
 
 # Pull latest code

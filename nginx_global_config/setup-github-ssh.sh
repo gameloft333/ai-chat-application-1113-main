@@ -193,11 +193,19 @@ update_remote_url() {
 # 测试SSH连接
 test_connection() {
     log "测试SSH连接..."
-    if ! ssh -T git@github.com; then
+    # 执行SSH测试并捕获输出
+    local output
+    output=$(ssh -T git@github.com 2>&1)
+    
+    # 检查输出中是否包含成功认证的信息
+    if echo "$output" | grep -q "successfully authenticated"; then
+        log "SSH连接测试成功！"
+        return 0
+    else
         error "SSH连接测试失败"
+        error "错误信息: $output"
         return 1
     fi
-    return 0
 }
 
 # 创建SSH配置文件
@@ -285,7 +293,7 @@ check_and_setup_ssh_agent() {
 
 # 主函数
 main() {
-    log "=== GitHub SSH 配置助手 v1.0.7 ==="
+    log "=== GitHub SSH 配置助手 v1.1.8 ==="
     
     # 检查必要的命令
     if ! check_requirements; then
