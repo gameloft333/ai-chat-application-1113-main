@@ -309,7 +309,7 @@ main() {
     if ! create_ssh_config; then
         error "创建SSH配置失败"
         exit 1
-    }
+    fi
     
     # 显示公钥
     show_public_key
