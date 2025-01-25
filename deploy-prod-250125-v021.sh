@@ -253,6 +253,11 @@ generate_deployment_report() {
             docker inspect --format "{{.State.Health.Status}}" $service 2>/dev/null || echo "无健康检查配置"
         done
         
+        echo -e "\n---------- 支付服务验证结果 ----------"
+        echo "支付服务健康检查: $(curl -s https://payment.saga4v.com/health)"
+        echo "支付服务 CORS 配置: $(curl -s -X OPTIONS -H 'Origin: https://love.saga4v.com' -I https://payment.saga4v.com/api/stripe/create-payment-intent | grep -i 'access-control')"
+        echo "Docker 网络状态: $(docker network inspect saga4v_network --format '{{.Name}} - {{.Driver}}')"
+        
         echo -e "\n---------- 重要提醒 ----------"
         echo "1. 请检查所有服务是否正常运行"
         echo "2. 确认所有端口是否正确暴露"
@@ -275,21 +280,39 @@ generate_deployment_report() {
 main() {
     trap rollback ERR
 
-    # Add container stop check before deployment
+    # 添加容器停止检查
     stop_existing_containers
 
     pre_deployment_check
+    
+    # 添加环境变量检查
+    check_env_variables || {
+        echo -e "${RED}环境变量验证失败${NC}"
+        exit 1
+    }
+    
     pull_latest_code
-    create_external_network  # Add network creation before deployment
+    create_external_network
     build_images
     deploy_containers
+    
+    # 添加支付服务验证
+    echo -e "${YELLOW}等待服务启动...${NC}"
+    sleep 10  # 给服务一些启动时间
+    
+    verify_payment_service || {
+        echo -e "${RED}支付服务验证失败，开始回滚...${NC}"
+        rollback
+        exit 1
+    }
+    
     check_deployment
     cleanup
 
     # 生成部署报告
     generate_deployment_report
 
-    echo -e "${GREEN}Deployment Successful!${NC}"
+    echo -e "${GREEN}部署成功！${NC}"
 }
 
 # Execute main function
@@ -338,4 +361,50 @@ check_payment_service() {
         docker-compose -f docker-compose.prod.yml logs payment
         return 1
     fi
+}
+
+# 添加支付服务验证函数
+verify_payment_service() {
+    echo -e "${GREEN}[VERIFY] 验证支付服务配置和连接${NC}"
+    
+    # 1. 验证支付服务是否正常运行
+    echo "1. 验证支付服务运行状态..."
+    if ! curl -s --head https://payment.saga4v.com/health > /dev/null; then
+        echo -e "${RED}错误: 支付服务未响应${NC}"
+        return 1
+    fi
+    
+    # 2. 验证支付服务健康状态
+    echo "2. 检查支付服务健康状态..."
+    local health_response=$(curl -s https://payment.saga4v.com/health)
+    if ! echo "$health_response" | grep -q "healthy"; then
+        echo -e "${RED}错误: 支付服务不健康${NC}"
+        echo "健康检查响应: $health_response"
+        return 1
+    fi
+    
+    # 3. 验证网络连接
+    echo "3. 检查 Docker 网络连接..."
+    if ! docker network inspect saga4v_network > /dev/null 2>&1; then
+        echo -e "${RED}错误: saga4v_network 网络不存在${NC}"
+        return 1
+    fi
+    
+    # 4. 验证 CORS 配置
+    echo "4. 验证 CORS 配置..."
+    local cors_response=$(curl -s -X OPTIONS \
+        -H "Origin: https://love.saga4v.com" \
+        -H "Access-Control-Request-Method: POST" \
+        -I \
+        https://payment.saga4v.com/api/stripe/create-payment-intent)
+    
+    if ! echo "$cors_response" | grep -qi "access-control"; then
+        echo -e "${RED}错误: CORS 配置可能有问题${NC}"
+        echo "CORS 响应头:"
+        echo "$cors_response"
+        return 1
+    fi
+    
+    echo -e "${GREEN}支付服务验证完成：所有检查通过${NC}"
+    return 0
 }

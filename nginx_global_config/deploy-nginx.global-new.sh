@@ -151,6 +151,29 @@ verify_deployment() {
     log "部署验证完成"
 }
 
+# 添加检查 Nginx 日志目录的函数
+check_nginx_logs() {
+    log "[检查] 验证 Nginx 日志目录..."
+    
+    # 检查容器内的日志目录
+    if ! docker exec saga4v-nginx test -d /var/log/nginx; then
+        log "创建 Nginx 日志目录..."
+        docker exec saga4v-nginx mkdir -p /var/log/nginx
+        docker exec saga4v-nginx chown -R nginx:nginx /var/log/nginx
+        docker exec saga4v-nginx chmod 755 /var/log/nginx
+        log "✓ Nginx 日志目录创建完成"
+    else
+        log "✓ Nginx 日志目录已存在"
+        
+        # 验证权限
+        if ! docker exec saga4v-nginx test -w /var/log/nginx; then
+            warn "修复日志目录权限..."
+            docker exec saga4v-nginx chown -R nginx:nginx /var/log/nginx
+            docker exec saga4v-nginx chmod 755 /var/log/nginx
+        fi
+    fi
+}
+
 # Main function
 main() {
     log "开始部署全局 Nginx..."
@@ -159,6 +182,7 @@ main() {
     create_network
     stop_existing
     deploy_container
+    check_nginx_logs
     health_check
     verify_deployment
     

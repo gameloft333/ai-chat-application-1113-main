@@ -71,7 +71,17 @@ app.use((req, res, next) => {
         origin: req.headers.origin,
         headers: req.headers,
         body: req.body,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        protocol: req.protocol,
+        secure: req.secure,
+        hostname: req.hostname,
+        ip: req.ip,
+        originalUrl: req.originalUrl,
+        corsHeaders: {
+            origin: req.headers.origin,
+            accessControlRequestMethod: req.headers['access-control-request-method'],
+            accessControlRequestHeaders: req.headers['access-control-request-headers']
+        }
     });
     next();
 });
