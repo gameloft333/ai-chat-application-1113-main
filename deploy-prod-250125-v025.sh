@@ -177,8 +177,26 @@ build_images() {
 # Deploy containers
 deploy_containers() {
     echo -e "${GREEN}[STEP 5/7] Deploying Containers${NC}"
-    # docker-compose -f docker-compose.prod.yml up -d --remove-orphans
-    docker-compose -f docker-compose.prod.yml up -d
+    
+    # 确保环境变量文件存在
+    if [ ! -f ".env.production" ]; then
+        echo -e "${RED}错误: .env.production 文件不存在${NC}"
+        return 1
+    fi
+    
+    # 导出环境变量到当前会话
+    export $(cat .env.production | grep -v '^#' | xargs)
+    
+    # 使用 --env-file 参数确保环境变量传递给容器
+    docker-compose -f docker-compose.prod.yml --env-file .env.production up -d
+    
+    # 验证容器是否成功启动
+    if ! docker-compose -f docker-compose.prod.yml ps | grep -q "Up"; then
+        echo -e "${RED}容器启动失败${NC}"
+        return 1
+    fi
+    
+    echo -e "${GREEN}容器部署完成${NC}"
 }
 
 # Health check
@@ -343,21 +361,23 @@ main() {
     
     # 添加环境变量检查
     check_env_variables || {
-        echo -e "${YELLOW}环境变量检查失败，是否继续部署？[y/N] ${NC}"
+        echo -e "${YELLOW}环境变量检查失败，是否继续？[y/N] ${NC}"
         read -r continue_deploy
         if [[ ! "$continue_deploy" =~ ^[Yy]$ ]]; then
-            echo -e "${YELLOW}部署已取消，请检查环境变量配置${NC}"
+            echo -e "${YELLOW}部署已取消${NC}"
             exit 1
         fi
-        echo -e "${YELLOW}继续部署，但某些功能可能无法正常工作${NC}"
     }
     
     pull_latest_code
     create_external_network
     build_images
-    deploy_containers
+    deploy_containers || {
+        echo -e "${RED}容器部署失败${NC}"
+        rollback
+        exit 1
+    }
     
-    # 添加支付服务验证
     echo -e "${YELLOW}等待服务启动...${NC}"
     sleep 10  # 给服务一些启动时间
     
@@ -372,64 +392,38 @@ main() {
 
     # 生成部署报告
     generate_deployment_report
-
+    
     echo -e "${GREEN}部署成功！${NC}"
 }
 
 # Execute main function
 main
 
-check_payment_service() {
-    echo -e "${GREEN}[CHECK] 验证支付服务配置${NC}"
-    
-    # 检查环境变量
-    if [ -z "$STRIPE_SECRET_KEY" ]; then
-        echo -e "${RED}错误: 未设置 STRIPE_SECRET_KEY${NC}"
-        return 1
-    fi
-    
-    # 检查支付服务健康状态
-    local health_check_url="https://payment.saga4v.com/health"
-    echo "检查支付服务健康状态: $health_check_url"
-    
-    if curl -s "$health_check_url" | grep -q "healthy"; then
-        echo -e "${GREEN}支付服务运行正常${NC}"
-    else
-        echo -e "${RED}支付服务异常${NC}"
-        docker-compose -f docker-compose.prod.yml logs payment
-        return 1
-    fi
-}
-
 # 添加支付服务验证函数
 verify_payment_service() {
     echo -e "${GREEN}[VERIFY] 验证支付服务配置和连接${NC}"
     
-    # 1. 验证支付服务是否正常运行
-    echo "1. 验证支付服务运行状态..."
-    if ! curl -s --head https://payment.saga4v.com/health > /dev/null; then
-        echo -e "${RED}错误: 支付服务未响应${NC}"
+    # 等待服务启动
+    local max_retries=12  # 最多等待60秒
+    local retry=0
+    local payment_url="https://payment.saga4v.com/health"
+    
+    while [ $retry -lt $max_retries ]; do
+        if curl -s "$payment_url" | grep -q "healthy"; then
+            echo -e "${GREEN}支付服务已就绪${NC}"
+            break
+        fi
+        echo -e "${YELLOW}等待支付服务启动... ($(( retry + 1 ))/${max_retries})${NC}"
+        sleep 5
+        retry=$((retry + 1))
+    done
+    
+    if [ $retry -eq $max_retries ]; then
+        echo -e "${RED}支付服务启动超时${NC}"
         return 1
     fi
     
-    # 2. 验证支付服务健康状态
-    echo "2. 检查支付服务健康状态..."
-    local health_response=$(curl -s https://payment.saga4v.com/health)
-    if ! echo "$health_response" | grep -q "healthy"; then
-        echo -e "${RED}错误: 支付服务不健康${NC}"
-        echo "健康检查响应: $health_response"
-        return 1
-    fi
-    
-    # 3. 验证网络连接
-    echo "3. 检查 Docker 网络连接..."
-    if ! docker network inspect saga4v_network > /dev/null 2>&1; then
-        echo -e "${RED}错误: saga4v_network 网络不存在${NC}"
-        return 1
-    fi
-    
-    # 4. 验证 CORS 配置
-    echo "4. 验证 CORS 配置..."
+    # 验证 CORS 配置
     local cors_response=$(curl -s -X OPTIONS \
         -H "Origin: https://love.saga4v.com" \
         -H "Access-Control-Request-Method: POST" \
@@ -437,12 +431,10 @@ verify_payment_service() {
         https://payment.saga4v.com/api/stripe/create-payment-intent)
     
     if ! echo "$cors_response" | grep -qi "access-control"; then
-        echo -e "${RED}错误: CORS 配置可能有问题${NC}"
-        echo "CORS 响应头:"
-        echo "$cors_response"
+        echo -e "${RED}CORS 配置验证失败${NC}"
         return 1
     fi
     
-    echo -e "${GREEN}支付服务验证完成：所有检查通过${NC}"
+    echo -e "${GREEN}支付服务验证通过${NC}"
     return 0
 }
