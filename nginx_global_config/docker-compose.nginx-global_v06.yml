@@ -46,6 +46,12 @@ services:
       timeout: 10s
       retries: 3
 
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   # Love Project - Replace IP and Port with your actual deployment details
   # love_app:
     # REPLACE: Use your actual container image or build configuration

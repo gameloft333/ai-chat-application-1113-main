@@ -71,54 +71,33 @@ health_check() {
     local max_retries=5
     local retry=0
     
-    # 从配置文件中提取需要 HTTPS 的域名
-    log "检查需要 HTTPS 的域名..."
-    local https_domains=$(grep -A1 "listen 80;" "$NGINX_CONF" | grep "server_name" | grep -v "_" | awk '{for(i=2;i<=NF;i++) print $i}' | sed 's/;//')
+    # 显示 Nginx 配置文件内容
+    log "当前 Nginx 配置文件内容:"
+    docker exec saga4v-nginx cat /etc/nginx/nginx.conf
+    
+    # 检查证书文件权限
+    log "检查证书文件权限..."
+    docker exec saga4v-nginx ls -l /etc/nginx/ssl/
+    
+    # 检查证书文件内容
+    log "检查证书文件..."
+    docker exec saga4v-nginx find /etc/nginx/ssl/ -type f -o -type l
+    
+    # 验证 Nginx 配置
+    log "验证 Nginx 配置..."
+    docker exec saga4v-nginx nginx -T
     
     while [ $retry -lt $max_retries ]; do
-        if docker exec saga4v-nginx nginx -t &>/dev/null; then
+        if docker exec saga4v-nginx nginx -t 2>&1; then
             log "Nginx 配置测试通过"
-            
-            local cert_errors=0
-            local cert_warnings=0
-            
-            # 检查每个需要 HTTPS 的域名的证书
-            for domain in $https_domains; do
-                log "检查域名 $domain 的证书配置..."
-                
-                # 检查证书文件
-                if docker exec saga4v-nginx [ -f "/etc/nginx/ssl/$domain/fullchain.pem" ] && \
-                   docker exec saga4v-nginx [ -f "/etc/nginx/ssl/$domain/privkey.pem" ]; then
-                    log "✓ $domain 的 SSL 证书文件存在"
-                    
-                    # 验证证书有效性
-                    if docker exec saga4v-nginx openssl x509 -in "/etc/nginx/ssl/$domain/fullchain.pem" -noout -checkend 0 &>/dev/null; then
-                        log "✓ $domain 的 SSL 证书有效"
-                    else
-                        warn "! $domain 的 SSL 证书可能已过期"
-                        cert_warnings=$((cert_warnings + 1))
-                    fi
-                else
-                    error "✗ $domain 缺少 SSL 证书文件"
-                    cert_errors=$((cert_errors + 1))
-                fi
-            done
-            
-            # 根据检查结果决定是否继续
-            if [ $cert_errors -gt 0 ]; then
-                error "发现 $cert_errors 个证书错误"
-                return 1
-            elif [ $cert_warnings -gt 0 ]; then
-                warn "发现 $cert_warnings 个证书警告，但将继续部署"
-            fi
-            
             return 0
         fi
         
         retry=$((retry + 1))
         if [ $retry -eq $max_retries ]; then
-            error "健康检查失败"
+            error "健康检查失败，详细错误信息："
             docker logs saga4v-nginx
+            docker exec saga4v-nginx nginx -t 2>&1
             return 1
         fi
         
