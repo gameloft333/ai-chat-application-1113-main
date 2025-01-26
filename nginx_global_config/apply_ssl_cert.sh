@@ -186,32 +186,71 @@ apply_cert() {
     local domain=$1
     local email=$2
     
+    # 停止所有相关容器
+    docker stop saga4v-nginx temp-nginx 2>/dev/null || true
+    docker rm saga4v-nginx temp-nginx 2>/dev/null || true
+    
     # 创建必要的目录
-    mkdir -p /etc/nginx/ssl/$domain
-    chmod -R 755 /etc/nginx/ssl/$domain
-    
-    # 确保 .well-known 目录可访问
     mkdir -p /var/www/html/.well-known/acme-challenge
-    chmod -R 755 /var/www/html/.well-known
+    chmod -R 755 /var/www/html
     
-    # 配置临时的 Nginx 配置用于验证
-    cat > "/etc/nginx/conf.d/$domain.conf" <<EOF
-server {
-    listen 80;
-    server_name $domain;
+    # 创建简化的临时 Nginx 配置
+    cat > "temp_nginx.conf" <<EOF
+user nginx;
+worker_processes auto;
+error_log /var/log/nginx/error.log;
+pid /run/nginx.pid;
+
+events {
+    worker_connections 1024;
+}
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
     
-    location /.well-known/acme-challenge/ {
-        root /var/www/html;
-    }
-    
-    location / {
-        return 301 https://\$host\$request_uri;
+    # 仅配置 HTTP 验证服务器
+    server {
+        listen 80;
+        server_name $domain;
+        
+        # 禁用所有缓存
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+        add_header Pragma "no-cache";
+        add_header Expires 0;
+        
+        location /.well-known/acme-challenge/ {
+            root /var/www/html;
+            try_files \$uri =404;
+            
+            # 调试信息
+            add_header X-Debug-Path \$document_root;
+            add_header X-Debug-URI \$uri;
+        }
+        
+        # 其他所有请求返回 444
+        location / {
+            return 444;
+        }
     }
 }
 EOF
 
-    # 重新加载 Nginx 配置
-    nginx -t && nginx -s reload
+    # 启动临时 Nginx 容器
+    docker run -d \
+        --name temp-nginx \
+        --network host \
+        -v $(pwd)/temp_nginx.conf:/etc/nginx/nginx.conf:ro \
+        -v /var/www/html:/var/www/html \
+        nginx:latest
+
+    # 等待 Nginx 启动并验证
+    sleep 5
+    if ! curl -s -I "http://$domain/.well-known/acme-challenge/test" 2>&1 | grep -q "404"; then
+        error "Nginx 验证服务器配置可能有误"
+        docker logs temp-nginx
+        return 1
+    fi
     
     # 申请证书
     certbot certonly --webroot \
@@ -222,8 +261,18 @@ EOF
         -d "$domain" \
         --preferred-challenges http-01
         
-    if [ $? -eq 0 ]; then
-        # 证书申请成功后，创建符号链接
+    local cert_result=$?
+    
+    # 清理
+    docker stop temp-nginx
+    docker rm temp-nginx
+    rm -f temp_nginx.conf
+    
+    if [ $cert_result -eq 0 ]; then
+        # 创建证书目录
+        mkdir -p /etc/nginx/ssl/$domain
+        
+        # 创建证书软链接
         ln -sf /etc/letsencrypt/live/$domain/fullchain.pem /etc/nginx/ssl/$domain/fullchain.pem
         ln -sf /etc/letsencrypt/live/$domain/privkey.pem /etc/nginx/ssl/$domain/privkey.pem
         
