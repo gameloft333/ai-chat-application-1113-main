@@ -210,3 +210,19 @@ trap cleanup EXIT
 
 # Execute main function
 main 
+
+check_certificates() {
+    log "检查 SSL 证书..."
+    local domains="love.saga4v.com play.saga4v.com payment.saga4v.com"
+    
+    for domain in $domains; do
+        if [ ! -f "/etc/letsencrypt/live/$domain/fullchain.pem" ] || \
+           [ ! -f "/etc/letsencrypt/live/$domain/privkey.pem" ]; then
+            error "缺少 $domain 的证书文件"
+            return 1
+        fi
+    done
+    
+    log "✓ SSL 证书检查通过"
+    return 0
+} 
