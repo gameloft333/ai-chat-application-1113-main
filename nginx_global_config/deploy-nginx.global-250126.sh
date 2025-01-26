@@ -159,7 +159,7 @@ check_nginx_logs() {
     if ! docker inspect saga4v-nginx >/dev/null 2>&1; then
         error "容器不存在"
         return 1
-    }
+    fi
     
     # 使用volume而不是直接操作容器内部
     docker run --rm \
