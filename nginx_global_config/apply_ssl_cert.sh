@@ -186,38 +186,49 @@ apply_cert() {
     local domain=$1
     local email=$2
     
-    # 先检查域名可访问性
-    if ! check_domain_accessibility "$domain"; then
-        return 1
-    fi
-    
-    log "正在为 $domain 申请 SSL 证书..."
-    
-    # 备份现有的nginx配置
-    if [ -f "/etc/nginx/conf.d/$domain.conf" ]; then
-        local backup_file="/etc/nginx/conf.d/$domain.conf.bak.$(date +%Y%m%d_%H%M%S)"
-        log "备份现有配置到: $backup_file"
-        cp "/etc/nginx/conf.d/$domain.conf" "$backup_file"
-    fi
+    # 创建必要的目录
+    mkdir -p /etc/nginx/ssl/$domain
+    chmod -R 755 /etc/nginx/ssl/$domain
     
     # 确保 .well-known 目录可访问
     mkdir -p /var/www/html/.well-known/acme-challenge
     chmod -R 755 /var/www/html/.well-known
     
+    # 配置临时的 Nginx 配置用于验证
+    cat > "/etc/nginx/conf.d/$domain.conf" <<EOF
+server {
+    listen 80;
+    server_name $domain;
+    
+    location /.well-known/acme-challenge/ {
+        root /var/www/html;
+    }
+    
+    location / {
+        return 301 https://\$host\$request_uri;
+    }
+}
+EOF
+
+    # 重新加载 Nginx 配置
+    nginx -t && nginx -s reload
+    
     # 申请证书
-    certbot certonly --nginx \
+    certbot certonly --webroot \
+        --webroot-path /var/www/html \
         --non-interactive \
         --agree-tos \
         --email "$email" \
         -d "$domain" \
-        --preferred-challenges http
+        --preferred-challenges http-01
         
     if [ $? -eq 0 ]; then
+        # 证书申请成功后，创建符号链接
+        ln -sf /etc/letsencrypt/live/$domain/fullchain.pem /etc/nginx/ssl/$domain/fullchain.pem
+        ln -sf /etc/letsencrypt/live/$domain/privkey.pem /etc/nginx/ssl/$domain/privkey.pem
+        
         log "✓ $domain 证书申请成功"
-        log "证书位置: /etc/letsencrypt/live/$domain/"
-        log "证书文件:"
-        log "  - 完整证书链: /etc/letsencrypt/live/$domain/fullchain.pem"
-        log "  - 私钥: /etc/letsencrypt/live/$domain/privkey.pem"
+        log "证书位置: /etc/nginx/ssl/$domain/"
         return 0
     else
         error "× $domain 证书申请失败"
