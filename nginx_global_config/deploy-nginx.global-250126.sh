@@ -71,39 +71,38 @@ health_check() {
     local max_retries=5
     local retry=0
     
-    # 显示 Nginx 配置文件内容
-    log "当前 Nginx 配置文件内容:"
-    docker exec saga4v-nginx cat /etc/nginx/nginx.conf
-    
-    # 检查证书文件权限
-    log "检查证书文件权限..."
-    docker exec saga4v-nginx ls -l /etc/nginx/ssl/
-    
-    # 检查证书文件内容
-    log "检查证书文件..."
-    docker exec saga4v-nginx find /etc/nginx/ssl/ -type f -o -type l
-    
-    # 验证 Nginx 配置
-    log "验证 Nginx 配置..."
-    docker exec saga4v-nginx nginx -T
+    # 创建必要的目录
+    docker exec saga4v-nginx mkdir -p /etc/nginx/ssl/{love,play,payment}.saga4v.com
     
     while [ $retry -lt $max_retries ]; do
+        # 检查容器是否运行
+        if ! docker ps | grep -q saga4v-nginx; then
+            error "容器未运行，检查启动日志："
+            docker logs saga4v-nginx
+            docker inspect saga4v-nginx
+            return 1
+        fi
+        
+        # 检查 Nginx 进程
+        if ! docker exec saga4v-nginx pgrep nginx >/dev/null; then
+            error "Nginx 进程未运行"
+            docker logs saga4v-nginx
+            return 1
+        fi
+        
+        # 验证配置
         if docker exec saga4v-nginx nginx -t 2>&1; then
             log "Nginx 配置测试通过"
             return 0
         fi
         
         retry=$((retry + 1))
-        if [ $retry -eq $max_retries ]; then
-            error "健康检查失败，详细错误信息："
-            docker logs saga4v-nginx
-            docker exec saga4v-nginx nginx -t 2>&1
-            return 1
-        fi
-        
         log "等待服务就绪... ($retry/$max_retries)"
         sleep 5
     done
+    
+    error "健康检查失败"
+    return 1
 }
 
 # Verify deployment
@@ -113,21 +112,27 @@ verify_deployment() {
     # 检查容器状态
     if ! docker ps | grep -q saga4v-nginx; then
         error "容器未运行"
+        # 显示详细错误信息
+        docker logs saga4v-nginx
+        docker inspect saga4v-nginx
         return 1
     fi
     
-    # 检查网络连接
-    if ! docker network inspect saga4v_network | grep -q saga4v-nginx; then
-        error "容器未正确加入网络"
+    # 检查 Nginx 进程
+    if ! docker exec saga4v-nginx pgrep nginx >/dev/null; then
+        error "Nginx 进程未运行"
+        docker logs saga4v-nginx
         return 1
     fi
     
-    # 检查日志是否有错误
-    if docker logs saga4v-nginx 2>&1 | grep -i "error"; then
-        warn "日志中发现错误信息"
+    # 检查端口监听
+    if ! docker exec saga4v-nginx netstat -tlpn | grep -q ':80'; then
+        error "80 端口未监听"
+        return 1
     fi
     
-    log "部署验证完成"
+    log "✓ 部署验证通过"
+    return 0
 }
 
 # 添加检查 Nginx 日志目录的函数
