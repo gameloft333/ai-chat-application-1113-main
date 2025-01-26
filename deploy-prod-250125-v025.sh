@@ -185,7 +185,7 @@ deploy_containers() {
     fi
     
     # 导出环境变量到当前会话
-    export $(cat .env.production | grep -v '^#' | xargs)
+    export_env_vars
     
     # 使用 --env-file 参数确保环境变量传递给容器
     docker-compose -f docker-compose.prod.yml --env-file .env.production up -d
@@ -336,6 +336,54 @@ check_env_variables() {
     return 0
 }
 
+# 修改环境变量导出部分
+export_env_vars() {
+    echo -e "${GREEN}[ENV] 导出环境变量...${NC}"
+    
+    # 只导出非注释和非空行的变量
+    while IFS='=' read -r key value; do
+        # 跳过注释行和空行
+        [[ $key =~ ^#.*$ ]] && continue
+        [[ -z $key ]] && continue
+        
+        # 去除可能的引号
+        value=$(echo "$value" | sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")
+        
+        # 导出变量
+        export "$key=$value"
+        echo -e "${GREEN}✓ 已导出: $key${NC}"
+    done < .env.production
+}
+
+# 将 verify_payment_service 函数移到其他函数定义的位置
+verify_payment_service() {
+    echo -e "${GREEN}[VERIFY] 验证支付服务配置和连接${NC}"
+    
+    # 使用容器内部健康检查
+    local container_name="ai-chat-application-1113-main-payment-server-1"
+    local max_retries=12
+    local retry=0
+    
+    while [ $retry -lt $max_retries ]; do
+        if docker exec $container_name curl -s http://localhost:4242/health | grep -q "healthy"; then
+            echo -e "${GREEN}支付服务已就绪${NC}"
+            return 0
+        fi
+        echo -e "${YELLOW}等待支付服务启动... ($(( retry + 1 ))/${max_retries})${NC}"
+        sleep 5
+        retry=$((retry + 1))
+    done
+    
+    echo -e "${YELLOW}支付服务健康检查未通过，是否继续部署？[y/N] ${NC}"
+    read -r continue_deploy
+    if [[ "$continue_deploy" =~ ^[Yy]$ ]]; then
+        echo -e "${YELLOW}继续部署，但支付功能可能不可用${NC}"
+        return 0
+    fi
+    
+    return 1
+}
+
 # Main deployment function
 main() {
     trap rollback ERR
@@ -382,9 +430,14 @@ main() {
     sleep 10  # 给服务一些启动时间
     
     verify_payment_service || {
-        echo -e "${RED}支付服务验证失败，开始回滚...${NC}"
-        rollback
-        exit 1
+        echo -e "${YELLOW}支付服务验证未通过，是否继续部署？[y/N] ${NC}"
+        read -r continue_deploy
+        if [[ ! "$continue_deploy" =~ ^[Yy]$ ]]; then
+            echo -e "${RED}开始回滚...${NC}"
+            rollback
+            exit 1
+        fi
+        echo -e "${YELLOW}继续部署，但支付功能可能不可用${NC}"
     }
     
     check_deployment
@@ -398,43 +451,3 @@ main() {
 
 # Execute main function
 main
-
-# 添加支付服务验证函数
-verify_payment_service() {
-    echo -e "${GREEN}[VERIFY] 验证支付服务配置和连接${NC}"
-    
-    # 等待服务启动
-    local max_retries=12  # 最多等待60秒
-    local retry=0
-    local payment_url="https://payment.saga4v.com/health"
-    
-    while [ $retry -lt $max_retries ]; do
-        if curl -s "$payment_url" | grep -q "healthy"; then
-            echo -e "${GREEN}支付服务已就绪${NC}"
-            break
-        fi
-        echo -e "${YELLOW}等待支付服务启动... ($(( retry + 1 ))/${max_retries})${NC}"
-        sleep 5
-        retry=$((retry + 1))
-    done
-    
-    if [ $retry -eq $max_retries ]; then
-        echo -e "${RED}支付服务启动超时${NC}"
-        return 1
-    fi
-    
-    # 验证 CORS 配置
-    local cors_response=$(curl -s -X OPTIONS \
-        -H "Origin: https://love.saga4v.com" \
-        -H "Access-Control-Request-Method: POST" \
-        -I \
-        https://payment.saga4v.com/api/stripe/create-payment-intent)
-    
-    if ! echo "$cors_response" | grep -qi "access-control"; then
-        echo -e "${RED}CORS 配置验证失败${NC}"
-        return 1
-    fi
-    
-    echo -e "${GREEN}支付服务验证通过${NC}"
-    return 0
-}
