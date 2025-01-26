@@ -114,6 +114,7 @@ pre_deployment_check() {
 
 # Pull latest code
 pull_latest_code() {
+<<<<<<< HEAD
     echo -e "${GREEN}[STEP 2/7] 代码更新检查${NC}"
     
     # 显示当前分支和提交信息
@@ -149,6 +150,10 @@ pull_latest_code() {
     else
         echo -e "${YELLOW}跳过代码更新，使用当前版本继续部署${NC}"
     fi
+=======
+    echo -e "${GREEN}[STEP 2/7] Pulling Latest Code${NC}"
+    git pull origin main
+>>>>>>> 115da8132a85ad28a6cbb7959e2c1f6cde41760c
 }
 
 # Function to check and stop existing containers
