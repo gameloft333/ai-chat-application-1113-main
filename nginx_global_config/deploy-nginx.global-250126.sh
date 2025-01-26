@@ -155,22 +155,28 @@ verify_deployment() {
 check_nginx_logs() {
     log "[检查] 验证 Nginx 日志目录..."
     
-    # 检查容器内的日志目录
-    if ! docker exec saga4v-nginx test -d /var/log/nginx; then
-        log "创建 Nginx 日志目录..."
-        docker exec saga4v-nginx mkdir -p /var/log/nginx
-        docker exec saga4v-nginx chown -R nginx:nginx /var/log/nginx
-        docker exec saga4v-nginx chmod 755 /var/log/nginx
-        log "✓ Nginx 日志目录创建完成"
+    # 使用docker inspect检查容器状态
+    if ! docker inspect saga4v-nginx >/dev/null 2>&1; then
+        error "容器不存在"
+        return 1
+    }
+    
+    # 使用volume而不是直接操作容器内部
+    docker run --rm \
+        --volumes-from saga4v-nginx \
+        -v $(pwd)/scripts:/scripts \
+        nginx:stable-alpine \
+        sh -c '
+            mkdir -p /var/log/nginx && \
+            chown -R nginx:nginx /var/log/nginx && \
+            chmod 755 /var/log/nginx
+        '
+    
+    if [ $? -eq 0 ]; then
+        log "✓ Nginx 日志目录配置完成"
     else
-        log "✓ Nginx 日志目录已存在"
-        
-        # 验证权限
-        if ! docker exec saga4v-nginx test -w /var/log/nginx; then
-            warn "修复日志目录权限..."
-            docker exec saga4v-nginx chown -R nginx:nginx /var/log/nginx
-            docker exec saga4v-nginx chmod 755 /var/log/nginx
-        fi
+        error "Nginx 日志目录配置失败"
+        return 1
     fi
 }
 

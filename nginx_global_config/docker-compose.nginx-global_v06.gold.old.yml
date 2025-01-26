@@ -26,9 +26,6 @@ services:
 
       # Certbot challenge directory
       - /var/www/certbot:/var/www/certbot:ro
-      
-      # 添加日志目录映射
-      - ./logs:/var/log/nginx
 
     networks:
       - saga4v_network
