@@ -239,16 +239,35 @@ EOF
     # 启动临时 Nginx 容器
     docker run -d \
         --name temp-nginx \
-        --network host \
+        -p 80:80 \
         -v $(pwd)/temp_nginx.conf:/etc/nginx/nginx.conf:ro \
         -v /var/www/html:/var/www/html \
         nginx:latest
 
-    # 等待 Nginx 启动并验证
-    sleep 5
-    if ! curl -s -I "http://$domain/.well-known/acme-challenge/test" 2>&1 | grep -q "404"; then
-        error "Nginx 验证服务器配置可能有误"
+    # 等待 Nginx 启动
+    log "等待 Nginx 启动..."
+    local max_retries=10
+    local retry=0
+    while [ $retry -lt $max_retries ]; do
+        if docker exec temp-nginx nginx -t &>/dev/null; then
+            log "Nginx 配置检查通过"
+            # 验证 acme-challenge 目录是否可访问
+            if curl -s -I "http://localhost/.well-known/acme-challenge/test" 2>&1 | grep -q "404"; then
+                log "验证服务器配置正确"
+                break
+            fi
+        fi
+        retry=$((retry + 1))
+        log "等待 Nginx 启动 (${retry}/${max_retries})..."
+        sleep 2
+    done
+
+    if [ $retry -eq $max_retries ]; then
+        error "Nginx 验证服务器启动失败"
         docker logs temp-nginx
+        docker stop temp-nginx
+        docker rm temp-nginx
+        rm -f temp_nginx.conf
         return 1
     fi
     
