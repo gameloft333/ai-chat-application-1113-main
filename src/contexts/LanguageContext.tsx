@@ -7,6 +7,7 @@ type LanguageType = keyof typeof languages;
 
 interface LanguageContextType {
     language: LanguageType;
+    currentLanguage: LanguageType;
     t: (key: string) => string;
     setLanguage: (lang: LanguageType) => void;
 }
@@ -33,8 +34,15 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         return value || key;
     };
 
+    const contextValue: LanguageContextType = {
+        language,
+        currentLanguage: language,
+        t,
+        setLanguage
+    };
+
     return (
-        <LanguageContext.Provider value={{ language, t, setLanguage }}>
+        <LanguageContext.Provider value={contextValue}>
             {children}
         </LanguageContext.Provider>
     );

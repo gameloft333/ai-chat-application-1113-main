@@ -21,6 +21,13 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
   const [marqueeMessages, setMarqueeMessages] = useState<MarqueeMessage[]>([]);
   const [randomColors, setRandomColors] = useState<Record<string, string>>({});
 
+  useEffect(() => {
+    console.log('Language Check:', {
+      currentLanguage,
+      availableLanguages: ['zh', 'en']
+    });
+  }, [currentLanguage]);
+
   // 添加调试日志
   useEffect(() => {
     console.log('Current Language:', currentLanguage);
@@ -29,14 +36,6 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
       console.log(`Character ${char.id} i18n:`, char.i18n?.[currentLanguage]);
     });
   }, [sortedCharacters, currentLanguage]);
-
-  // 添加语言检查日志
-  useEffect(() => {
-    console.log('Language Check:', {
-      currentLanguage,
-      t: t('common.selectCharacter')
-    });
-  }, [currentLanguage, t]);
 
   // 修改生成随机颜色的逻辑
   const getRandomColor = (characterId: string) => {
@@ -96,7 +95,8 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
           // 如果对话人数相同，随机排序
           return Math.random() - 0.5;
         }
-        return countB - countA; // 降序排列
+        // 如果对话人数相同，随机排序
+        return countB - countA;
       });
 
       setSortedCharacters(sorted.slice(0, maxCharacters));
@@ -130,6 +130,31 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
     return () => unsubscribe();
   }, []);
 
+  const renderCharacterInfo = (character: Character) => {
+    if (!character.i18n || !character.i18n[currentLanguage]) {
+      console.log(`Missing i18n data for character ${character.id} in language ${currentLanguage}`);
+      return null;
+    }
+
+    const { age, description } = character.i18n[currentLanguage];
+    
+    if (!age && !description) {
+      console.log(`Empty i18n data for character ${character.id} in language ${currentLanguage}`);
+      return null;
+    }
+
+    return (
+      <>
+        {age && <p className="text-gray-300 text-sm">{age}</p>}
+        {description && (
+          <p className="text-gray-300 text-sm mt-2 line-clamp-2">
+            {description}
+          </p>
+        )}
+      </>
+    );
+  };
+
   return (
     <div className="space-y-8">
       <h2 className="text-2xl font-bold text-center mb-8">
@@ -158,12 +183,12 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
               />
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 rounded-b-lg">
                 <h3 className="text-white text-lg font-bold mb-1">{character.name}</h3>
-                {age !== `characters.${character.id}.age` && (
-                  <p className="text-gray-300 text-sm">{age}</p>
-                )}
-                {description !== `characters.${character.id}.description` && (
-                  <p className="text-gray-300 text-sm mt-2 line-clamp-2">{description}</p>
-                )}
+                {/* 添加调试日志 */}
+                {console.log('Character data:', character)}
+                {console.log('i18n data:', character.i18n)}
+                {console.log('Current language:', currentLanguage)}
+                
+                {renderCharacterInfo(character)}
               </div>
             </div>
           );
