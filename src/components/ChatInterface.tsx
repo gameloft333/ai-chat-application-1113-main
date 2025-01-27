@@ -93,7 +93,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
         <div>
           <h3 className="text-lg font-semibold dark:text-white">{selectedCharacter.name}</h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400">{t(`characters.${selectedCharacter.id}.description`)}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {selectedCharacter.i18n?.[currentLanguage]?.description || t(`characters.${selectedCharacter.id}.description`)}
+          </p>
         </div>
       </div>
 

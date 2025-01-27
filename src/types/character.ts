@@ -241,7 +241,7 @@ export const characters: Character[] = [
     "i18n": {
       "en": {
         "age": "32 years",
-        "description": "a 32-year-old art critic from London, has gained recognition at international art forums for her profound understanding of the fusion of European classical art and modern culture, dreaming of visiting all the world's famous museums to connect the past and future through art."
+        "description": "art critic from London, has gained recognition at international art forums for her profound understanding of the fusion of European classical art and modern culture, dreaming of visiting all the world's famous museums to connect the past and future through art."
       },
       "zh": {
         "age": "32岁",
@@ -260,7 +260,7 @@ export const characters: Character[] = [
     "i18n": {
       "en": {
         "age": "32 years",
-        "description": "a 32-year-old art critic from London, has gained recognition at international art forums for her profound understanding of the fusion of European classical art and modern culture, dreaming of visiting all the world's famous museums to connect the past and future through art."
+        "description": "art critic from London, has gained recognition at international art forums for her profound understanding of the fusion of European classical art and modern culture, dreaming of visiting all the world's famous museums to connect the past and future through art."
       },
       "zh": {
         "age": "32岁",
@@ -279,7 +279,7 @@ export const characters: Character[] = [
     "i18n": {
       "en": {
         "age": "36 years",
-        "description": "a 36-year-old high-end jewelry designer from St. Petersburg, has shone at international jewelry exhibitions with her elegant confidence and profound understanding of luxurious living, dreaming of bringing her designs to more international stages to inherit noble temperament with jewelry."
+        "description": "high-end jewelry designer from St. Petersburg, has shone at international jewelry exhibitions with her elegant confidence and profound understanding of luxurious living, dreaming of bringing her designs to more international stages to inherit noble temperament with jewelry."
       },
       "zh": {
         "age": "36岁",
@@ -298,7 +298,7 @@ export const characters: Character[] = [
     "i18n": {
       "en": {
         "age": "35 years",
-        "description": "a 35-year-old artist from Florence, Italy, has made a name for herself at international art exhibitions with her profound understanding and unique insights into Renaissance art, dreaming of exploring the world's artistic heritage."
+        "description": "artist from Florence, Italy, has made a name for herself at international art exhibitions with her profound understanding and unique insights into Renaissance art, dreaming of exploring the world's artistic heritage."
       },
       "zh": {
         "age": "35岁",
@@ -336,7 +336,7 @@ export const characters: Character[] = [
     "i18n": {
       "en": {
         "age": "30 years",
-        "description": "a 30-year-old fashion blogger and cultural critic from London, has published numerous articles in international fashion blogs and cultural magazines with her profound insights into the integration of fashion and culture, dreaming of exploring all the cultures she is interested in and influencing the world with the concept of the interdependence of fashion and culture"
+        "description": "fashion blogger and cultural critic from London, has published numerous articles in international fashion blogs and cultural magazines with her profound insights into the integration of fashion and culture, dreaming of exploring all the cultures she is interested in and influencing the world with the concept of the interdependence of fashion and culture"
       },
       "zh": {
         "age": "30岁",
@@ -355,7 +355,7 @@ export const characters: Character[] = [
     "i18n": {
       "en": {
         "age": "34 years",
-        "description": "a 34-year-old top chef from Paris, has won numerous international culinary awards with her exquisite French cooking skills and profound understanding of global food culture, dreaming of tasting all the world's special foods and connecting the world with food."
+        "description": "top chef from Paris, has won numerous international culinary awards with her exquisite French cooking skills and profound understanding of global food culture, dreaming of tasting all the world's special foods and connecting the world with food."
       },
       "zh": {
         "age": "34岁",
@@ -393,7 +393,7 @@ export const characters: Character[] = [
     "i18n": {
       "en": {
         "age": "30 years",
-        "description": "a 30-year-old art critic and fashion blogger from Paris, showcases her influence in the art and fashion worlds with her elegant artistic temperament, dreams of promoting her artistic views globally, and interprets Parisian charm with a unique perspective."
+        "description": "art critic and fashion blogger from Paris, showcases her influence in the art and fashion worlds with her elegant artistic temperament, dreams of promoting her artistic views globally, and interprets Parisian charm with a unique perspective."
       },
       "zh": {
         "age": "30岁",
@@ -412,7 +412,7 @@ export const characters: Character[] = [
     "i18n": {
       "en": {
         "age": "25 years",
-        "description": "a 25-year-old fashion blogger and model, captivates a large social media following with her youthful energy and distinctive style, aspiring to shine on the international fashion stage."
+        "description": "fashion blogger and model, captivates a large social media following with her youthful energy and distinctive style, aspiring to shine on the international fashion stage."
       },
       "zh": {
         "age": "25岁",
@@ -488,7 +488,7 @@ export const characters: Character[] = [
     "i18n": {
       "en": {
         "age": "33 years",
-        "description": "a 33-year-old pet behavior expert from Los Angeles, uses her gentle patience and professional skills to help countless families solve pet behavior problems, dreaming of adopting all stray animals and guarding every life with love."
+        "description": "pet behavior expert from Los Angeles, uses her gentle patience and professional skills to help countless families solve pet behavior problems, dreaming of adopting all stray animals and guarding every life with love."
       },
       "zh": {
         "age": "33岁",
@@ -602,7 +602,7 @@ export const characters: Character[] = [
     "i18n": {
       "en": {
         "age": "29 years",
-        "description": "a 29-year-old socialite and model from a vibrant coastal city, shines at high-end fashion parties with her confident charm, boasting numerous social media followers, dreams of leaving her mark on the global fashion scene, and conquers the fashion and social circles with her unique charm and confidence."
+        "description": "socialite and model from a vibrant coastal city, shines at high-end fashion parties with her confident charm, boasting numerous social media followers, dreams of leaving her mark on the global fashion scene, and conquers the fashion and social circles with her unique charm and confidence."
       },
       "zh": {
         "age": "29岁",
@@ -678,7 +678,7 @@ export const characters: Character[] = [
     "i18n": {
       "en": {
         "age": "30 years",
-        "description": "a 30-year-old fashion designer from Seoul, has made a splash at international fashion weeks with her delicate and refined design style, dreaming of exploring more cultural elements to connect the world through fashion."
+        "description": "fashion designer from Seoul, has made a splash at international fashion weeks with her delicate and refined design style, dreaming of exploring more cultural elements to connect the world through fashion."
       },
       "zh": {
         "age": "30岁",
@@ -697,7 +697,7 @@ export const characters: Character[] = [
     "i18n": {
       "en": {
         "age": "31 years",
-        "description": "a 31-year-old senior fashion editor from Paris, has published many in-depth articles in international fashion magazines with her fashionable and avant-garde style and profound understanding of the integration of fashion and art, dreaming of fully realizing her design concepts and inspiring the world with fashion and art."
+        "description": "senior fashion editor from Paris, has published many in-depth articles in international fashion magazines with her fashionable and avant-garde style and profound understanding of the integration of fashion and art, dreaming of fully realizing her design concepts and inspiring the world with fashion and art."
       },
       "zh": {
         "age": "31岁",

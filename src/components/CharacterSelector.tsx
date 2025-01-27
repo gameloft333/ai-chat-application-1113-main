@@ -131,17 +131,17 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
   }, []);
 
   const renderCharacterInfo = (character: Character) => {
-    if (!character.i18n || !character.i18n[currentLanguage]) {
-      console.log(`Missing i18n data for character ${character.id} in language ${currentLanguage}`);
-      return null;
-    }
+    // 从 i18n 数据中获取描述信息
+    const description = character.i18n?.[currentLanguage]?.description;
+    const age = character.i18n?.[currentLanguage]?.age;
 
-    const { age, description } = character.i18n[currentLanguage];
-    
-    if (!age && !description) {
-      console.log(`Empty i18n data for character ${character.id} in language ${currentLanguage}`);
-      return null;
-    }
+    // 添加调试日志
+    console.log(`Rendering info for ${character.id}:`, {
+      currentLanguage,
+      description,
+      age,
+      i18n: character.i18n
+    });
 
     return (
       <>
@@ -164,9 +164,6 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
       <div className="grid grid-cols-4 gap-4">
         {sortedCharacters.map((character) => {
           const borderStyle = getBorderStyle(character);
-          // 使用 t 函数直接获取翻译
-          const age = t(`characters.${character.id}.age`);
-          const description = t(`characters.${character.id}.description`);
           
           return (
             <div
