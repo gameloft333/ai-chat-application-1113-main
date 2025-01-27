@@ -24,7 +24,11 @@ const CSV_HEADERS = [
   'promptFile',
   'avatarFile',
   'gender',
-  'borderColor'
+  'borderColor',
+  'en_age',
+  'en_description',
+  'zh_age',
+  'zh_description'
 ];
 
 // 默认导出目录
@@ -82,14 +86,22 @@ export function exportCharactersToCSV(outputPath: string = 'characters.csv'): bo
       promptFile: char.promptFile || '',
       avatarFile: char.avatarFile || '',
       gender: char.gender || '',
-      borderColor: char.borderColor || ''
+      borderColor: char.borderColor || '',
+      en_age: char.i18n?.en?.age || '',
+      en_description: char.i18n?.en?.description || '',
+      zh_age: char.i18n?.zh?.age || '',
+      zh_description: char.i18n?.zh?.description || ''
     })), {
       header: true,
-      columns: CSV_HEADERS
+      columns: CSV_HEADERS,
+      record_delimiter: '\n',  // 明确指定换行符
+      quoted: true,           // 给所有字段加引号
+      quoted_empty: true      // 空值也加引号
     });
 
-    // 写入文件
-    fs.writeFileSync(fullPath, csvContent, 'utf-8');
+    // 添加 BOM 头以解决 Excel 打开的中文乱码问题
+    const BOM = '\ufeff';
+    fs.writeFileSync(fullPath, BOM + csvContent, { encoding: 'utf8' });
     
     // 验证文件是否成功创建
     if (fs.existsSync(fullPath)) {
@@ -124,16 +136,31 @@ export function importCharactersFromCSV(inputPath: string = 'characters.csv'): C
     });
 
     // 转换为Character类型
-    const importedCharacters: Character[] = records.map((record: any) => ({
-      id: record.id,
-      name: record.name,
-      profile: record.profile || '',
-      image: record.image,
-      promptFile: record.promptFile,
-      avatarFile: record.avatarFile,
-      gender: record.gender as 'male' | 'female' | undefined,
-      borderColor: record.borderColor as Character['borderColor'] || undefined
-    }));
+    const importedCharacters: Character[] = records.map((record: any) => {
+      // 确保有 id，如果没有则用 name 转小写作为 id
+      const id = record.id || record.name.toLowerCase().replace(/\s+/g, '');
+      
+      return {
+        id,
+        name: record.name,
+        profile: record.profile || '',
+        image: record.image,
+        promptFile: record.promptFile,
+        avatarFile: record.avatarFile,
+        gender: record.gender as 'male' | 'female' | undefined,
+        borderColor: record.borderColor as Character['borderColor'] || undefined,
+        i18n: {
+          en: {
+            age: record.en_age || '',
+            description: record.en_description || ''
+          },
+          zh: {
+            age: record.zh_age || '',
+            description: record.zh_description || ''
+          }
+        }
+      };
+    });
 
     console.log(`成功从 ${inputPath} 导入 ${importedCharacters.length} 个角色`);
     return importedCharacters;

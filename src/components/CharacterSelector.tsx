@@ -16,10 +16,27 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
   maxCharacters = characters.length,
   selectedGender
 }) => {
-  const { t } = useLanguage();
+  const { t, currentLanguage } = useLanguage();
   const [sortedCharacters, setSortedCharacters] = useState<Character[]>([]);
   const [marqueeMessages, setMarqueeMessages] = useState<MarqueeMessage[]>([]);
   const [randomColors, setRandomColors] = useState<Record<string, string>>({});
+
+  // 添加调试日志
+  useEffect(() => {
+    console.log('Current Language:', currentLanguage);
+    console.log('Characters data:', sortedCharacters);
+    sortedCharacters.forEach(char => {
+      console.log(`Character ${char.id} i18n:`, char.i18n?.[currentLanguage]);
+    });
+  }, [sortedCharacters, currentLanguage]);
+
+  // 添加语言检查日志
+  useEffect(() => {
+    console.log('Language Check:', {
+      currentLanguage,
+      t: t('common.selectCharacter')
+    });
+  }, [currentLanguage, t]);
 
   // 修改生成随机颜色的逻辑
   const getRandomColor = (characterId: string) => {
@@ -122,6 +139,10 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
       <div className="grid grid-cols-4 gap-4">
         {sortedCharacters.map((character) => {
           const borderStyle = getBorderStyle(character);
+          // 使用 t 函数直接获取翻译
+          const age = t(`characters.${character.id}.age`);
+          const description = t(`characters.${character.id}.description`);
+          
           return (
             <div
               key={character.id}
@@ -137,12 +158,12 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
               />
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 rounded-b-lg">
                 <h3 className="text-white text-lg font-bold mb-1">{character.name}</h3>
-                <p className="text-gray-300 text-sm">
-                  {t(`characters.${character.id}.age`)}
-                </p>
-                <p className="text-gray-300 text-sm mt-2 line-clamp-2">
-                  {t(`characters.${character.id}.description`)}
-                </p>
+                {age !== `characters.${character.id}.age` && (
+                  <p className="text-gray-300 text-sm">{age}</p>
+                )}
+                {description !== `characters.${character.id}.description` && (
+                  <p className="text-gray-300 text-sm mt-2 line-clamp-2">{description}</p>
+                )}
               </div>
             </div>
           );

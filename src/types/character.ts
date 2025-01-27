@@ -9,7 +9,17 @@ export const characters: Character[] = [
     "image": "/characters/santaclaus.png",
     "promptFile": "santaclaus.txt",
     "avatarFile": "/characters/santaclaus.png",
-    "gender": "male"
+    "gender": "male",
+    "i18n": {
+      "en": {
+        "age": "Timeless (Centuries Old)",
+        "description": "The jolly and generous gift-giver, embodying the joy and tradition of Christmas. He is full of warmth and dedicated to bringing happiness and wonder to children all around the world."
+      },
+      "zh": {
+        "age": "永恒 (数世纪之久)",
+        "description": "快乐慷慨的礼物赠予者，象征着圣诞节的欢乐与传统。他充满爱心，致力于为全世界的孩子们带去欢乐和惊喜。"
+      }
+    }
   },
   {
     "id": "elonmusk",
@@ -18,7 +28,17 @@ export const characters: Character[] = [
     "image": "/characters/elonmusk.png",
     "promptFile": "elonmusk.txt",
     "avatarFile": "/characters/elonmusk.png",
-    "gender": "male"
+    "gender": "male",
+    "i18n": {
+      "en": {
+        "age": "52 years (Born 1971)",
+        "description": "An innovation-driven technology leader dedicated to revolutionizing space exploration, electric vehicles, and sustainable energy. Known for his audacious vision, relentless pursuit, and outspoken personality."
+      },
+      "zh": {
+        "age": "52岁 (1971年出生)",
+        "description": "创新驱动的科技领袖，致力于革新太空探索、电动汽车和可持续能源。以其大胆的愿景、不懈的追求和坦率的个性而闻名。"
+      }
+    }
   },
   {
     "id": "bertha",
@@ -27,7 +47,17 @@ export const characters: Character[] = [
     "image": "/characters/bertha.png",
     "promptFile": "bertha.txt",
     "avatarFile": "/characters/bertha.png",
-    "gender": "female"
+    "gender": "female",
+    "i18n": {
+      "en": {
+        "age": "22 years",
+        "description": "Art student passionate about gothic culture with unique insights into dark aesthetics"
+      },
+      "zh": {
+        "age": "22岁",
+        "description": "热爱哥特文化的艺术系学生，对暗黑美学有独特见解。"
+      }
+    }
   },
   {
     "id": "veronica",
@@ -36,7 +66,17 @@ export const characters: Character[] = [
     "image": "/characters/veronica.png",
     "promptFile": "veronica.txt",
     "avatarFile": "/characters/veronica.png",
-    "gender": "female"
+    "gender": "female",
+    "i18n": {
+      "en": {
+        "age": "19 years",
+        "description": "Vibrant college freshman with a passion for fashion and social media"
+      },
+      "zh": {
+        "age": "19岁",
+        "description": "活泼开朗的大学新生，对时尚和社交媒体充满热情。"
+      }
+    }
   },
   {
     "id": "mary",
@@ -45,7 +85,17 @@ export const characters: Character[] = [
     "image": "/characters/mary.png",
     "promptFile": "mary.txt",
     "avatarFile": "/characters/mary.png",
-    "gender": "female"
+    "gender": "female",
+    "i18n": {
+      "en": {
+        "age": "24 years",
+        "description": "Gentle librarian with a love for poetry and classical music"
+      },
+      "zh": {
+        "age": "24岁",
+        "description": "温柔细腻的图书管理员，喜欢诗歌和古典音乐。"
+      }
+    }
   },
   {
     "id": "dana",
@@ -54,7 +104,17 @@ export const characters: Character[] = [
     "image": "/characters/dana.png",
     "promptFile": "dana.txt",
     "avatarFile": "/characters/dana.png",
-    "gender": "female"
+    "gender": "female",
+    "i18n": {
+      "en": {
+        "age": "21 years",
+        "description": "Energetic fitness enthusiast who loves outdoor adventures"
+      },
+      "zh": {
+        "age": "21岁",
+        "description": "充满活力的运动达人，热爱健身和户外探险。"
+      }
+    }
   },
   {
     "id": "sophia",
@@ -63,7 +123,17 @@ export const characters: Character[] = [
     "image": "/characters/sophia.png",
     "promptFile": "sophia.txt",
     "avatarFile": "/characters/sophia.png",
-    "gender": "female"
+    "gender": "female",
+    "i18n": {
+      "en": {
+        "age": "23 years",
+        "description": "Elegant cafe owner with an artistic approach to life"
+      },
+      "zh": {
+        "age": "23岁",
+        "description": "优雅知性的咖啡店老板，对生活充满艺术感。"
+      }
+    }
   },
   {
     "id": "jing",
@@ -72,7 +142,17 @@ export const characters: Character[] = [
     "image": "/characters/jing.png",
     "promptFile": "jing.txt",
     "avatarFile": "/characters/jing.png",
-    "gender": "female"
+    "gender": "female",
+    "i18n": {
+      "en": {
+        "age": "20 years",
+        "description": "Eastern beauty with deep interest in traditional culture and graceful personality"
+      },
+      "zh": {
+        "age": "20岁",
+        "description": "东方美女，对传统文化有深厚兴趣，性格温婉。"
+      }
+    }
   },
   {
     "id": "lily",
@@ -81,7 +161,17 @@ export const characters: Character[] = [
     "image": "/characters/lily.png",
     "promptFile": "lily.txt",
     "avatarFile": "/characters/lily.png",
-    "gender": "female"
+    "gender": "female",
+    "i18n": {
+      "en": {
+        "age": "18 years",
+        "description": "Sweet high school student who loves anime and gaming"
+      },
+      "zh": {
+        "age": "18岁",
+        "description": "甜美可爱的高中生，对动漫和游戏充满热爱。"
+      }
+    }
   },
   {
     "id": "vivian",
@@ -90,7 +180,17 @@ export const characters: Character[] = [
     "image": "/characters/vivian.png",
     "promptFile": "vivian.txt",
     "avatarFile": "/characters/vivian.png",
-    "gender": "female"
+    "gender": "female",
+    "i18n": {
+      "en": {
+        "age": "25 years",
+        "description": "Mature career woman with a passionate drive for success"
+      },
+      "zh": {
+        "age": "25岁",
+        "description": "成熟稳重的职场女性，对事业充满热情。"
+      }
+    }
   },
   {
     "id": "aisha",
@@ -99,7 +199,17 @@ export const characters: Character[] = [
     "image": "/characters/Aisha.jpg",
     "promptFile": "aisha.txt",
     "avatarFile": "/characters/Aisha.jpg",
-    "gender": "female"
+    "gender": "female",
+    "i18n": {
+      "en": {
+        "age": "",
+        "description": ""
+      },
+      "zh": {
+        "age": "",
+        "description": ""
+      }
+    }
   },
   {
     "id": "amber",
@@ -108,7 +218,17 @@ export const characters: Character[] = [
     "image": "/characters/Amber.jpg",
     "promptFile": "amber.txt",
     "avatarFile": "/characters/Amber.jpg",
-    "gender": "female"
+    "gender": "female",
+    "i18n": {
+      "en": {
+        "age": "",
+        "description": ""
+      },
+      "zh": {
+        "age": "",
+        "description": ""
+      }
+    }
   },
   {
     "id": "amelia",
@@ -117,7 +237,17 @@ export const characters: Character[] = [
     "image": "/characters/Amelia.jpg",
     "promptFile": "amelia.txt",
     "avatarFile": "/characters/Amelia.jpg",
-    "gender": "female"
+    "gender": "female",
+    "i18n": {
+      "en": {
+        "age": "",
+        "description": ""
+      },
+      "zh": {
+        "age": "",
+        "description": ""
+      }
+    }
   },
   {
     "id": "amelie",
@@ -126,7 +256,17 @@ export const characters: Character[] = [
     "image": "/characters/Amelie.jpg",
     "promptFile": "amelie.txt",
     "avatarFile": "/characters/Amelie.jpg",
-    "gender": "female"
+    "gender": "female",
+    "i18n": {
+      "en": {
+        "age": "",
+        "description": ""
+      },
+      "zh": {
+        "age": "",
+        "description": ""
+      }
+    }
   },
   {
     "id": "anastasia",
@@ -135,7 +275,17 @@ export const characters: Character[] = [
     "image": "/characters/Anastasia.jpg",
     "promptFile": "anastasia.txt",
     "avatarFile": "/characters/Anastasia.jpg",
-    "gender": "female"
+    "gender": "female",
+    "i18n": {
+      "en": {
+        "age": "",
+        "description": ""
+      },
+      "zh": {
+        "age": "",
+        "description": ""
+      }
+    }
   },
   {
     "id": "artemis",
@@ -144,7 +294,17 @@ export const characters: Character[] = [
     "image": "/characters/Artemis.jpg",
     "promptFile": "artemis.txt",
     "avatarFile": "/characters/Artemis.jpg",
-    "gender": "female"
+    "gender": "female",
+    "i18n": {
+      "en": {
+        "age": "",
+        "description": ""
+      },
+      "zh": {
+        "age": "",
+        "description": ""
+      }
+    }
   },
   {
     "id": "aurora",
@@ -153,7 +313,17 @@ export const characters: Character[] = [
     "image": "/characters/Aurora.jpg",
     "promptFile": "aurora.txt",
     "avatarFile": "/characters/Aurora.jpg",
-    "gender": "female"
+    "gender": "female",
+    "i18n": {
+      "en": {
+        "age": "",
+        "description": ""
+      },
+      "zh": {
+        "age": "",
+        "description": ""
+      }
+    }
   },
   {
     "id": "charlotte",
@@ -162,7 +332,17 @@ export const characters: Character[] = [
     "image": "/characters/Charlotte.jpg",
     "promptFile": "charlotte.txt",
     "avatarFile": "/characters/Charlotte.jpg",
-    "gender": "female"
+    "gender": "female",
+    "i18n": {
+      "en": {
+        "age": "",
+        "description": ""
+      },
+      "zh": {
+        "age": "",
+        "description": ""
+      }
+    }
   },
   {
     "id": "chefisabelle",
@@ -171,7 +351,17 @@ export const characters: Character[] = [
     "image": "/characters/ChefIsabelle.jpg",
     "promptFile": "chefisabelle.txt",
     "avatarFile": "/characters/ChefIsabelle.jpg",
-    "gender": "female"
+    "gender": "female",
+    "i18n": {
+      "en": {
+        "age": "",
+        "description": ""
+      },
+      "zh": {
+        "age": "",
+        "description": ""
+      }
+    }
   },
   {
     "id": "elara",
@@ -180,7 +370,17 @@ export const characters: Character[] = [
     "image": "/characters/Elara.jpg",
     "promptFile": "elara.txt",
     "avatarFile": "/characters/Elara.jpg",
-    "gender": "female"
+    "gender": "female",
+    "i18n": {
+      "en": {
+        "age": "",
+        "description": ""
+      },
+      "zh": {
+        "age": "",
+        "description": ""
+      }
+    }
   },
   {
     "id": "elodie",
@@ -189,7 +389,17 @@ export const characters: Character[] = [
     "image": "/characters/Elodie.jpg",
     "promptFile": "elodie.txt",
     "avatarFile": "/characters/Elodie.jpg",
-    "gender": "female"
+    "gender": "female",
+    "i18n": {
+      "en": {
+        "age": "",
+        "description": ""
+      },
+      "zh": {
+        "age": "",
+        "description": ""
+      }
+    }
   },
   {
     "id": "hana",
@@ -198,7 +408,17 @@ export const characters: Character[] = [
     "image": "/characters/Hana.jpg",
     "promptFile": "hana.txt",
     "avatarFile": "/characters/Hana.jpg",
-    "gender": "female"
+    "gender": "female",
+    "i18n": {
+      "en": {
+        "age": "25 years",
+        "description": "a 25-year-old fashion blogger and model, captivates a large social media following with her youthful energy and distinctive style, aspiring to shine on the international fashion stage."
+      },
+      "zh": {
+        "age": "25岁",
+        "description": "时尚博主兼模特，以青春活力和独特时尚品味在社交媒体上拥有大量粉丝，梦想在国际时尚舞台绽放。"
+      }
+    }
   },
   {
     "id": "jasmine",
@@ -207,7 +427,17 @@ export const characters: Character[] = [
     "image": "/characters/Jasmine.jpg",
     "promptFile": "jasmine.txt",
     "avatarFile": "/characters/Jasmine.jpg",
-    "gender": "female"
+    "gender": "female",
+    "i18n": {
+      "en": {
+        "age": "",
+        "description": ""
+      },
+      "zh": {
+        "age": "",
+        "description": ""
+      }
+    }
   },
   {
     "id": "leonardo",
@@ -216,7 +446,17 @@ export const characters: Character[] = [
     "image": "/characters/Leonardo.jpg",
     "promptFile": "leonardo.txt",
     "avatarFile": "/characters/Leonardo.jpg",
-    "gender": "male"
+    "gender": "male",
+    "i18n": {
+      "en": {
+        "age": "",
+        "description": ""
+      },
+      "zh": {
+        "age": "",
+        "description": ""
+      }
+    }
   },
   {
     "id": "lihua",
@@ -225,7 +465,17 @@ export const characters: Character[] = [
     "image": "/characters/LiHua.jpg",
     "promptFile": "lihua.txt",
     "avatarFile": "/characters/LiHua.jpg",
-    "gender": "female"
+    "gender": "female",
+    "i18n": {
+      "en": {
+        "age": "",
+        "description": ""
+      },
+      "zh": {
+        "age": "",
+        "description": ""
+      }
+    }
   },
   {
     "id": "luna",
@@ -234,7 +484,17 @@ export const characters: Character[] = [
     "image": "/characters/Luna.jpg",
     "promptFile": "luna.txt",
     "avatarFile": "/characters/Luna.jpg",
-    "gender": "female"
+    "gender": "female",
+    "i18n": {
+      "en": {
+        "age": "",
+        "description": ""
+      },
+      "zh": {
+        "age": "",
+        "description": ""
+      }
+    }
   },
   {
     "id": "max",
@@ -243,7 +503,17 @@ export const characters: Character[] = [
     "image": "/characters/Max.jpg",
     "promptFile": "max.txt",
     "avatarFile": "/characters/Max.jpg",
-    "gender": "male"
+    "gender": "male",
+    "i18n": {
+      "en": {
+        "age": "",
+        "description": ""
+      },
+      "zh": {
+        "age": "",
+        "description": ""
+      }
+    }
   },
   {
     "id": "maya",
@@ -252,7 +522,17 @@ export const characters: Character[] = [
     "image": "/characters/Maya.jpg",
     "promptFile": "maya.txt",
     "avatarFile": "/characters/Maya.jpg",
-    "gender": "female"
+    "gender": "female",
+    "i18n": {
+      "en": {
+        "age": "",
+        "description": ""
+      },
+      "zh": {
+        "age": "",
+        "description": ""
+      }
+    }
   },
   {
     "id": "meiying",
@@ -261,7 +541,17 @@ export const characters: Character[] = [
     "image": "/characters/Meiying.jpg",
     "promptFile": "meiying.txt",
     "avatarFile": "/characters/Meiying.jpg",
-    "gender": "female"
+    "gender": "female",
+    "i18n": {
+      "en": {
+        "age": "",
+        "description": ""
+      },
+      "zh": {
+        "age": "",
+        "description": ""
+      }
+    }
   },
   {
     "id": "ruby",
@@ -270,7 +560,17 @@ export const characters: Character[] = [
     "image": "/characters/Ruby.jpg",
     "promptFile": "ruby.txt",
     "avatarFile": "/characters/Ruby.jpg",
-    "gender": "female"
+    "gender": "female",
+    "i18n": {
+      "en": {
+        "age": "",
+        "description": ""
+      },
+      "zh": {
+        "age": "",
+        "description": ""
+      }
+    }
   },
   {
     "id": "sakura",
@@ -279,7 +579,17 @@ export const characters: Character[] = [
     "image": "/characters/Sakura.jpg",
     "promptFile": "sakura.txt",
     "avatarFile": "/characters/Sakura.jpg",
-    "gender": "female"
+    "gender": "female",
+    "i18n": {
+      "en": {
+        "age": "",
+        "description": ""
+      },
+      "zh": {
+        "age": "",
+        "description": ""
+      }
+    }
   },
   {
     "id": "scarlett",
@@ -288,7 +598,17 @@ export const characters: Character[] = [
     "image": "/characters/Scarlett.jpg",
     "promptFile": "scarlett.txt",
     "avatarFile": "/characters/Scarlett.jpg",
-    "gender": "female"
+    "gender": "female",
+    "i18n": {
+      "en": {
+        "age": "",
+        "description": ""
+      },
+      "zh": {
+        "age": "",
+        "description": ""
+      }
+    }
   },
   {
     "id": "seraphina",
@@ -297,7 +617,17 @@ export const characters: Character[] = [
     "image": "/characters/Seraphina.jpg",
     "promptFile": "seraphina.txt",
     "avatarFile": "/characters/Seraphina.jpg",
-    "gender": "female"
+    "gender": "female",
+    "i18n": {
+      "en": {
+        "age": "",
+        "description": ""
+      },
+      "zh": {
+        "age": "",
+        "description": ""
+      }
+    }
   },
   {
     "id": "sienna",
@@ -306,7 +636,17 @@ export const characters: Character[] = [
     "image": "/characters/Sienna.jpg",
     "promptFile": "sienna.txt",
     "avatarFile": "/characters/Sienna.jpg",
-    "gender": "female"
+    "gender": "female",
+    "i18n": {
+      "en": {
+        "age": "",
+        "description": ""
+      },
+      "zh": {
+        "age": "",
+        "description": ""
+      }
+    }
   },
   {
     "id": "summer",
@@ -315,7 +655,17 @@ export const characters: Character[] = [
     "image": "/characters/Summer.jpg",
     "promptFile": "summer.txt",
     "avatarFile": "/characters/Summer.jpg",
-    "gender": "female"
+    "gender": "female",
+    "i18n": {
+      "en": {
+        "age": "",
+        "description": ""
+      },
+      "zh": {
+        "age": "",
+        "description": ""
+      }
+    }
   },
   {
     "id": "sunny",
@@ -324,7 +674,17 @@ export const characters: Character[] = [
     "image": "/characters/Sunny.jpg",
     "promptFile": "sunny.txt",
     "avatarFile": "/characters/Sunny.jpg",
-    "gender": "female"
+    "gender": "female",
+    "i18n": {
+      "en": {
+        "age": "",
+        "description": ""
+      },
+      "zh": {
+        "age": "",
+        "description": ""
+      }
+    }
   },
   {
     "id": "vivienne",
@@ -333,7 +693,17 @@ export const characters: Character[] = [
     "image": "/characters/Vivienne.jpg",
     "promptFile": "vivienne.txt",
     "avatarFile": "/characters/Vivienne.jpg",
-    "gender": "female"
+    "gender": "female",
+    "i18n": {
+      "en": {
+        "age": "",
+        "description": ""
+      },
+      "zh": {
+        "age": "",
+        "description": ""
+      }
+    }
   },
   {
     "id": "yuna",
@@ -342,7 +712,17 @@ export const characters: Character[] = [
     "image": "/characters/Yuna.jpg",
     "promptFile": "yuna.txt",
     "avatarFile": "/characters/Yuna.jpg",
-    "gender": "female"
+    "gender": "female",
+    "i18n": {
+      "en": {
+        "age": "",
+        "description": ""
+      },
+      "zh": {
+        "age": "",
+        "description": ""
+      }
+    }
   },
   {
     "id": "zahra",
@@ -351,6 +731,16 @@ export const characters: Character[] = [
     "image": "/characters/Zahra.jpg",
     "promptFile": "zahra.txt",
     "avatarFile": "/characters/Zahra.jpg",
-    "gender": "female"
+    "gender": "female",
+    "i18n": {
+      "en": {
+        "age": "",
+        "description": ""
+      },
+      "zh": {
+        "age": "",
+        "description": ""
+      }
+    }
   }
 ];
