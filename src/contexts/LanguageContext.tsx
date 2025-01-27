@@ -28,10 +28,20 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const t = (key: string) => {
         const keys = key.split('.');
         let value: any = languages[language];
-        for (const k of keys) {
-            value = value?.[k];
+        
+        try {
+            for (const k of keys) {
+                value = value?.[k];
+                if (value === undefined) {
+                    console.warn(`Translation missing for key: ${key} in language: ${language}`);
+                    return ''; // 返回空字符串而不是 key
+                }
+            }
+            return value;
+        } catch (error) {
+            console.error(`Error getting translation for key: ${key}`, error);
+            return '';
         }
-        return value || key;
     };
 
     const contextValue: LanguageContextType = {
