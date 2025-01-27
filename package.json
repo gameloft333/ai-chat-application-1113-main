@@ -1,7 +1,7 @@
 {
   "name": "companion",
   "private": true,
-  "version": "1.151.561.99651",
+  "version": "1.155.570.22127",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -28,7 +28,8 @@
     "version:major": "node scripts/update-version.js major",
     "version:minor": "node scripts/update-version.js minor",
     "version:patch": "node scripts/update-version.js patch",
-    "commit": "scripts/run-commit.bat"
+    "commit": "scripts/run-commit.bat",
+    "characters": "cross-env DEBUG=* tsx src/scripts/characterManager.ts"
   },
   "dependencies": {
     "@firebase/auth": "^1.6.0",
@@ -79,6 +80,8 @@
     "tsx": "^4.7.0",
     "typescript": "^5.0.2",
     "ts-node": "^10.9.2",
-    "vite": "^5.0.0"
+    "vite": "^5.0.0",
+    "csv-parse": "^5.5.3",
+    "csv-stringify": "^6.4.5"
   }
 }

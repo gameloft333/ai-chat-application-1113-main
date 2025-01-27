@@ -68,40 +68,54 @@ deploy_container() {
 # Health check
 health_check() {
     log "[STEP 5/6] 健康检查..."
-    local max_retries=5
+    local max_retries=10  # 增加重试次数
     local retry=0
+    local wait_time=5
     
-    # 创建必要的目录
-    docker exec saga4v-nginx mkdir -p /etc/nginx/ssl/{love,play,payment}.saga4v.com
+    # 先等待一些时间让容器完全启动
+    sleep 10
+    
+    # 确保必要目录存在且权限正确
+    docker exec saga4v-nginx sh -c '
+        mkdir -p /etc/nginx/ssl/{love,play,payment}.saga4v.com && \
+        chown -R nginx:nginx /etc/nginx/ssl && \
+        chmod -R 755 /etc/nginx/ssl && \
+        mkdir -p /var/log/nginx && \
+        chown -R nginx:nginx /var/log/nginx && \
+        chmod -R 755 /var/log/nginx
+    '
     
     while [ $retry -lt $max_retries ]; do
-        # 检查容器是否运行
-        if ! docker ps | grep -q saga4v-nginx; then
-            error "容器未运行，检查启动日志："
-            docker logs saga4v-nginx
-            docker inspect saga4v-nginx
-            return 1
-        fi
-        
-        # 检查 Nginx 进程
-        if ! docker exec saga4v-nginx pgrep nginx >/dev/null; then
-            error "Nginx 进程未运行"
-            docker logs saga4v-nginx
-            return 1
-        fi
-        
-        # 验证配置
+        # 检查 Nginx 配置
         if docker exec saga4v-nginx nginx -t 2>&1; then
-            log "Nginx 配置测试通过"
-            return 0
+            # 检查 SSL 证书
+            if docker exec saga4v-nginx sh -c '
+                test -r /etc/nginx/ssl/love.saga4v.com/fullchain.pem && \
+                test -r /etc/nginx/ssl/love.saga4v.com/privkey.pem && \
+                test -r /etc/nginx/ssl/play.saga4v.com/fullchain.pem && \
+                test -r /etc/nginx/ssl/play.saga4v.com/privkey.pem && \
+                test -r /etc/nginx/ssl/payment.saga4v.com/fullchain.pem && \
+                test -r /etc/nginx/ssl/payment.saga4v.com/privkey.pem
+            '; then
+                # 检查 Nginx 进程
+                if docker exec saga4v-nginx pgrep nginx >/dev/null; then
+                    # 检查端口监听
+                    if docker exec saga4v-nginx netstat -tlpn | grep -q ':80'; then
+                        log "✓ 健康检查通过"
+                        return 0
+                    fi
+                fi
+            fi
         fi
         
-        retry=$((retry + 1))
         log "等待服务就绪... ($retry/$max_retries)"
-        sleep 5
+        sleep $wait_time
+        retry=$((retry + 1))
     done
     
-    error "健康检查失败"
+    error "健康检查失败，详细信息："
+    docker logs saga4v-nginx
+    docker exec saga4v-nginx nginx -T
     return 1
 }
 
