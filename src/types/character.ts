@@ -202,11 +202,11 @@ export const characters: Character[] = [
     "gender": "female",
     "i18n": {
       "en": {
-        "age": "Unknown",
+        "age": "Secret",
         "description": "a symbol of wisdom from an ancient city, promotes cultural preservation projects with an elegant and learned image, dreams of spreading knowledge and culture to a broader world, and illuminates life with the light of culture and wisdom."
       },
       "zh": {
-        "age": "未知",
+        "age": "保密",
         "description": "来自古老城市的智慧象征，以优雅博学的形象推动文化保存项目，梦想将知识和文化传播到更广阔的世界，用文化与智慧之光点亮生活。"
       }
     }
@@ -373,11 +373,11 @@ export const characters: Character[] = [
     "gender": "female",
     "i18n": {
       "en": {
-        "age": "Unknown",
+        "age": "Secret",
         "description": "a soul mage and agent from a mysterious ancient family, prevents historical conspiracies with a smart and mysterious image, dreams of uncovering the deepest secrets of her family, and navigates complex identities with wisdom and caution."
       },
       "zh": {
-        "age": "未知",
+        "age": "保密",
         "description": "来自神秘古老家族的灵魂法师和特工，以聪明神秘的形象阻止历史阴谋，梦想揭开家族最深秘密，用智慧和谨慎在复杂身份中游刃有余。"
       }
     }
@@ -430,11 +430,11 @@ export const characters: Character[] = [
     "gender": "female",
     "i18n": {
       "en": {
-        "age": "Unknown",
+        "age": "Secret",
         "description": "a princess from a city full of exotic charm, promotes cultural exchange with a free and brave image, dreams of exploring the outside world, and interprets the pursuit of freedom with adventure and beauty."
       },
       "zh": {
-        "age": "未知",
+        "age": "保密",
         "description": "来自异域风情城市的公主，以自由勇敢的形象推动文化交流，梦想探索外面的世界，用冒险和美丽诠释对自由的追求。"
       }
     }
@@ -449,11 +449,11 @@ export const characters: Character[] = [
     "gender": "male",
     "i18n": {
       "en": {
-        "age": "Unknown",
+        "age": "Secret",
         "description": "a single noble from a historically rich noble family, showcases the family's art collection with an elegant demeanor, dreams of promoting the family's cultural heritage globally, and maintains the family's glory through cultural activities and charitable endeavors."
       },
       "zh": {
-        "age": "未知",
+        "age": "保密",
         "description": "来自历史悠久贵族家庭的单身贵族，以优雅风度展示家族艺术收藏，梦想全球推广家族文化遗产，用文化活动和慈善事业保持家族荣耀。"
       }
     }
@@ -582,11 +582,11 @@ export const characters: Character[] = [
     "gender": "female",
     "i18n": {
       "en": {
-        "age": "Unknown",
+        "age": "Secret",
         "description": "a fashion blogger and dancer from a modern city, has a youthful and energetic image with a large following on social media, dreams of showcasing her dance on the international stage, and expresses herself through fashion and art."
       },
       "zh": {
-        "age": "未知",
+        "age": "保密",
         "description": "来自现代都市的时尚博主和舞者，以青春活力的形象在社交媒体上拥有大量粉丝，梦想在国际舞台展示舞蹈，用时尚与艺术表达自我。"
       }
     }
@@ -620,11 +620,11 @@ export const characters: Character[] = [
     "gender": "female",
     "i18n": {
       "en": {
-        "age": "Unknown",
+        "age": "Secret",
         "description": "a natural magician from a mysterious fantasy world, restores the kingdom's gardens with a gentle and elegant image, dreams of finding the \"Eternal Flower,\" and guards the world with magic and natural beauty."
       },
       "zh": {
-        "age": "未知",
+        "age": "保密",
         "description": "来自神秘幻想世界的自然魔法师，以温柔优雅的形象恢复王国花园，梦想找到“永恒之花”，用魔法与自然之美守护世界。"
       }
     }
@@ -734,11 +734,11 @@ export const characters: Character[] = [
     "gender": "female",
     "i18n": {
       "en": {
-        "age": "Unknown",
+        "age": "Secret",
         "description": "a royal member from an ancient kingdom, designs national treasure-level jewelry with an elegant and noble image, dreams of showcasing her dance on the international stage, and interprets the profoundness of culture with art and beauty."
       },
       "zh": {
-        "age": "未知",
+        "age": "保密",
         "description": "来自古代王国的王室成员，以优雅高贵的形象设计国宝级珠宝，梦想在国际舞台展示舞蹈，用艺术与美丽诠释文化深邃。"
       }
     }

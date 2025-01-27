@@ -1,7 +1,7 @@
 {
   "name": "companion",
   "private": true,
-  "version": "1.155.570.22127",
+  "version": "1.166.582.39372",
   "type": "module",
   "scripts": {
     "dev": "vite",
