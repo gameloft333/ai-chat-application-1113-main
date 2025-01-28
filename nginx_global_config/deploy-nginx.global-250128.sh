@@ -390,27 +390,23 @@ check_certificates() {
 
 # 修改验证配置函数
 verify_config() {
-    log "[STEP 5/6] 验证配置文件..."
+    log "验证 Nginx 配置..."
     
-    # 创建临时配置文件
-    TMP_CONF="/tmp/nginx_test.conf"
-    cp "$NGINX_CONF" "$TMP_CONF"
+    # 检查配置文件语法
+    if ! docker run --rm \
+        -v "$(pwd)/nginx.global.250128.conf:/etc/nginx/nginx.conf:ro" \
+        nginx:stable-alpine nginx -t; then
+        error "Nginx 配置文件语法错误"
+        return 1
+    }
     
-    # 替换上游服务器为本地地址进行测试
-    sed -i 's/proxy_pass http:\/\/luna-game-frontend:5173/proxy_pass http:\/\/127.0.0.1:5173/g' "$TMP_CONF"
-    sed -i 's/proxy_pass http:\/\/ai-chat-application-1113-main-frontend-1:4173/proxy_pass http:\/\/127.0.0.1:4173/g' "$TMP_CONF"
-    sed -i 's/proxy_pass http:\/\/ai-chat-application-1113-main-payment-server-1:4242/proxy_pass http:\/\/127.0.0.1:4242/g' "$TMP_CONF"
-    
-    # 使用临时配置文件进行验证
-    if ! nginx -t -c "$TMP_CONF"; then
-        error "本地 Nginx 配置验证失败"
-        rm -f "$TMP_CONF"
+    # 检查重复的服务器名称
+    if grep -c "server_name _;" nginx.global.250128.conf | grep -q "^[2-9]"; then
+        error "发现重复的默认服务器名称配置"
         return 1
     fi
     
-    # 清理临时文件
-    rm -f "$TMP_CONF"
-    log "✓ Nginx 配置验证通过"
+    log "✓ 配置文件验证通过"
     return 0
 }
 
