@@ -297,8 +297,38 @@ verify_deployment() {
     log "[STEP 6/6] 验证部署..."
     
     # 检查 saga4v-nginx 容器状态
-    if ! docker ps --filter "name=saga4v-nginx" --format "{{.Status}}" | grep -q "Up"; then
-        error "saga4v-nginx 容器未运行"
+    local nginx_container_id=$(docker ps -q --filter "name=saga4v-nginx")
+    if [ -z "$nginx_container_id" ]; then
+        error "找不到 saga4v-nginx 容器"
+        return 1
+    fi
+    
+    # 使用 ss 命令检查端口监听（Alpine 自带）
+    if ! docker exec $nginx_container_id sh -c "ss -tlpn | grep -E ':80|:443'" > /dev/null 2>&1; then
+        # 如果 ss 命令失败，尝试直接检查进程
+        if ! docker exec $nginx_container_id sh -c "ps aux | grep '[n]ginx: master process'" > /dev/null 2>&1; then
+            error "Nginx 进程未运行"
+            docker exec $nginx_container_id ps aux
+            return 1
+        fi
+        
+        # 检查 Nginx 主进程的端口绑定
+        if ! docker exec $nginx_container_id sh -c "cat /proc/net/tcp /proc/net/tcp6 | grep -E ':0050|:01BB'" > /dev/null 2>&1; then
+            error "Nginx 未监听必要端口"
+            log "检查端口绑定详情..."
+            docker exec $nginx_container_id sh -c "cat /proc/net/tcp /proc/net/tcp6 | grep 'nginx'"
+            return 1
+        fi
+    fi
+    
+    # 从宿主机测试端口连接
+    if ! timeout 5 bash -c "</dev/tcp/localhost/80" 2>/dev/null; then
+        error "无法连接到 80 端口"
+        return 1
+    fi
+    
+    if ! timeout 5 bash -c "</dev/tcp/localhost/443" 2>/dev/null; then
+        error "无法连接到 443 端口"
         return 1
     fi
     
@@ -306,20 +336,6 @@ verify_deployment() {
     if ! docker network inspect saga4v_network | grep -q "\"Name\": \"saga4v-nginx\""; then
         log "将 saga4v-nginx 连接到 saga4v_network..."
         docker network connect saga4v_network saga4v-nginx || true
-    fi
-    
-    # 验证端口监听
-    local nginx_container_id=$(docker ps -q --filter "name=saga4v-nginx")
-    if [ -z "$nginx_container_id" ]; then
-        error "找不到 saga4v-nginx 容器"
-        return 1
-    fi
-    
-    # 使用 docker exec 检查端口监听
-    if ! docker exec $nginx_container_id netstat -tlpn | grep -qE ':80|:443'; then
-        error "Nginx 未监听必要端口"
-        docker exec $nginx_container_id netstat -tlpn
-        return 1
     fi
     
     log "✓ 部署验证通过"
@@ -426,4 +442,22 @@ verify_config() {
     fi
     
     return 0
+}
+
+# 添加调试函数
+debug_nginx_status() {
+    local container_id=$1
+    log "收集 Nginx 诊断信息..."
+    
+    # 检查进程
+    docker exec $container_id sh -c "ps aux" || true
+    
+    # 检查端口绑定
+    docker exec $container_id sh -c "cat /proc/net/tcp /proc/net/tcp6" || true
+    
+    # 检查 Nginx 配置
+    docker exec $container_id sh -c "nginx -T" || true
+    
+    # 检查错误日志
+    docker exec $container_id sh -c "tail -n 50 /var/log/nginx/error.log" || true
 }
