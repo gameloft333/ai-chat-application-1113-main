@@ -179,25 +179,46 @@ check_dependencies() {
 deploy_container() {
     log "[STEP 4/6] 部署容器..."
     
-    # 确保配置目录存在并设置正确权限
-    docker run --rm \
-        -v "$(pwd)/nginx.conf:/etc/nginx/nginx.conf:ro" \
-        -v "$(pwd)/conf.d:/etc/nginx/conf.d:ro" \
-        -v "nginx-logs:/var/log/nginx" \
-        --entrypoint sh \
-        nginx:stable-alpine \
-        -c 'chown -R nginx:nginx /var/log/nginx && chmod 755 /var/log/nginx'
+    # 检查配置文件是否存在
+    if [ ! -f "nginx.conf" ]; then
+        error "nginx.conf 文件不存在"
+        return 1
+    fi
     
-    # 使用 docker-compose 启动容器
+    # 检查配置目录是否存在
+    if [ ! -d "conf.d" ]; then
+        error "conf.d 目录不存在"
+        return 1
+    }
+    
+    # 创建临时目录用于配置文件
+    local tmp_dir=$(mktemp -d)
+    log "创建临时配置目录: $tmp_dir"
+    
+    # 复制配置文件到临时目录
+    cp nginx.conf "$tmp_dir/"
+    cp -r conf.d "$tmp_dir/"
+    
+    # 设置正确的权限
+    chmod 644 "$tmp_dir/nginx.conf"
+    chmod 755 "$tmp_dir/conf.d"
+    find "$tmp_dir/conf.d" -type f -exec chmod 644 {} \;
+    
+    # 使用 docker-compose 启动容器，使用临时目录
+    export NGINX_CONF_DIR="$tmp_dir"
     if ! docker-compose -f "$DOCKER_COMPOSE_FILE" up -d; then
         error "容器启动失败"
         docker-compose -f "$DOCKER_COMPOSE_FILE" logs
+        rm -rf "$tmp_dir"
         return 1
     fi
     
     # 等待容器完全启动
     log "等待容器启动..."
     sleep 5
+    
+    # 清理临时目录
+    rm -rf "$tmp_dir"
     
     return 0
 }
