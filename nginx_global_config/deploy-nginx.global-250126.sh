@@ -69,6 +69,7 @@ check_dependencies() {
     
     # 首先获取所有配置了 SSL 证书的域名
     local current_domain=""
+    local current_upstream=""
     local has_ssl=false
     
     while IFS= read -r line; do
@@ -76,12 +77,13 @@ check_dependencies() {
         local server_name=$(echo "$line" | awk '/server_name/ {print $2}' | tr -d ';')
         # 提取 SSL 证书路径
         local ssl_cert=$(echo "$line" | grep -o '/etc/nginx/ssl/[^/]*/fullchain.pem' || true)
-        # 提取代理地址
-        local proxy_pass=$(echo "$line" | awk '/proxy_pass/ {match($0, /http:\/\/([^:]+):([0-9]+)/, arr); if(arr[1] && arr[2]) print arr[1] ":" arr[2]}' | tr -d ';')
+        # 提取完整的代理地址
+        local proxy_pass=$(echo "$line" | awk '/proxy_pass/ {match($0, /http:\/\/([^\/]+)/, arr); if(arr[1]) print arr[1]}' | tr -d ';')
         
         if [[ -n "$server_name" ]]; then
             current_domain="$server_name"
             has_ssl=false
+            current_upstream=""
         fi
         
         if [[ -n "$ssl_cert" ]]; then
@@ -89,42 +91,42 @@ check_dependencies() {
         fi
         
         if [[ -n "$proxy_pass" ]] && [[ "$has_ssl" == true ]] && [[ -n "$current_domain" ]]; then
-            SSL_SERVICES["$proxy_pass"]="$current_domain"
+            current_upstream="$proxy_pass"
+            # 使用关联数组存储完整的映射关系
+            SSL_SERVICES["$current_upstream"]="$current_domain"
         fi
     done < "$NGINX_CONF"
     
     # 检查配置了 SSL 的服务
-    for service in "${!SSL_SERVICES[@]}"; do
-        local container_name=${service%:*}
-        local port=${service#*:}
-        local domain=${SSL_SERVICES[$service]}
+    for service_addr in "${!SSL_SERVICES[@]}"; do
+        # 从完整地址中提取容器名和端口
+        local container_name=$(echo "$service_addr" | cut -d':' -f1)
+        local port=$(echo "$service_addr" | cut -d':' -f2)
+        local domain=${SSL_SERVICES[$service_addr]}
         
         log "检查 SSL 服务: $container_name (端口: $port, 域名: $domain)"
         
-        # 检查容器状态
-        if ! docker ps --format '{{.Names}} {{.Status}}' | grep -q "${container_name}.*Up"; then
-            error "$container_name 容器未运行"
+        # 使用 docker ps 获取实际的容器名称（支持部分匹配）
+        local actual_container=$(docker ps --format '{{.Names}}' | grep "$container_name" || true)
+        
+        if [[ -z "$actual_container" ]]; then
+            error "找不到匹配的容器: $container_name"
             log "当前运行的容器列表："
             docker ps
             return 1
         fi
         
-        # 检查网络连接
-        if ! docker network inspect saga4v_network | grep -q "$container_name"; then
-            error "$container_name 未连接到 saga4v_network 网络"
+        # 使用实际的容器名称进行检查
+        if ! docker network inspect saga4v_network | grep -q "\"$actual_container\""; then
+            error "$actual_container 未连接到 saga4v_network 网络"
             log "网络详情："
             docker network inspect saga4v_network
             return 1
         fi
         
-        # 检查 SSL 证书
-        local ssl_cert="/etc/nginx/ssl/$domain/fullchain.pem"
-        local ssl_key="/etc/nginx/ssl/$domain/privkey.pem"
-        if [[ ! -f "$ssl_cert" ]] || [[ ! -f "$ssl_key" ]]; then
-            error "$domain 的 SSL 证书文件不存在"
-            log "期望的证书路径："
-            log "- $ssl_cert"
-            log "- $ssl_key"
+        # 检查端口监听
+        if ! docker exec "$actual_container" netstat -tlpn 2>/dev/null | grep -q ":$port"; then
+            error "$actual_container 的 $port 端口未监听"
             return 1
         fi
     done
