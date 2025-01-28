@@ -152,7 +152,7 @@ deploy_container() {
     if ! docker run --rm --network saga4v_network alpine nslookup luna-game-frontend; then
         error "无法解析 luna-game-frontend 主机名"
         return 1
-    }
+    fi
     
     # 验证 Nginx 配置
     if ! docker run --rm \
