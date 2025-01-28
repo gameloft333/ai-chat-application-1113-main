@@ -398,7 +398,7 @@ verify_config() {
         nginx:stable-alpine nginx -t; then
         error "Nginx 配置文件语法错误"
         return 1
-    }
+    fi
     
     # 检查重复的服务器名称
     if grep -c "server_name _;" nginx.global.250128.conf | grep -q "^[2-9]"; then
