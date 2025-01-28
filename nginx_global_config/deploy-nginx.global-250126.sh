@@ -303,22 +303,20 @@ verify_deployment() {
         return 1
     fi
     
-    # 使用 ss 命令检查端口监听（Alpine 自带）
-    if ! docker exec $nginx_container_id sh -c "ss -tlpn | grep -E ':80|:443'" > /dev/null 2>&1; then
-        # 如果 ss 命令失败，尝试直接检查进程
-        if ! docker exec $nginx_container_id sh -c "ps aux | grep '[n]ginx: master process'" > /dev/null 2>&1; then
-            error "Nginx 进程未运行"
-            docker exec $nginx_container_id ps aux
-            return 1
-        fi
-        
-        # 检查 Nginx 主进程的端口绑定
-        if ! docker exec $nginx_container_id sh -c "cat /proc/net/tcp /proc/net/tcp6 | grep -E ':0050|:01BB'" > /dev/null 2>&1; then
-            error "Nginx 未监听必要端口"
-            log "检查端口绑定详情..."
-            docker exec $nginx_container_id sh -c "cat /proc/net/tcp /proc/net/tcp6 | grep 'nginx'"
-            return 1
-        fi
+    # 使用 Alpine 兼容的方式检查进程
+    if ! docker exec $nginx_container_id sh -c "pgrep nginx" > /dev/null 2>&1; then
+        error "Nginx 进程未运行"
+        # 收集更多诊断信息
+        docker exec $nginx_container_id sh -c "cat /proc/[0-9]*/comm 2>/dev/null | grep nginx" || true
+        docker logs $nginx_container_id
+        return 1
+    fi
+    
+    # 检查端口监听（使用 /proc/net/tcp）
+    if ! docker exec $nginx_container_id sh -c "cat /proc/net/tcp /proc/net/tcp6 | grep -E ':0050|:01BB'" > /dev/null 2>&1; then
+        error "Nginx 未监听必要端口"
+        docker exec $nginx_container_id sh -c "cat /proc/net/tcp /proc/net/tcp6" || true
+        return 1
     fi
     
     # 从宿主机测试端口连接
@@ -332,10 +330,11 @@ verify_deployment() {
         return 1
     fi
     
-    # 检查网络连接
-    if ! docker network inspect saga4v_network | grep -q "\"Name\": \"saga4v-nginx\""; then
-        log "将 saga4v-nginx 连接到 saga4v_network..."
-        docker network connect saga4v_network saga4v-nginx || true
+    # 检查 Nginx 配置语法
+    if ! docker exec $nginx_container_id nginx -t 2>/dev/null; then
+        error "Nginx 配置验证失败"
+        docker exec $nginx_container_id nginx -T || true
+        return 1
     fi
     
     log "✓ 部署验证通过"
