@@ -154,12 +154,37 @@ deploy_container() {
         warn "这可能不影响实际服务，因为容器可能使用 Docker 网络进行通信"
     fi
     
-    # 验证 Nginx 配置（这是必要的检查）
+    # 验证 Nginx 配置（需要挂载所有必要的证书目录）
     log "验证 Nginx 配置..."
     if ! docker run --rm \
         --network saga4v_network \
         -v "$(pwd)/$NGINX_CONF:/etc/nginx/nginx.conf:ro" \
+        -v "/etc/letsencrypt/live/love.saga4v.com/fullchain.pem:/etc/nginx/ssl/love.saga4v.com/fullchain.pem:ro" \
+        -v "/etc/letsencrypt/live/love.saga4v.com/privkey.pem:/etc/nginx/ssl/love.saga4v.com/privkey.pem:ro" \
+        -v "/etc/letsencrypt/live/play.saga4v.com/fullchain.pem:/etc/nginx/ssl/play.saga4v.com/fullchain.pem:ro" \
+        -v "/etc/letsencrypt/live/play.saga4v.com/privkey.pem:/etc/nginx/ssl/play.saga4v.com/privkey.pem:ro" \
+        -v "/etc/letsencrypt/live/payment.saga4v.com/fullchain.pem:/etc/nginx/ssl/payment.saga4v.com/fullchain.pem:ro" \
+        -v "/etc/letsencrypt/live/payment.saga4v.com/privkey.pem:/etc/nginx/ssl/payment.saga4v.com/privkey.pem:ro" \
         nginx:latest nginx -t; then
+        
+        # 如果配置验证失败，检查证书文件是否存在
+        log "检查证书文件..."
+        local domains="love.saga4v.com play.saga4v.com payment.saga4v.com"
+        local missing_certs=false
+        
+        for domain in $domains; do
+            if [[ ! -f "/etc/letsencrypt/live/$domain/fullchain.pem" ]] || \
+               [[ ! -f "/etc/letsencrypt/live/$domain/privkey.pem" ]]; then
+                error "缺少 $domain 的证书文件"
+                missing_certs=true
+            fi
+        done
+        
+        if [[ "$missing_certs" == "true" ]]; then
+            error "请确保所有域名的 SSL 证书都已正确安装"
+            return 1
+        fi
+        
         error "Nginx 配置验证失败"
         return 1
     fi
