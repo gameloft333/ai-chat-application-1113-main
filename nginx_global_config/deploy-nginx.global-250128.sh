@@ -169,7 +169,7 @@ deploy_container() {
     log "[STEP 4/6] 部署容器..."
     
     # 检查配置文件
-    local nginx_conf="nginx.global.250122.conf"
+    local nginx_conf="nginx.global.250128.conf"
     if [ ! -f "$nginx_conf" ]; then
         error "$nginx_conf 文件不存在"
         error "请确保配置文件位于当前目录: $(pwd)"
