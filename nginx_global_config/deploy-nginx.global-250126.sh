@@ -119,12 +119,15 @@ check_dependencies() {
         
         log "检查 SSL 服务: $matched_container (端口: $port, 域名: $domain)"
         
-        # 检查网络连接
-        if ! docker network inspect saga4v_network | grep -q "\"$matched_container\""; then
-            error "$matched_container 未连接到 saga4v_network 网络"
-            log "网络详情："
-            docker network inspect saga4v_network
-            return 1
+        # 改进网络连接检查
+        if ! docker network inspect saga4v_network | grep -q "\"Name\": \"$matched_container\""; then
+            # 使用更可靠的方式验证网络连接
+            if ! docker inspect "$matched_container" --format '{{range $net,$v := .NetworkSettings.Networks}}{{$net}}{{end}}' | grep -q "saga4v_network"; then
+                error "$matched_container 未连接到 saga4v_network 网络"
+                log "网络详情："
+                docker network inspect saga4v_network
+                return 1
+            fi
         fi
     done
     
