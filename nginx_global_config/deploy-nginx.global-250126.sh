@@ -75,11 +75,8 @@ health_check() {
     # 先等待一些时间让容器完全启动
     sleep 10
     
-    # 确保必要目录存在且权限正确
+    # 不再尝试修改只读文件的权限
     docker exec saga4v-nginx sh -c '
-        mkdir -p /etc/nginx/ssl/{love,play,payment}.saga4v.com && \
-        chown -R nginx:nginx /etc/nginx/ssl && \
-        chmod -R 755 /etc/nginx/ssl && \
         mkdir -p /var/log/nginx && \
         chown -R nginx:nginx /var/log/nginx && \
         chmod -R 755 /var/log/nginx
@@ -88,22 +85,12 @@ health_check() {
     while [ $retry -lt $max_retries ]; do
         # 检查 Nginx 配置
         if docker exec saga4v-nginx nginx -t 2>&1; then
-            # 检查 SSL 证书
-            if docker exec saga4v-nginx sh -c '
-                test -r /etc/nginx/ssl/love.saga4v.com/fullchain.pem && \
-                test -r /etc/nginx/ssl/love.saga4v.com/privkey.pem && \
-                test -r /etc/nginx/ssl/play.saga4v.com/fullchain.pem && \
-                test -r /etc/nginx/ssl/play.saga4v.com/privkey.pem && \
-                test -r /etc/nginx/ssl/payment.saga4v.com/fullchain.pem && \
-                test -r /etc/nginx/ssl/payment.saga4v.com/privkey.pem
-            '; then
-                # 检查 Nginx 进程
-                if docker exec saga4v-nginx pgrep nginx >/dev/null; then
-                    # 检查端口监听
-                    if docker exec saga4v-nginx netstat -tlpn | grep -q ':80'; then
-                        log "✓ 健康检查通过"
-                        return 0
-                    fi
+            # 检查 Nginx 进程
+            if docker exec saga4v-nginx pgrep nginx >/dev/null; then
+                # 检查端口监听
+                if docker exec saga4v-nginx netstat -tlpn | grep -q ':80'; then
+                    log "✓ 健康检查通过"
+                    return 0
                 fi
             fi
         fi
