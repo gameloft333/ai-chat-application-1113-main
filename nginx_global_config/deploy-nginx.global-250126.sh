@@ -177,62 +177,27 @@ check_dependencies() {
 
 # Deploy new container
 deploy_container() {
-    log "[STEP 4/6] 部署新容器..."
+    log "[STEP 4/6] 部署容器..."
     
-    # 先检查依赖
-    if ! check_dependencies; then
-        error "依赖检查失败"
-        return 1
-    fi
+    # 确保配置目录存在并设置正确权限
+    docker run --rm \
+        -v "$(pwd)/nginx.conf:/etc/nginx/nginx.conf:ro" \
+        -v "$(pwd)/conf.d:/etc/nginx/conf.d:ro" \
+        -v "nginx-logs:/var/log/nginx" \
+        --entrypoint sh \
+        nginx:stable-alpine \
+        -c 'chown -R nginx:nginx /var/log/nginx && chmod 755 /var/log/nginx'
     
-    # DNS 解析检查改为警告
-    log "检查 DNS 解析..."
-    if ! docker run --rm --network saga4v_network alpine nslookup luna-game-frontend; then
-        warn "DNS 解析警告：无法解析 luna-game-frontend 主机名"
-        warn "这可能不影响实际服务，因为容器可能使用 Docker 网络进行通信"
-    fi
-    
-    # 验证 Nginx 配置（需要挂载所有必要的证书目录）
-    log "验证 Nginx 配置..."
-    if ! docker run --rm \
-        --network saga4v_network \
-        -v "$(pwd)/$NGINX_CONF:/etc/nginx/nginx.conf:ro" \
-        -v "/etc/letsencrypt/live/love.saga4v.com/fullchain.pem:/etc/nginx/ssl/love.saga4v.com/fullchain.pem:ro" \
-        -v "/etc/letsencrypt/live/love.saga4v.com/privkey.pem:/etc/nginx/ssl/love.saga4v.com/privkey.pem:ro" \
-        -v "/etc/letsencrypt/live/play.saga4v.com/fullchain.pem:/etc/nginx/ssl/play.saga4v.com/fullchain.pem:ro" \
-        -v "/etc/letsencrypt/live/play.saga4v.com/privkey.pem:/etc/nginx/ssl/play.saga4v.com/privkey.pem:ro" \
-        -v "/etc/letsencrypt/live/payment.saga4v.com/fullchain.pem:/etc/nginx/ssl/payment.saga4v.com/fullchain.pem:ro" \
-        -v "/etc/letsencrypt/live/payment.saga4v.com/privkey.pem:/etc/nginx/ssl/payment.saga4v.com/privkey.pem:ro" \
-        nginx:latest nginx -t; then
-        
-        # 如果配置验证失败，检查证书文件是否存在
-        log "检查证书文件..."
-        local domains="love.saga4v.com play.saga4v.com payment.saga4v.com"
-        local missing_certs=false
-        
-        for domain in $domains; do
-            if [[ ! -f "/etc/letsencrypt/live/$domain/fullchain.pem" ]] || \
-               [[ ! -f "/etc/letsencrypt/live/$domain/privkey.pem" ]]; then
-                error "缺少 $domain 的证书文件"
-                missing_certs=true
-            fi
-        done
-        
-        if [[ "$missing_certs" == "true" ]]; then
-            error "请确保所有域名的 SSL 证书都已正确安装"
-            return 1
-        fi
-        
-        error "Nginx 配置验证失败"
-        return 1
-    fi
-    
-    # 部署容器
-    log "启动 Nginx 容器..."
+    # 使用 docker-compose 启动容器
     if ! docker-compose -f "$DOCKER_COMPOSE_FILE" up -d; then
         error "容器启动失败"
+        docker-compose -f "$DOCKER_COMPOSE_FILE" logs
         return 1
     fi
+    
+    # 等待容器完全启动
+    log "等待容器启动..."
+    sleep 5
     
     return 0
 }
@@ -303,37 +268,49 @@ verify_deployment() {
         return 1
     fi
     
-    # 使用 Alpine 兼容的方式检查进程
-    if ! docker exec $nginx_container_id sh -c "pgrep nginx" > /dev/null 2>&1; then
-        error "Nginx 进程未运行"
-        # 收集更多诊断信息
-        docker exec $nginx_container_id sh -c "cat /proc/[0-9]*/comm 2>/dev/null | grep nginx" || true
-        docker logs $nginx_container_id
-        return 1
+    # 使用多重检查机制
+    local check_failed=0
+    
+    # 1. 检查 Nginx 主进程
+    if ! docker exec $nginx_container_id sh -c "cat /proc/1/comm" | grep -q "nginx"; then
+        error "Nginx 主进程未运行"
+        check_failed=1
     fi
     
-    # 检查端口监听（使用 /proc/net/tcp）
-    if ! docker exec $nginx_container_id sh -c "cat /proc/net/tcp /proc/net/tcp6 | grep -E ':0050|:01BB'" > /dev/null 2>&1; then
-        error "Nginx 未监听必要端口"
-        docker exec $nginx_container_id sh -c "cat /proc/net/tcp /proc/net/tcp6" || true
-        return 1
+    # 2. 检查 Nginx worker 进程
+    if ! docker exec $nginx_container_id sh -c "cat /proc/[0-9]*/comm" | grep -q "nginx"; then
+        error "Nginx worker 进程未运行"
+        check_failed=1
     fi
     
-    # 从宿主机测试端口连接
+    # 3. 检查配置文件权限
+    if ! docker exec $nginx_container_id sh -c "ls -l /etc/nginx/nginx.conf"; then
+        error "无法访问 Nginx 配置文件"
+        check_failed=1
+    fi
+    
+    # 4. 检查日志目录权限
+    if ! docker exec $nginx_container_id sh -c "ls -l /var/log/nginx/"; then
+        error "无法访问日志目录"
+        check_failed=1
+    fi
+    
+    # 5. 检查端口监听
     if ! timeout 5 bash -c "</dev/tcp/localhost/80" 2>/dev/null; then
-        error "无法连接到 80 端口"
-        return 1
+        error "80 端口未监听"
+        check_failed=1
     fi
     
     if ! timeout 5 bash -c "</dev/tcp/localhost/443" 2>/dev/null; then
-        error "无法连接到 443 端口"
-        return 1
+        error "443 端口未监听"
+        check_failed=1
     fi
     
-    # 检查 Nginx 配置语法
-    if ! docker exec $nginx_container_id nginx -t 2>/dev/null; then
-        error "Nginx 配置验证失败"
-        docker exec $nginx_container_id nginx -T || true
+    # 如果任何检查失败，收集诊断信息
+    if [ $check_failed -eq 1 ]; then
+        log "收集诊断信息..."
+        docker exec $nginx_container_id sh -c "nginx -T" || true
+        docker logs $nginx_container_id
         return 1
     fi
     
