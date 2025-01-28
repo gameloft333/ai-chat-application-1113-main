@@ -53,9 +53,47 @@ create_network() {
 # Stop existing container
 stop_existing() {
     log "[STEP 3/6] 停止现有容器..."
+    
+    # 检查并停止所有使用 80/443 端口的容器
+    local ports_in_use=$(netstat -tlpn 2>/dev/null | grep -E ':80|:443' || true)
+    if [ -n "$ports_in_use" ]; then
+        log "发现端口占用："
+        echo "$ports_in_use"
+        
+        # 获取使用这些端口的进程
+        local pids=$(echo "$ports_in_use" | awk '{print $NF}' | cut -d'/' -f1 | sort -u)
+        for pid in $pids; do
+            local container_id=$(docker ps -q --filter "pid=$pid")
+            if [ -n "$container_id" ]; then
+                log "停止容器 ID: $container_id"
+                docker stop "$container_id" || true
+                docker rm "$container_id" || true
+            fi
+        done
+    fi
+    
+    # 停止现有的 saga4v-nginx 容器
     if docker ps -q --filter "name=saga4v-nginx" | grep -q .; then
         docker stop saga4v-nginx || true
         docker rm saga4v-nginx || true
+    fi
+    
+    # 等待端口释放
+    local timeout=30
+    local counter=0
+    while [ $counter -lt $timeout ]; do
+        if ! netstat -tlpn 2>/dev/null | grep -qE ':80|:443'; then
+            log "✓ 端口已释放"
+            return 0
+        fi
+        counter=$((counter + 1))
+        sleep 1
+    done
+    
+    if [ $counter -eq $timeout ]; then
+        error "端口释放超时，请手动检查端口占用"
+        netstat -tlpn | grep -E ':80|:443'
+        return 1
     fi
 }
 
@@ -260,6 +298,13 @@ health_check() {
 # Verify deployment
 verify_deployment() {
     log "[STEP 6/6] 验证部署..."
+    
+    # 检查端口占用情况
+    if netstat -tlpn 2>/dev/null | grep -qE ':80|:443'; then
+        error "端口 80/443 已被占用"
+        netstat -tlpn | grep -E ':80|:443'
+        return 1
+    fi
     
     # 必要性检查：容器是否运行
     if ! docker ps | grep -q saga4v-nginx; then
