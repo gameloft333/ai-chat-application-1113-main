@@ -337,6 +337,7 @@ main() {
     backup_configs
     create_network
     stop_existing
+    verify_config
     deploy_container
     check_nginx_logs
     health_check
@@ -385,7 +386,30 @@ verify_cert() {
 verify_config() {
     log "验证 Nginx 配置..."
     
-    # 检查证书文件权限
+    # 检查并修复证书权限
+    for domain in love.saga4v.com play.saga4v.com payment.saga4v.com; do
+        log "检查 $domain 的证书权限..."
+        
+        # 检查证书目录
+        if [ -d "/etc/letsencrypt/live/$domain" ]; then
+            log "设置 $domain 证书目录权限..."
+            chmod 755 "/etc/letsencrypt/live/$domain"
+            chmod 755 "/etc/letsencrypt/archive/$domain"
+            
+            # 设置证书文件权限
+            chown -R root:nginx "/etc/letsencrypt/live/$domain"
+            chown -R root:nginx "/etc/letsencrypt/archive/$domain"
+            
+            # 设置具体文件权限
+            chmod 644 "/etc/letsencrypt/archive/$domain/fullchain1.pem"
+            chmod 640 "/etc/letsencrypt/archive/$domain/privkey1.pem"
+        else
+            error "证书目录不存在: /etc/letsencrypt/live/$domain"
+            return 1
+        fi
+    done
+    
+    # 验证证书权限
     for domain in love.saga4v.com play.saga4v.com payment.saga4v.com; do
         if [ ! -r "/etc/nginx/ssl/$domain/fullchain.pem" ] || \
            [ ! -r "/etc/nginx/ssl/$domain/privkey.pem" ]; then
@@ -400,6 +424,7 @@ verify_config() {
         return 1
     fi
     
+    log "✓ 证书权限和 Nginx 配置验证通过"
     return 0
 }
 
