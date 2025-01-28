@@ -434,7 +434,7 @@ check_aws_environment() {
     if ! curl -s http://169.254.169.254/latest/meta-data/ >/dev/null; then
         log "非 AWS 环境，跳过 AWS 特定检查"
         return 0
-    }
+    fi
     
     # 检查必要的端口是否开放
     local required_ports="80 443"
@@ -461,7 +461,7 @@ check_aws_environment() {
     if [ "${disk_space%.*}" -lt 10 ]; then
         error "磁盘空间不足: ${disk_space}GB"
         return 1
-    }
+    fi
     
     log "✓ AWS 环境检查通过"
     return 0
