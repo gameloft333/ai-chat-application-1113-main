@@ -330,22 +330,6 @@ check_nginx_logs() {
     fi
 }
 
-# Main function
-main() {
-    log "开始部署全局 Nginx..."
-    
-    backup_configs
-    create_network
-    stop_existing
-    verify_config
-    deploy_container
-    check_nginx_logs
-    health_check
-    verify_deployment
-    
-    log "部署完成!"
-}
-
 # Error handling
 cleanup() {
     if [ $? -ne 0 ]; then
@@ -362,6 +346,7 @@ trap cleanup EXIT
 # Execute main function
 main 
 
+# 添加证书检查函数
 check_certificates() {
     log "检查 SSL 证书..."
     local domains="love.saga4v.com play.saga4v.com payment.saga4v.com"
@@ -378,11 +363,7 @@ check_certificates() {
     return 0
 }
 
-verify_cert() {
-    local domain="payment.saga4v.com"
-    openssl x509 -in /etc/letsencrypt/live/$domain/fullchain.pem -text -noout | grep "Subject:"
-}
-
+# 添加配置验证函数
 verify_config() {
     log "验证 Nginx 配置..."
     
@@ -419,13 +400,72 @@ verify_config() {
     done
     
     # 验证 Nginx 配置
-    if ! docker exec saga4v-nginx nginx -t; then
+    if ! docker exec saga4v-nginx nginx -t 2>/dev/null; then
         error "Nginx 配置验证失败"
         return 1
     fi
     
     log "✓ 证书权限和 Nginx 配置验证通过"
     return 0
+}
+
+# 添加日志目录检查函数
+check_log_directories() {
+    log "检查日志目录..."
+    
+    # 创建所需的日志目录
+    mkdir -p /var/log/nginx
+    
+    # 创建所需的日志文件
+    touch /var/log/nginx/ssl-error.log
+    touch /var/log/nginx/payment-ssl-error.log
+    touch /var/log/nginx/payment.access.log
+    touch /var/log/nginx/payment.error.log
+    
+    # 设置正确的权限
+    chown -R nginx:nginx /var/log/nginx
+    chmod 644 /var/log/nginx/*.log
+    
+    log "✓ 日志目录检查完成"
+}
+
+# Main function
+main() {
+    log "开始部署全局 Nginx..."
+    
+    backup_configs
+    create_network
+    stop_existing
+    check_log_directories
+    check_certificates
+    verify_config
+    deploy_container
+    check_nginx_logs
+    health_check
+    verify_deployment
+    
+    log "部署完成!"
+}
+
+# Error handling
+cleanup() {
+    if [ $? -ne 0 ]; then
+        error "部署失败，正在回滚..."
+        if [ -d "$BACKUP_DIR" ]; then
+            cp "$BACKUP_DIR"/* ./ 2>/dev/null || true
+        fi
+        docker-compose -f "$DOCKER_COMPOSE_FILE" down || true
+    fi
+}
+
+trap cleanup EXIT
+
+# Execute main function
+main 
+
+verify_cert() {
+    local domain="payment.saga4v.com"
+    openssl x509 -in /etc/letsencrypt/live/$domain/fullchain.pem -text -noout | grep "Subject:"
 }
 
 # 添加调试函数
