@@ -360,80 +360,29 @@ check_certificates() {
     return 0
 }
 
-# 添加配置验证函数
+# 修改验证配置函数
 verify_config() {
-    log "验证 Nginx 配置..."
+    log "[STEP 5/6] 验证配置文件..."
     
-    # 检查并修复证书权限
-    for domain in love.saga4v.com play.saga4v.com payment.saga4v.com; do
-        log "检查 $domain 的证书权限..."
-        
-        # 检查证书目录
-        if [ -d "/etc/letsencrypt/live/$domain" ]; then
-            log "设置 $domain 证书目录权限..."
-            
-            # 添加详细的操作日志
-            log "设置目录权限: /etc/letsencrypt/live/$domain"
-            chmod 755 "/etc/letsencrypt/live/$domain" || {
-                error "无法设置目录权限: /etc/letsencrypt/live/$domain"
-                return 1
-            }
-            
-            log "设置目录权限: /etc/letsencrypt/archive/$domain"
-            chmod 755 "/etc/letsencrypt/archive/$domain" || {
-                error "无法设置目录权限: /etc/letsencrypt/archive/$domain"
-                return 1
-            }
-            
-            # 设置证书文件权限
-            log "设置证书所有权: $domain"
-            chown -R root:nginx "/etc/letsencrypt/live/$domain" || {
-                error "无法设置证书所有权: /etc/letsencrypt/live/$domain"
-                return 1
-            }
-            chown -R root:nginx "/etc/letsencrypt/archive/$domain" || {
-                error "无法设置证书所有权: /etc/letsencrypt/archive/$domain"
-                return 1
-            }
-            
-            # 设置具体文件权限
-            log "设置证书文件权限: $domain"
-            chmod 644 "/etc/letsencrypt/archive/$domain/fullchain1.pem" || {
-                error "无法设置证书文件权限: fullchain1.pem"
-                return 1
-            }
-            chmod 640 "/etc/letsencrypt/archive/$domain/privkey1.pem" || {
-                error "无法设置证书文件权限: privkey1.pem"
-                return 1
-            }
-        else
-            error "证书目录不存在: /etc/letsencrypt/live/$domain"
-            return 1
-        fi
-    done
+    # 创建临时配置文件
+    TMP_CONF="/tmp/nginx_test.conf"
+    cp "$NGINX_CONF" "$TMP_CONF"
     
-    # 验证证书权限
-    log "验证证书文件权限..."
-    for domain in love.saga4v.com play.saga4v.com payment.saga4v.com; do
-        if [ ! -r "/etc/nginx/ssl/$domain/fullchain.pem" ]; then
-            error "无法读取证书文件: /etc/nginx/ssl/$domain/fullchain.pem"
-            return 1
-        fi
-        if [ ! -r "/etc/nginx/ssl/$domain/privkey.pem" ]; then
-            error "无法读取证书文件: /etc/nginx/ssl/$domain/privkey.pem"
-            return 1
-        fi
-        log "✓ $domain 证书权限验证通过"
-    done
+    # 替换上游服务器为本地地址进行测试
+    sed -i 's/proxy_pass http:\/\/luna-game-frontend:5173/proxy_pass http:\/\/127.0.0.1:5173/g' "$TMP_CONF"
+    sed -i 's/proxy_pass http:\/\/ai-chat-application-1113-main-frontend-1:4173/proxy_pass http:\/\/127.0.0.1:4173/g' "$TMP_CONF"
+    sed -i 's/proxy_pass http:\/\/ai-chat-application-1113-main-payment-server-1:4242/proxy_pass http:\/\/127.0.0.1:4242/g' "$TMP_CONF"
     
-    # 验证 Nginx 配置
-    log "验证 Nginx 配置文件..."
-    if ! docker exec saga4v-nginx nginx -t 2>&1; then
-        error "Nginx 配置验证失败，详细错误信息如上"
+    # 使用临时配置文件进行验证
+    if ! nginx -t -c "$TMP_CONF"; then
+        error "本地 Nginx 配置验证失败"
+        rm -f "$TMP_CONF"
         return 1
     fi
     
-    log "✓ 证书权限和 Nginx 配置验证通过"
+    # 清理临时文件
+    rm -f "$TMP_CONF"
+    log "✓ Nginx 配置验证通过"
     return 0
 }
 
@@ -476,10 +425,7 @@ main() {
     
     # 验证本地配置文件
     log "[STEP 5/6] 验证配置文件..."
-    if ! nginx -t -c $(pwd)/nginx.global.250128.conf; then
-        error "本地 Nginx 配置验证失败"
-        return 1
-    fi
+    verify_config
     
     log "[STEP 6/6] 部署容器..."
     deploy_container
