@@ -58,29 +58,44 @@ create_network() {
 stop_existing() {
     log "[STEP 3/6] 停止现有容器..."
     
-    # 使用 docker-compose 停止容器
-    if [ -f "$DOCKER_COMPOSE_FILE" ]; then
-        log "使用 docker-compose 停止容器..."
-        if ! docker-compose -f "$DOCKER_COMPOSE_FILE" down --timeout 30; then
-            warn "容器优雅停止超时，尝试强制停止..."
-            if ! docker-compose -f "$DOCKER_COMPOSE_FILE" down -v --remove-orphans; then
-                error "容器停止失败，收集诊断信息..."
-                docker ps -a | grep saga4v-nginx
-                docker logs --tail 50 saga4v-nginx || true
-                return 1
+    # 检查并停止 Nginx 相关的 docker-proxy 进程
+    local nginx_proxies=$(ps aux | grep docker-proxy | grep -E ':80|:443' | awk '{print $2}')
+    if [ -n "$nginx_proxies" ]; then
+        log "发现 Nginx 相关的 docker-proxy 进程："
+        for pid in $nginx_proxies; do
+            # 获取对应的容器 ID
+            local container_id=$(docker ps -q --filter "publish=80-80" --filter "publish=443-443")
+            if [ -n "$container_id" ]; then
+                local container_name=$(docker inspect --format '{{.Name}}' "$container_id" | sed 's/\///')
+                # 只停止 saga4v-nginx 容器
+                if [[ "$container_name" == "saga4v-nginx" ]]; then
+                    log "停止容器: $container_name"
+                    docker stop "$container_id" || true
+                    docker rm "$container_id" || true
+                else
+                    log "跳过非 Nginx 容器: $container_name"
+                fi
             fi
-        fi
-    else
-        warn "未找到 docker-compose 文件: $DOCKER_COMPOSE_FILE"
-        # 尝试直接停止容器
-        if docker ps -q --filter "name=saga4v-nginx" | grep -q .; then
-            log "尝试直接停止容器..."
-            docker stop -t 30 saga4v-nginx || docker kill saga4v-nginx
-        fi
+        done
     fi
     
-    log "✓ 容器停止完成"
-    return 0
+    # 等待端口释放
+    local timeout=30
+    local counter=0
+    while [ $counter -lt $timeout ]; do
+        if ! docker ps -q --filter "name=saga4v-nginx" | grep -q .; then
+            log "✓ Nginx 容器已停止"
+            return 0
+        fi
+        counter=$((counter + 1))
+        sleep 1
+    done
+    
+    if [ $counter -eq $timeout ]; then
+        error "Nginx 容器停止超时"
+        docker ps | grep saga4v-nginx
+        return 1
+    fi
 }
 
 # 添加新的检查函数
