@@ -461,18 +461,45 @@ check_log_directories() {
 main() {
     log "开始部署全局 Nginx..."
     
+    log "[STEP 1/6] 备份现有配置..."
     backup_configs
+    
+    log "[STEP 2/6] 检查网络配置..."
     create_network
+    
+    log "[STEP 3/6] 停止现有容器..."
     stop_existing
+    
+    log "[STEP 4/6] 准备环境..."
     check_log_directories
     check_certificates
-    verify_config
+    
+    # 验证本地配置文件
+    log "[STEP 5/6] 验证配置文件..."
+    if ! nginx -t -c $(pwd)/nginx.global.250128.conf; then
+        error "本地 Nginx 配置验证失败"
+        return 1
+    fi
+    
+    log "[STEP 6/6] 部署容器..."
     deploy_container
+    
+    # 等待容器启动
+    log "等待容器启动..."
+    sleep 5
+    
+    # 在容器启动后验证配置
+    if ! docker exec saga4v-nginx nginx -t; then
+        error "容器内 Nginx 配置验证失败"
+        return 1
+    fi
+    
     check_nginx_logs
     health_check
     verify_deployment
     
-    log "部署完成!"
+    log "✓ 部署完成!"
+    return 0
 }
 
 # Error handling
