@@ -343,16 +343,44 @@ cleanup() {
 
 trap cleanup EXIT
 
-# 添加证书检查函数
+# 修改 check_certificates 函数，添加证书时间验证
 check_certificates() {
     log "检查 SSL 证书..."
     local domains="love.saga4v.com play.saga4v.com payment.saga4v.com"
     
     for domain in $domains; do
-        if [ ! -f "/etc/letsencrypt/live/$domain/fullchain.pem" ] || \
-           [ ! -f "/etc/letsencrypt/live/$domain/privkey.pem" ]; then
+        local cert_path="/etc/letsencrypt/live/$domain/fullchain.pem"
+        
+        # 检查证书文件存在
+        if [ ! -f "$cert_path" ] || [ ! -f "/etc/letsencrypt/live/$domain/privkey.pem" ]; then
             error "缺少 $domain 的证书文件"
             return 1
+        fi
+        
+        # 检查证书有效期
+        local current_time=$(date +%s)
+        local not_before=$(openssl x509 -in "$cert_path" -noout -startdate | cut -d= -f2)
+        local not_after=$(openssl x509 -in "$cert_path" -noout -enddate | cut -d= -f2)
+        
+        local start_time=$(date -d "$not_before" +%s)
+        local end_time=$(date -d "$not_after" +%s)
+        
+        if [ $current_time -lt $start_time ]; then
+            error "$domain 的证书尚未生效 (生效时间: $not_before)"
+            error "需要重新申请证书"
+            return 1
+        fi
+        
+        if [ $current_time -gt $end_time ]; then
+            error "$domain 的证书已过期 (过期时间: $not_after)"
+            error "需要更新证书"
+            return 1
+        fi
+        
+        # 检查剩余有效期
+        local days_left=$(( ($end_time - $current_time) / 86400 ))
+        if [ $days_left -lt 30 ]; then
+            warn "$domain 的证书将在 $days_left 天后过期"
         fi
     done
     
