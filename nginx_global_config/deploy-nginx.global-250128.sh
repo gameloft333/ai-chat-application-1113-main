@@ -15,7 +15,7 @@ exec > >(tee -a "$LOG_FILE") 2>&1
 
 # Configuration
 DOCKER_COMPOSE_FILE="docker-compose.nginx-global_v06.yml"
-NGINX_CONF="nginx.global.250122.conf"
+NGINX_CONF="nginx.global.250128.conf"
 BACKUP_DIR="nginx_backups/$(date +%Y%m%d_%H%M%S)"
 
 # Functions

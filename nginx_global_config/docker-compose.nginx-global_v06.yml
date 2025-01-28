@@ -9,7 +9,7 @@ services:
       - "443:443"
     volumes:
       # Nginx Configuration
-      - ./nginx.global.250122.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx.global.250128.conf:/etc/nginx/nginx.conf:ro
       # - /etc/nginx/conf.d:/etc/nginx/conf.d:ro
       
       # SSL Certificates - love.saga4v.com
