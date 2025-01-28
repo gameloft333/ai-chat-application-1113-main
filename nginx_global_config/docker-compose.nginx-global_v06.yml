@@ -53,10 +53,6 @@ services:
         max-size: "10m"
         max-file: "3"
 
-    depends_on:
-      luna-game-frontend:
-        condition: service_healthy
-
   # Love Project - Replace IP and Port with your actual deployment details
   # love_app:
     # REPLACE: Use your actual container image or build configuration
