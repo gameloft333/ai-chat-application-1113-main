@@ -426,55 +426,9 @@ check_log_directories() {
     log "✓ 日志目录检查完成"
 }
 
-# 添加 AWS 环境检查函数
-check_aws_environment() {
-    log "检查 AWS 环境..."
-    
-    # 检查是否为 AWS 环境
-    if ! curl -s http://169.254.169.254/latest/meta-data/ >/dev/null; then
-        log "非 AWS 环境，跳过 AWS 特定检查"
-        return 0
-    fi
-    
-    # 检查必要的端口是否开放
-    local required_ports="80 443"
-    for port in $required_ports; do
-        if ! nc -zv localhost $port >/dev/null 2>&1; then
-            error "端口 $port 未开放"
-            return 1
-        fi
-    done
-    
-    # 检查 AWS 实例类型
-    local instance_type=$(curl -s http://169.254.169.254/latest/meta-data/instance-type)
-    log "AWS 实例类型: $instance_type"
-    
-    # 检查可用内存
-    local memory_available=$(free -m | awk '/^Mem:/{print $7}')
-    if [ "$memory_available" -lt 1024 ]; then
-        error "可用内存不足: ${memory_available}MB"
-        return 1
-    fi
-    
-    # 检查磁盘空间
-    local disk_space=$(df -h / | awk 'NR==2 {print $4}' | sed 's/G//')
-    if [ "${disk_space%.*}" -lt 10 ]; then
-        error "磁盘空间不足: ${disk_space}GB"
-        return 1
-    fi
-    
-    log "✓ AWS 环境检查通过"
-    return 0
-}
-
 # Main function
 main() {
     log "开始部署全局 Nginx..."
-    
-    check_aws_environment || {
-        error "AWS 环境检查失败"
-        return 1
-    }
     
     backup_configs
     create_network
@@ -504,7 +458,7 @@ cleanup() {
 trap cleanup EXIT
 
 # Execute main function
-main 
+main
 
 verify_cert() {
     local domain="payment.saga4v.com"
