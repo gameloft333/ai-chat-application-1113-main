@@ -62,7 +62,20 @@ stop_existing() {
 # Deploy new container
 deploy_container() {
     log "[STEP 4/6] 部署新容器..."
-    docker-compose -f "$DOCKER_COMPOSE_FILE" up -d
+    
+    # 先验证 Nginx 配置
+    if ! docker run --rm \
+        -v "$(pwd)/$NGINX_CONF:/etc/nginx/nginx.conf:ro" \
+        nginx:latest nginx -t; then
+        error "Nginx 配置验证失败"
+        return 1
+    fi
+    
+    # 配置验证通过后再部署
+    if ! docker-compose -f "$DOCKER_COMPOSE_FILE" up -d; then
+        error "容器启动失败"
+        return 1
+    fi
 }
 
 # Health check
@@ -70,42 +83,52 @@ health_check() {
     log "[STEP 5/6] 健康检查..."
     local max_retries=10  # 增加重试次数
     local retry=0
-    local wait_time=10  # 增加等待时间
-    
-    # 先等待容器完全启动
-    sleep 15
+    local wait_time=5
     
     while [ $retry -lt $max_retries ]; do
-        # 1. 检查容器状态
-        if ! docker ps -q --filter "name=saga4v-nginx" --filter "status=running" | grep -q .; then
-            log "等待容器启动... ($retry/$max_retries)"
-            sleep $wait_time
-            retry=$((retry + 1))
-            continue
-        fi
+        # 检查容器状态
+        container_status=$(docker inspect -f '{{.State.Status}}' saga4v-nginx 2>/dev/null)
         
-        # 2. 检查 Nginx 进程是否运行
-        if docker exec saga4v-nginx pgrep nginx >/dev/null; then
-            # 3. 简单检查 Nginx 是否响应
-            if docker exec saga4v-nginx curl -s -I http://localhost/ 2>/dev/null | grep -q "HTTP/"; then
-                log "✓ 健康检查通过"
-                return 0
-            fi
-        fi
+        case "$container_status" in
+            "running")
+                # 容器正在运行，检查 Nginx
+                if docker exec saga4v-nginx nginx -t &>/dev/null; then
+                    log "✓ 健康检查通过"
+                    return 0
+                fi
+                ;;
+            "restarting")
+                # 立即收集错误信息并退出
+                error "容器重启循环，收集错误信息..."
+                log "1. 容器状态："
+                docker ps -a | grep saga4v-nginx
+                log "2. 容器日志："
+                docker logs --tail 50 saga4v-nginx
+                log "3. Nginx 配置检查："
+                docker exec saga4v-nginx nginx -T || true
+                return 1
+                ;;
+            *)
+                if [ $retry -eq $((max_retries - 1)) ]; then
+                    # 最后一次重试时收集完整诊断信息
+                    error "健康检查失败，收集诊断信息..."
+                    log "1. 容器状态："
+                    docker ps -a | grep saga4v-nginx
+                    log "2. 容器日志："
+                    docker logs --tail 20 saga4v-nginx
+                    log "3. Nginx 错误日志："
+                    docker exec saga4v-nginx cat /var/log/nginx/error.log 2>/dev/null || true
+                    error "健康检查超时，状态: $container_status"
+                    return 1
+                fi
+                log "等待容器启动... ($retry/$max_retries) [状态: $container_status]"
+                ;;
+        esac
         
         log "等待服务就绪... ($retry/$max_retries)"
         sleep $wait_time
         retry=$((retry + 1))
     done
-    
-    # 如果检查失败，收集关键信息
-    error "健康检查失败，收集诊断信息..."
-    log "1. 容器状态："
-    docker ps -a | grep saga4v-nginx
-    log "2. 容器日志："
-    docker logs --tail 20 saga4v-nginx
-    log "3. Nginx 错误日志："
-    docker exec saga4v-nginx cat /var/log/nginx/error.log 2>/dev/null || true
     
     return 1
 }
