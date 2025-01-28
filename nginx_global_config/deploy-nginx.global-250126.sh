@@ -258,7 +258,7 @@ health_check() {
 verify_deployment() {
     log "[STEP 6/6] 验证部署..."
     
-    # 检查容器状态
+    # 必要性检查：容器是否运行
     if ! docker ps | grep -q saga4v-nginx; then
         error "容器未运行"
         # 显示详细错误信息
@@ -267,16 +267,30 @@ verify_deployment() {
         return 1
     fi
     
-    # 检查 Nginx 进程
+    # 非必要性检查：Nginx 进程
     if ! docker exec saga4v-nginx pgrep nginx >/dev/null; then
-        error "Nginx 进程未运行"
-        docker logs saga4v-nginx
-        return 1
+        warn "Nginx 进程未检测到，尝试启动..."
+        if ! docker exec saga4v-nginx nginx; then
+            warn "Nginx 启动失败，但容器仍在运行"
+        fi
     fi
     
-    # 检查端口监听
+    # 必要性检查：80/443 端口监听
+    local port_check=0
     if ! docker exec saga4v-nginx netstat -tlpn | grep -q ':80'; then
         error "80 端口未监听"
+        port_check=1
+    fi
+    if ! docker exec saga4v-nginx netstat -tlpn | grep -q ':443'; then
+        error "443 端口未监听"
+        port_check=1
+    fi
+    
+    if [ $port_check -eq 1 ]; then
+        # 如果端口检查失败，收集诊断信息
+        log "收集诊断信息..."
+        docker logs saga4v-nginx
+        docker exec saga4v-nginx nginx -T || true
         return 1
     fi
     
