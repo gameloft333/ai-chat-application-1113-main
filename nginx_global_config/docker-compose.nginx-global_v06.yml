@@ -41,7 +41,7 @@ services:
 
     # Optional: Health check
     healthcheck:
-      test: ["CMD", "nginx", "-t"]
+      test: ["CMD", "curl", "-f", "http://localhost/health-check"]
       interval: 30s
       timeout: 10s
       retries: 3

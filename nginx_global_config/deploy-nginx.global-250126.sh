@@ -75,23 +75,37 @@ health_check() {
     # 先等待一些时间让容器完全启动
     sleep 10
     
-    # 不再尝试修改只读文件的权限
-    docker exec saga4v-nginx sh -c '
-        mkdir -p /var/log/nginx && \
-        chown -R nginx:nginx /var/log/nginx && \
-        chmod -R 755 /var/log/nginx
-    '
-    
     while [ $retry -lt $max_retries ]; do
-        # 检查 Nginx 配置
-        if docker exec saga4v-nginx nginx -t 2>&1; then
-            # 检查 Nginx 进程
-            if docker exec saga4v-nginx pgrep nginx >/dev/null; then
-                # 检查端口监听
-                if docker exec saga4v-nginx netstat -tlpn | grep -q ':80'; then
-                    log "✓ 健康检查通过"
-                    return 0
-                fi
+        # 1. 检查容器状态
+        if ! docker ps -q --filter "name=saga4v-nginx" --filter "status=running" | grep -q .; then
+            log "等待容器启动... ($retry/$max_retries)"
+            sleep $wait_time
+            retry=$((retry + 1))
+            continue
+        fi
+        
+        # 2. 检查配置文件语法
+        if ! docker exec saga4v-nginx nginx -t 2>/dev/null; then
+            log "等待配置就绪... ($retry/$max_retries)"
+            sleep $wait_time
+            retry=$((retry + 1))
+            continue
+        fi
+        
+        # 3. 检查 Nginx 进程
+        if ! docker exec saga4v-nginx pgrep nginx >/dev/null; then
+            log "等待进程启动... ($retry/$max_retries)"
+            sleep $wait_time
+            retry=$((retry + 1))
+            continue
+        fi
+        
+        # 4. 检查端口监听（同时检查 80 和 443 端口）
+        if docker exec saga4v-nginx sh -c 'netstat -tlpn | grep -q ":80\|:443"'; then
+            # 5. 尝试简单的 HTTP 请求
+            if docker exec saga4v-nginx curl -s -o /dev/null -w "%{http_code}" http://localhost/health-check 2>/dev/null | grep -q "200\|301\|302\|404"; then
+                log "✓ 健康检查通过"
+                return 0
             fi
         fi
         
@@ -100,9 +114,19 @@ health_check() {
         retry=$((retry + 1))
     done
     
-    error "健康检查失败，详细信息："
-    docker logs saga4v-nginx
+    # 如果检查失败，收集详细信息
+    error "健康检查失败，收集诊断信息..."
+    log "1. 容器状态："
+    docker inspect saga4v-nginx
+    log "2. Nginx 配置检查："
     docker exec saga4v-nginx nginx -T
+    log "3. 进程状态："
+    docker exec saga4v-nginx ps aux
+    log "4. 端口监听状态："
+    docker exec saga4v-nginx netstat -tlpn
+    log "5. 容器日志："
+    docker logs --tail 50 saga4v-nginx
+    
     return 1
 }
 
