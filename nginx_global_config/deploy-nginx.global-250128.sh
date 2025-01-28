@@ -371,16 +371,41 @@ verify_config() {
         # 检查证书目录
         if [ -d "/etc/letsencrypt/live/$domain" ]; then
             log "设置 $domain 证书目录权限..."
-            chmod 755 "/etc/letsencrypt/live/$domain"
-            chmod 755 "/etc/letsencrypt/archive/$domain"
+            
+            # 添加详细的操作日志
+            log "设置目录权限: /etc/letsencrypt/live/$domain"
+            chmod 755 "/etc/letsencrypt/live/$domain" || {
+                error "无法设置目录权限: /etc/letsencrypt/live/$domain"
+                return 1
+            }
+            
+            log "设置目录权限: /etc/letsencrypt/archive/$domain"
+            chmod 755 "/etc/letsencrypt/archive/$domain" || {
+                error "无法设置目录权限: /etc/letsencrypt/archive/$domain"
+                return 1
+            }
             
             # 设置证书文件权限
-            chown -R root:nginx "/etc/letsencrypt/live/$domain"
-            chown -R root:nginx "/etc/letsencrypt/archive/$domain"
+            log "设置证书所有权: $domain"
+            chown -R root:nginx "/etc/letsencrypt/live/$domain" || {
+                error "无法设置证书所有权: /etc/letsencrypt/live/$domain"
+                return 1
+            }
+            chown -R root:nginx "/etc/letsencrypt/archive/$domain" || {
+                error "无法设置证书所有权: /etc/letsencrypt/archive/$domain"
+                return 1
+            }
             
             # 设置具体文件权限
-            chmod 644 "/etc/letsencrypt/archive/$domain/fullchain1.pem"
-            chmod 640 "/etc/letsencrypt/archive/$domain/privkey1.pem"
+            log "设置证书文件权限: $domain"
+            chmod 644 "/etc/letsencrypt/archive/$domain/fullchain1.pem" || {
+                error "无法设置证书文件权限: fullchain1.pem"
+                return 1
+            }
+            chmod 640 "/etc/letsencrypt/archive/$domain/privkey1.pem" || {
+                error "无法设置证书文件权限: privkey1.pem"
+                return 1
+            }
         else
             error "证书目录不存在: /etc/letsencrypt/live/$domain"
             return 1
@@ -388,17 +413,23 @@ verify_config() {
     done
     
     # 验证证书权限
+    log "验证证书文件权限..."
     for domain in love.saga4v.com play.saga4v.com payment.saga4v.com; do
-        if [ ! -r "/etc/nginx/ssl/$domain/fullchain.pem" ] || \
-           [ ! -r "/etc/nginx/ssl/$domain/privkey.pem" ]; then
-            error "证书文件权限错误: $domain"
+        if [ ! -r "/etc/nginx/ssl/$domain/fullchain.pem" ]; then
+            error "无法读取证书文件: /etc/nginx/ssl/$domain/fullchain.pem"
             return 1
         fi
+        if [ ! -r "/etc/nginx/ssl/$domain/privkey.pem" ]; then
+            error "无法读取证书文件: /etc/nginx/ssl/$domain/privkey.pem"
+            return 1
+        fi
+        log "✓ $domain 证书权限验证通过"
     done
     
     # 验证 Nginx 配置
-    if ! docker exec saga4v-nginx nginx -t 2>/dev/null; then
-        error "Nginx 配置验证失败"
+    log "验证 Nginx 配置文件..."
+    if ! docker exec saga4v-nginx nginx -t 2>&1; then
+        error "Nginx 配置验证失败，详细错误信息如上"
         return 1
     fi
     
