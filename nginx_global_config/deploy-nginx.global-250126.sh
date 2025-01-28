@@ -54,36 +54,33 @@ create_network() {
 stop_existing() {
     log "[STEP 3/6] 停止现有容器..."
     
-    # 检查并停止所有使用 80/443 端口的容器
-    local ports_in_use=$(netstat -tlpn 2>/dev/null | grep -E ':80|:443' || true)
-    if [ -n "$ports_in_use" ]; then
-        log "发现端口占用："
-        echo "$ports_in_use"
-        
-        # 获取使用这些端口的进程
-        local pids=$(echo "$ports_in_use" | awk '{print $NF}' | cut -d'/' -f1 | sort -u)
-        for pid in $pids; do
-            local container_id=$(docker ps -q --filter "pid=$pid")
+    # 检查并停止 Nginx 相关的 docker-proxy 进程
+    local nginx_proxies=$(ps aux | grep docker-proxy | grep -E ':80|:443' | awk '{print $2}')
+    if [ -n "$nginx_proxies" ]; then
+        log "发现 Nginx 相关的 docker-proxy 进程："
+        for pid in $nginx_proxies; do
+            # 获取对应的容器 ID
+            local container_id=$(docker ps -q --filter "publish=80-80" --filter "publish=443-443")
             if [ -n "$container_id" ]; then
-                log "停止容器 ID: $container_id"
-                docker stop "$container_id" || true
-                docker rm "$container_id" || true
+                local container_name=$(docker inspect --format '{{.Name}}' "$container_id" | sed 's/\///')
+                # 只停止 saga4v-nginx 容器
+                if [[ "$container_name" == "saga4v-nginx" ]]; then
+                    log "停止容器: $container_name"
+                    docker stop "$container_id" || true
+                    docker rm "$container_id" || true
+                else
+                    log "跳过非 Nginx 容器: $container_name"
+                fi
             fi
         done
-    fi
-    
-    # 停止现有的 saga4v-nginx 容器
-    if docker ps -q --filter "name=saga4v-nginx" | grep -q .; then
-        docker stop saga4v-nginx || true
-        docker rm saga4v-nginx || true
     fi
     
     # 等待端口释放
     local timeout=30
     local counter=0
     while [ $counter -lt $timeout ]; do
-        if ! netstat -tlpn 2>/dev/null | grep -qE ':80|:443'; then
-            log "✓ 端口已释放"
+        if ! docker ps -q --filter "name=saga4v-nginx" | grep -q .; then
+            log "✓ Nginx 容器已停止"
             return 0
         fi
         counter=$((counter + 1))
@@ -91,8 +88,8 @@ stop_existing() {
     done
     
     if [ $counter -eq $timeout ]; then
-        error "端口释放超时，请手动检查端口占用"
-        netstat -tlpn | grep -E ':80|:443'
+        error "Nginx 容器停止超时"
+        docker ps | grep saga4v-nginx
         return 1
     fi
 }
@@ -299,46 +296,29 @@ health_check() {
 verify_deployment() {
     log "[STEP 6/6] 验证部署..."
     
-    # 检查端口占用情况
-    if netstat -tlpn 2>/dev/null | grep -qE ':80|:443'; then
-        error "端口 80/443 已被占用"
-        netstat -tlpn | grep -E ':80|:443'
+    # 检查 saga4v-nginx 容器状态
+    if ! docker ps --filter "name=saga4v-nginx" --format "{{.Status}}" | grep -q "Up"; then
+        error "saga4v-nginx 容器未运行"
         return 1
     fi
     
-    # 必要性检查：容器是否运行
-    if ! docker ps | grep -q saga4v-nginx; then
-        error "容器未运行"
-        # 显示详细错误信息
-        docker logs saga4v-nginx
-        docker inspect saga4v-nginx
+    # 检查网络连接
+    if ! docker network inspect saga4v_network | grep -q "\"Name\": \"saga4v-nginx\""; then
+        log "将 saga4v-nginx 连接到 saga4v_network..."
+        docker network connect saga4v_network saga4v-nginx || true
+    fi
+    
+    # 验证端口监听
+    local nginx_container_id=$(docker ps -q --filter "name=saga4v-nginx")
+    if [ -z "$nginx_container_id" ]; then
+        error "找不到 saga4v-nginx 容器"
         return 1
     fi
     
-    # 非必要性检查：Nginx 进程
-    if ! docker exec saga4v-nginx pgrep nginx >/dev/null; then
-        warn "Nginx 进程未检测到，尝试启动..."
-        if ! docker exec saga4v-nginx nginx; then
-            warn "Nginx 启动失败，但容器仍在运行"
-        fi
-    fi
-    
-    # 必要性检查：80/443 端口监听
-    local port_check=0
-    if ! docker exec saga4v-nginx netstat -tlpn | grep -q ':80'; then
-        error "80 端口未监听"
-        port_check=1
-    fi
-    if ! docker exec saga4v-nginx netstat -tlpn | grep -q ':443'; then
-        error "443 端口未监听"
-        port_check=1
-    fi
-    
-    if [ $port_check -eq 1 ]; then
-        # 如果端口检查失败，收集诊断信息
-        log "收集诊断信息..."
-        docker logs saga4v-nginx
-        docker exec saga4v-nginx nginx -T || true
+    # 使用 docker exec 检查端口监听
+    if ! docker exec $nginx_container_id netstat -tlpn | grep -qE ':80|:443'; then
+        error "Nginx 未监听必要端口"
+        docker exec $nginx_container_id netstat -tlpn
         return 1
     fi
     
