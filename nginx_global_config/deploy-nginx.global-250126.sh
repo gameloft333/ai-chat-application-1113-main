@@ -189,7 +189,7 @@ deploy_container() {
     if [ ! -d "conf.d" ]; then
         error "conf.d 目录不存在"
         return 1
-    }
+    fi
     
     # 创建临时目录用于配置文件
     local tmp_dir=$(mktemp -d)
