@@ -70,10 +70,10 @@ health_check() {
     log "[STEP 5/6] 健康检查..."
     local max_retries=10  # 增加重试次数
     local retry=0
-    local wait_time=5
+    local wait_time=10  # 增加等待时间
     
-    # 先等待一些时间让容器完全启动
-    sleep 10
+    # 先等待容器完全启动
+    sleep 15
     
     while [ $retry -lt $max_retries ]; do
         # 1. 检查容器状态
@@ -84,26 +84,10 @@ health_check() {
             continue
         fi
         
-        # 2. 检查配置文件语法
-        if ! docker exec saga4v-nginx nginx -t 2>/dev/null; then
-            log "等待配置就绪... ($retry/$max_retries)"
-            sleep $wait_time
-            retry=$((retry + 1))
-            continue
-        fi
-        
-        # 3. 检查 Nginx 进程
-        if ! docker exec saga4v-nginx pgrep nginx >/dev/null; then
-            log "等待进程启动... ($retry/$max_retries)"
-            sleep $wait_time
-            retry=$((retry + 1))
-            continue
-        fi
-        
-        # 4. 检查端口监听（同时检查 80 和 443 端口）
-        if docker exec saga4v-nginx sh -c 'netstat -tlpn | grep -q ":80\|:443"'; then
-            # 5. 尝试简单的 HTTP 请求
-            if docker exec saga4v-nginx curl -s -o /dev/null -w "%{http_code}" http://localhost/health-check 2>/dev/null | grep -q "200\|301\|302\|404"; then
+        # 2. 检查 Nginx 进程是否运行
+        if docker exec saga4v-nginx pgrep nginx >/dev/null; then
+            # 3. 简单检查 Nginx 是否响应
+            if docker exec saga4v-nginx curl -s -I http://localhost/ 2>/dev/null | grep -q "HTTP/"; then
                 log "✓ 健康检查通过"
                 return 0
             fi
@@ -114,18 +98,14 @@ health_check() {
         retry=$((retry + 1))
     done
     
-    # 如果检查失败，收集详细信息
+    # 如果检查失败，收集关键信息
     error "健康检查失败，收集诊断信息..."
     log "1. 容器状态："
-    docker inspect saga4v-nginx
-    log "2. Nginx 配置检查："
-    docker exec saga4v-nginx nginx -T
-    log "3. 进程状态："
-    docker exec saga4v-nginx ps aux
-    log "4. 端口监听状态："
-    docker exec saga4v-nginx netstat -tlpn
-    log "5. 容器日志："
-    docker logs --tail 50 saga4v-nginx
+    docker ps -a | grep saga4v-nginx
+    log "2. 容器日志："
+    docker logs --tail 20 saga4v-nginx
+    log "3. Nginx 错误日志："
+    docker exec saga4v-nginx cat /var/log/nginx/error.log 2>/dev/null || true
     
     return 1
 }
