@@ -223,4 +223,30 @@ check_certificates() {
     
     log "✓ SSL 证书检查通过"
     return 0
-} 
+}
+
+verify_cert() {
+    local domain="payment.saga4v.com"
+    openssl x509 -in /etc/letsencrypt/live/$domain/fullchain.pem -text -noout | grep "Subject:"
+}
+
+verify_config() {
+    log "验证 Nginx 配置..."
+    
+    # 检查证书文件权限
+    for domain in love.saga4v.com play.saga4v.com payment.saga4v.com; do
+        if [ ! -r "/etc/nginx/ssl/$domain/fullchain.pem" ] || \
+           [ ! -r "/etc/nginx/ssl/$domain/privkey.pem" ]; then
+            error "证书文件权限错误: $domain"
+            return 1
+        fi
+    done
+    
+    # 验证 Nginx 配置
+    if ! docker exec saga4v-nginx nginx -t; then
+        error "Nginx 配置验证失败"
+        return 1
+    fi
+    
+    return 0
+}
