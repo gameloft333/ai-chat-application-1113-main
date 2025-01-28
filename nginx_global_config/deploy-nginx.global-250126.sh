@@ -59,19 +59,111 @@ stop_existing() {
     fi
 }
 
+# 添加新的检查函数
+check_dependencies() {
+    log "检查依赖服务..."
+    
+    # 从 nginx.conf 解析 SSL 证书配置和对应的服务
+    local NGINX_CONF="nginx.global.250122.conf"
+    declare -A SSL_SERVICES
+    
+    # 首先获取所有配置了 SSL 证书的域名
+    local current_domain=""
+    local has_ssl=false
+    
+    while IFS= read -r line; do
+        # 提取域名
+        local server_name=$(echo "$line" | awk '/server_name/ {print $2}' | tr -d ';')
+        # 提取 SSL 证书路径
+        local ssl_cert=$(echo "$line" | grep -o '/etc/nginx/ssl/[^/]*/fullchain.pem' || true)
+        # 提取代理地址
+        local proxy_pass=$(echo "$line" | awk '/proxy_pass/ {match($0, /http:\/\/([^:]+):([0-9]+)/, arr); if(arr[1] && arr[2]) print arr[1] ":" arr[2]}' | tr -d ';')
+        
+        if [[ -n "$server_name" ]]; then
+            current_domain="$server_name"
+            has_ssl=false
+        fi
+        
+        if [[ -n "$ssl_cert" ]]; then
+            has_ssl=true
+        fi
+        
+        if [[ -n "$proxy_pass" ]] && [[ "$has_ssl" == true ]] && [[ -n "$current_domain" ]]; then
+            SSL_SERVICES["$proxy_pass"]="$current_domain"
+        fi
+    done < "$NGINX_CONF"
+    
+    # 检查配置了 SSL 的服务
+    for service in "${!SSL_SERVICES[@]}"; do
+        local container_name=${service%:*}
+        local port=${service#*:}
+        local domain=${SSL_SERVICES[$service]}
+        
+        log "检查 SSL 服务: $container_name (端口: $port, 域名: $domain)"
+        
+        # 检查容器状态
+        if ! docker ps --format '{{.Names}} {{.Status}}' | grep -q "${container_name}.*Up"; then
+            error "$container_name 容器未运行"
+            log "当前运行的容器列表："
+            docker ps
+            return 1
+        fi
+        
+        # 检查网络连接
+        if ! docker network inspect saga4v_network | grep -q "$container_name"; then
+            error "$container_name 未连接到 saga4v_network 网络"
+            log "网络详情："
+            docker network inspect saga4v_network
+            return 1
+        fi
+        
+        # 检查 SSL 证书
+        local ssl_cert="/etc/nginx/ssl/$domain/fullchain.pem"
+        local ssl_key="/etc/nginx/ssl/$domain/privkey.pem"
+        if [[ ! -f "$ssl_cert" ]] || [[ ! -f "$ssl_key" ]]; then
+            error "$domain 的 SSL 证书文件不存在"
+            log "期望的证书路径："
+            log "- $ssl_cert"
+            log "- $ssl_key"
+            return 1
+        fi
+    done
+    
+    if [ ${#SSL_SERVICES[@]} -eq 0 ]; then
+        warn "未发现配置了 SSL 证书的服务"
+        return 0
+    fi
+    
+    log "✓ 所有 SSL 服务检查通过"
+    return 0
+}
+
 # Deploy new container
 deploy_container() {
     log "[STEP 4/6] 部署新容器..."
     
-    # 先验证 Nginx 配置
+    # 先检查依赖
+    if ! check_dependencies; then
+        error "依赖检查失败"
+        return 1
+    fi
+    
+    # 验证 DNS 解析
+    if ! docker run --rm --network saga4v_network alpine nslookup luna-game-frontend; then
+        error "无法解析 luna-game-frontend 主机名"
+        return 1
+    }
+    
+    # 验证 Nginx 配置
     if ! docker run --rm \
+        --network saga4v_network \
         -v "$(pwd)/$NGINX_CONF:/etc/nginx/nginx.conf:ro" \
         nginx:latest nginx -t; then
         error "Nginx 配置验证失败"
         return 1
     fi
     
-    # 配置验证通过后再部署
+    # 部署容器
     if ! docker-compose -f "$DOCKER_COMPOSE_FILE" up -d; then
         error "容器启动失败"
         return 1
