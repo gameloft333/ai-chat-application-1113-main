@@ -460,7 +460,7 @@ main() {
     }
     
     echo -e "${YELLOW}等待服务启动...${NC}"
-    sleep 10  # 给服务一些启动时间
+    sleep 30  # 从 10 改为 30
     
     verify_payment_service || {
         echo -e "${YELLOW}支付服务验证未通过，是否继续部署？[y/N] ${NC}"
