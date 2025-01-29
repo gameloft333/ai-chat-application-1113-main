@@ -51,5 +51,4 @@ RUN echo '#!/bin/sh' > /debug.sh && \
 # 启动命令
 CMD ["/bin/sh", "-c", "/debug.sh && npm run preview:prod"]
 
-COPY healthcheck.sh /healthcheck.sh
 RUN chmod +x /healthcheck.sh
