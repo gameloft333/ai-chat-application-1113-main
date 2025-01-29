@@ -45,7 +45,10 @@ import { MobilePreviewToggle } from './components/MobilePreviewToggle';
 import './styles/payment.css';
 
 const API_KEY = import.meta.env.VITE_API_KEY || '';
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_URL = import.meta.env.VITE_APP_URL || import.meta.env.VITE_PAYMENT_API_URL;
+if (!API_URL) {
+    console.error('警告: 未配置 VITE_APP_URL 或 VITE_PAYMENT_API_URL');
+}
 
 interface AppRoutesProps {
   themeColor: string;

@@ -1,5 +1,6 @@
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { STRIPE_CONFIG } from '../config/stripe-config';
+import { loadEnv } from '../utils/env-utils';
 
 export class StripeService {
     private static instance: StripeService;
@@ -38,11 +39,10 @@ export class StripeService {
             await this.ensureInitialized();
             console.log('Stripe 初始化完成');
             
-            const API_URL = import.meta.env.VITE_PAYMENT_API_URL || (
-                import.meta.env.PROD 
-                    ? 'https://payment.saga4v.com'  // 生产环境默认值
-                    : 'http://localhost:4242'       // 开发环境默认值
-            );
+            const API_URL = STRIPE_CONFIG.API_URL;
+            if (!API_URL) {
+                throw new Error('支付服务地址未配置');
+            }
             console.log('请求支付服务:', API_URL);
             
             // 添加更多请求头和错误处理

@@ -5,7 +5,7 @@ export const loadEnv = () => {
   console.log('当前环境:', {
     mode: currentMode,
     isProduction,
-    apiUrl: import.meta.env.VITE_API_URL,
+    apiUrl: import.meta.env.VITE_PAYMENT_API_URL,
     paypalMode: import.meta.env.VITE_PAYPAL_SANDBOX_MODE,
     stripeMode: import.meta.env.VITE_STRIPE_MODE,
     tonNetwork: import.meta.env.VITE_TON_NETWORK
