@@ -277,46 +277,32 @@ cleanup() {
     docker system prune -f
 }
 
-# 回滚函数
+# Rollback function
 rollback() {
-    echo -e "${RED}部署失败，开始回滚...${NC}"
+    echo -e "${RED}开始回滚...${NC}"
     
-    # 保存当前时间戳的日志
-    local rollback_log="development_log/rollback_$(date +%Y%m%d_%H%M%S).log"
+    # 保存容器日志（如果容器还存在）
+    echo -e "${YELLOW}保存容器日志...${NC}"
+    for service in app payment; do
+        container_name="ai-chat-application-1113-main-${service}"
+        if docker ps -a | grep -q ${container_name}; then
+            echo -e "${YELLOW}保存 ${container_name} 日志${NC}"
+            docker logs ${container_name} > ${container_name}_error.log 2>&1 || true
+        fi
+    done
     
-    # 1. 获取上一次成功部署的镜像标签
-    local last_successful_tag=$(docker images --format "{{.Tag}}" | grep "^v[0-9]" | sort -V | tail -n 1)
-    
-    if [ -z "$last_successful_tag" ]; then
-        echo -e "${RED}未找到可回滚的版本，停止所有容器${NC}" | tee -a "$rollback_log"
-        docker-compose -f docker-compose.prod.yml down
-        return 1
+    # 检查 healthcheck.sh 是否存在且可执行
+    if [ ! -x "./healthcheck.sh" ]; then
+        echo -e "${RED}错误: healthcheck.sh 不存在或没有执行权限${NC}"
+        ls -l healthcheck.sh || echo "healthcheck.sh 文件不存在"
     fi
     
-    echo -e "${YELLOW}找到上一个稳定版本: ${last_successful_tag}${NC}" | tee -a "$rollback_log"
+    # 停止并删除容器前先检查状态
+    docker-compose -f docker-compose.prod.yml ps
     
-    # 2. 停止当前运行的容器
-    echo -e "${YELLOW}停止当前容器...${NC}" | tee -a "$rollback_log"
     docker-compose -f docker-compose.prod.yml down
     
-    # 3. 使用上一个稳定版本的镜像启动服务
-    echo -e "${YELLOW}使用版本 ${last_successful_tag} 启动服务...${NC}" | tee -a "$rollback_log"
-    
-    # 修改镜像标签
-    export IMAGE_TAG=$last_successful_tag
-    
-    # 尝试启动上一个版本
-    if docker-compose -f docker-compose.prod.yml up -d >> "$rollback_log" 2>&1; then
-        echo -e "${GREEN}回滚成功，服务已恢复到版本 ${last_successful_tag}${NC}" | tee -a "$rollback_log"
-        
-        # 检查服务状态
-        echo -e "${YELLOW}检查服务状态...${NC}" | tee -a "$rollback_log"
-        docker-compose -f docker-compose.prod.yml ps >> "$rollback_log"
-        return 0
-    else
-        echo -e "${RED}回滚失败，请手动检查服务状态${NC}" | tee -a "$rollback_log"
-        return 1
-    fi
+    echo -e "${GREEN}回滚完成${NC}"
 }
 
 # 生成部署报告
@@ -376,9 +362,6 @@ generate_deployment_report() {
         echo "支付服务 CORS 配置: $(curl -s -X OPTIONS -H 'Origin: https://love.saga4v.com' -I https://payment.saga4v.com/api/stripe/create-payment-intent | grep -i 'access-control')"
         echo "Docker 网络状态: $(docker network inspect saga4v_network --format '{{.Name}} - {{.Driver}}')"
         
-        echo -e "\n---------- 容器状态列表 ----------"
-        docker ps --format "容器: {{.Names}}\n状态: {{.State}}\n" | grep -i "running"
-
         echo -e "\n---------- 重要提醒 ----------"
         echo "1. 请检查所有服务是否正常运行"
         echo "2. 确认所有端口是否正确暴露"
