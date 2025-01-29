@@ -156,14 +156,14 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
   };
 
   return (
-    <div className="space-y-8">
+    <div className="container mx-auto px-4 py-8">
       <h2 className="text-2xl font-bold text-center mb-8">
-        {t('common.selectCharacter')}
+        {t('common.selectCharacter')} {/* 显示选择角色的标题 */}
       </h2>
-      <MarqueeNotice messages={marqueeMessages} />
-      <div className="grid grid-cols-4 gap-4">
-        {sortedCharacters.map((character) => {
-          const borderStyle = getBorderStyle(character);
+      <MarqueeNotice messages={marqueeMessages} /> {/* 显示跑马灯通知 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"> {/* 使用网格布局，根据屏幕大小显示不同数量的列 */}
+        {sortedCharacters.map((character) => { /* 遍历所有角色 */
+          const borderStyle = getBorderStyle(character); /* 获取角色的边框样式 */
           
           return (
             <div

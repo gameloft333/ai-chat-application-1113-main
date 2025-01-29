@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { CharacterStatsService } from '../services/character-stats-service';
 import { characters } from '../types/character';
@@ -16,7 +16,7 @@ export const GenderSelector: React.FC<GenderSelectorProps> = ({
   themeColor,
   onPopularCharactersChange
 }) => {
-  const { t } = useLanguage();
+  const { t, currentLanguage } = useLanguage();
 
   useEffect(() => {
     const fetchStats = () => {
@@ -56,28 +56,35 @@ export const GenderSelector: React.FC<GenderSelectorProps> = ({
     fetchStats();
   }, [onPopularCharactersChange]);
 
-  const genderOptions = [
-    { value: 'popular', label: t('gender.popular') },
-    { value: 'female', label: t('gender.female') },
-    { value: 'male', label: t('gender.male') }
+  // 添加语言切换时的调试日志
+  useEffect(() => {
+    console.log('Current language:', currentLanguage);
+    console.log('Gender translations:', {
+      popular: t('gender.popular'),
+      female: t('gender.female'),
+      male: t('gender.male'),
+      celebrity: t('gender.celebrity')
+    });
+  }, [currentLanguage]);
+
+  const genderButtons = [
+    { key: 'popular', label: t('gender.popular') },
+    { key: 'female', label: t('gender.female') },
+    { key: 'male', label: t('gender.male') },
+    { key: 'celebrity', label: t('gender.celebrity') }
   ];
 
   return (
-    <div className="flex space-x-4">
-      {genderOptions.map((option) => (
+    <div className="flex justify-center space-x-4 mb-8 mt-8">
+      {genderButtons.map(({ key, label }) => (
         <button
-          key={option.value}
-          onClick={() => onGenderChange(option.value)}
+          key={key}
           className={`px-4 py-2 rounded-full transition-all duration-300 ${
-            selectedGender === option.value
-              ? 'text-white'
-              : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
+            selectedGender === key ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-400'
           }`}
-          style={{
-            backgroundColor: selectedGender === option.value ? themeColor : 'transparent'
-          }}
+          onClick={() => onGenderChange(key as string | null)}
         >
-          {option.label}
+          {label}
         </button>
       ))}
     </div>

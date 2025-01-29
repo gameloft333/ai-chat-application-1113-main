@@ -12,6 +12,12 @@ export const MARQUEE_CONFIG = {
   zIndex: 50, // 层级
 }
 
+// 添加以下配置
+export const THEME_CONFIG = {
+  defaultTheme: 'dark',
+  enableThemeSwitcher: false, // 设置为 false 隐藏切换按钮
+};
+
 
 
 

@@ -1,4 +1,3 @@
-
 import { Character } from './types.js';
 
 export const characters: Character[] = [
@@ -9,7 +8,7 @@ export const characters: Character[] = [
     "image": "/characters/santaclaus.png",
     "promptFile": "santaclaus.txt",
     "avatarFile": "/characters/santaclaus.png",
-    "gender": "male",
+    "gender": "celebrity",
     "i18n": {
       "en": {
         "age": "Timeless (Centuries Old)",
@@ -28,7 +27,7 @@ export const characters: Character[] = [
     "image": "/characters/elonmusk.png",
     "promptFile": "elonmusk.txt",
     "avatarFile": "/characters/elonmusk.png",
-    "gender": "male",
+    "gender": "celebrity",
     "i18n": {
       "en": {
         "age": "52 years (Born 1971)",
@@ -621,11 +620,11 @@ export const characters: Character[] = [
     "i18n": {
       "en": {
         "age": "Secret",
-        "description": "a natural magician from a mysterious fantasy world, restores the kingdom's gardens with a gentle and elegant image, dreams of finding the \"Eternal Flower,\" and guards the world with magic and natural beauty."
+        "description": "a natural magician from a mysterious fantasy world, restores the kingdom's gardens with a gentle and elegant image, dreams of finding the 'Eternal Flower,' and guards the world with magic and natural beauty."
       },
       "zh": {
         "age": "保密",
-        "description": "来自神秘幻想世界的自然魔法师，以温柔优雅的形象恢复王国花园，梦想找到“永恒之花”，用魔法与自然之美守护世界。"
+        "description": "来自神秘幻想世界的自然魔法师，以温柔优雅的形象恢复王国花园，梦想找到'永恒之花'，用魔法与自然之美守护世界。"
       }
     }
   },

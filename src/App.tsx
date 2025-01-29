@@ -43,6 +43,7 @@ import ThemeToggle from './components/ThemeToggle';
 import { MobileNavBar } from './components/MobileNavBar';
 import { MobilePreviewToggle } from './components/MobilePreviewToggle';
 import './styles/payment.css';
+import { THEME_CONFIG } from './config/theme-config';
 
 const API_KEY = import.meta.env.VITE_API_KEY || '';
 const API_URL = import.meta.env.VITE_APP_URL || import.meta.env.VITE_PAYMENT_API_URL;
@@ -52,6 +53,10 @@ if (!API_URL) {
 
 interface AppRoutesProps {
   themeColor: string;
+}
+
+interface AppContentProps extends AppRoutesProps {
+  showThemeToggle?: boolean; // 添加控制暗色模式按钮显示的属性
 }
 
 const AppRoutes: React.FC<AppRoutesProps> = ({ themeColor }) => {
@@ -74,7 +79,10 @@ interface UserState {
   planId?: string;
 }
 
-const AppContent: React.FC<AppRoutesProps> = ({ themeColor }) => {
+const AppContent: React.FC<AppContentProps> = ({ 
+  themeColor, 
+  showThemeToggle = true  // 默认显示
+}) => {
   const { t } = useLanguage();
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
@@ -497,6 +505,11 @@ const AppContent: React.FC<AppRoutesProps> = ({ themeColor }) => {
     }
   }, [selectedGender]);
 
+  useEffect(() => {
+    // 设置默认主题
+    document.documentElement.setAttribute('data-theme', THEME_CONFIG.defaultTheme);
+  }, []);
+
   return (
     <>
       <DynamicFavicon selectedCharacter={selectedCharacter} />
@@ -535,8 +548,15 @@ const AppContent: React.FC<AppRoutesProps> = ({ themeColor }) => {
                 </button>
               )}
               
-              {/* 主题切换按钮 */}
-              <ThemeToggle themeColor={themeColor} />
+              {/* 主题暗色模式切换按钮已隐藏 */}
+              {/* <button 
+                className="p-2.5 rounded-full transition-all duration-300 hover:scale-110 bg-gray-700 hover:bg-gray-600"
+                onClick={() => document.documentElement.classList.toggle('dark')}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-6 w-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-11h-6m-3 4v-6m-7 8h6" />
+                </svg>
+              </button> */}
               
               {/* 语言切换按钮 */}
               <LanguageSwitch themeColor={themeColor} />
@@ -683,6 +703,7 @@ const AppContent: React.FC<AppRoutesProps> = ({ themeColor }) => {
         {/* 添加反馈按钮 */}
         {currentUser && <FeedbackButton themeColor={themeColor} />}
       </div>
+      {THEME_CONFIG.enableThemeSwitcher && <ThemeToggle themeColor={themeColor} />}
     </>
   );
 };
