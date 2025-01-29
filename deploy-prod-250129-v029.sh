@@ -217,9 +217,21 @@ deploy_containers() {
     local app_log="development_log/app_$(date +%Y%m%d_%H%M%S).log"
     local payment_log="development_log/payment_$(date +%Y%m%d_%H%M%S).log"
     
+    # 生成新的版本标签
+    local current_tag="v$(date +%Y%m%d_%H%M%S)"
+    
     # 尝试一键部署并保存日志
     if docker-compose -f docker-compose.prod.yml up -d --build > "$deploy_log" 2>&1; then
         echo -e "${GREEN}一键部署成功${NC}"
+        
+        # 为成功部署的镜像添加标签
+        docker tag ai-chat-application-1113-main-app:latest ai-chat-application-1113-main-app:$current_tag
+        docker tag ai-chat-application-1113-main-payment:latest ai-chat-application-1113-main-payment:$current_tag
+        
+        # 记录成功部署的版本
+        echo "$current_tag" > "deployment_reports/last_successful_deploy.txt"
+        
+        echo -e "${GREEN}已保存部署版本: ${current_tag}${NC}"
         docker-compose -f docker-compose.prod.yml logs >> "$deploy_log" 2>&1
         return 0
     else
@@ -256,6 +268,15 @@ deploy_containers() {
         # 检查容器是否都启动成功
         if docker-compose -f docker-compose.prod.yml ps | grep -q "Up"; then
             echo -e "${GREEN}分步部署成功${NC}"
+            
+            # 为成功部署的镜像添加标签
+            docker tag ai-chat-application-1113-main-app:latest ai-chat-application-1113-main-app:$current_tag
+            docker tag ai-chat-application-1113-main-payment:latest ai-chat-application-1113-main-payment:$current_tag
+            
+            # 记录成功部署的版本
+            echo "$current_tag" > "deployment_reports/last_successful_deploy.txt"
+            
+            echo -e "${GREEN}已保存部署版本: ${current_tag}${NC}"
             return 0
         else
             echo -e "${RED}分步部署失败${NC}"
@@ -284,37 +305,35 @@ rollback() {
     # 保存当前时间戳的日志
     local rollback_log="development_log/rollback_$(date +%Y%m%d_%H%M%S).log"
     
-    # 1. 获取上一次成功部署的镜像标签
-    local last_successful_tag=$(docker images --format "{{.Tag}}" | grep "^v[0-9]" | sort -V | tail -n 1)
-    
-    if [ -z "$last_successful_tag" ]; then
-        echo -e "${RED}未找到可回滚的版本，停止所有容器${NC}" | tee -a "$rollback_log"
-        docker-compose -f docker-compose.prod.yml down
-        return 1
-    fi
-    
-    echo -e "${YELLOW}找到上一个稳定版本: ${last_successful_tag}${NC}" | tee -a "$rollback_log"
-    
-    # 2. 停止当前运行的容器
-    echo -e "${YELLOW}停止当前容器...${NC}" | tee -a "$rollback_log"
-    docker-compose -f docker-compose.prod.yml down
-    
-    # 3. 使用上一个稳定版本的镜像启动服务
-    echo -e "${YELLOW}使用版本 ${last_successful_tag} 启动服务...${NC}" | tee -a "$rollback_log"
-    
-    # 修改镜像标签
-    export IMAGE_TAG=$last_successful_tag
-    
-    # 尝试启动上一个版本
-    if docker-compose -f docker-compose.prod.yml up -d >> "$rollback_log" 2>&1; then
-        echo -e "${GREEN}回滚成功，服务已恢复到版本 ${last_successful_tag}${NC}" | tee -a "$rollback_log"
+    # 读取上一次成功部署的版本
+    if [ -f "deployment_reports/last_successful_deploy.txt" ]; then
+        local last_successful_tag=$(cat "deployment_reports/last_successful_deploy.txt")
+        echo -e "${YELLOW}找到上一个稳定版本: ${last_successful_tag}${NC}" | tee -a "$rollback_log"
         
-        # 检查服务状态
-        echo -e "${YELLOW}检查服务状态...${NC}" | tee -a "$rollback_log"
-        docker-compose -f docker-compose.prod.yml ps >> "$rollback_log"
-        return 0
+        # 2. 停止当前运行的容器
+        echo -e "${YELLOW}停止当前容器...${NC}" | tee -a "$rollback_log"
+        docker-compose -f docker-compose.prod.yml down
+        
+        # 3. 使用上一个稳定版本的镜像启动服务
+        echo -e "${YELLOW}使用版本 ${last_successful_tag} 启动服务...${NC}" | tee -a "$rollback_log"
+        
+        # 修改镜像标签
+        export IMAGE_TAG=$last_successful_tag
+        
+        # 尝试启动上一个版本
+        if docker-compose -f docker-compose.prod.yml up -d >> "$rollback_log" 2>&1; then
+            echo -e "${GREEN}回滚成功，服务已恢复到版本 ${last_successful_tag}${NC}" | tee -a "$rollback_log"
+            
+            # 检查服务状态
+            echo -e "${YELLOW}检查服务状态...${NC}" | tee -a "$rollback_log"
+            docker-compose -f docker-compose.prod.yml ps >> "$rollback_log"
+            return 0
+        else
+            echo -e "${RED}回滚失败，请手动检查服务状态${NC}" | tee -a "$rollback_log"
+            return 1
+        fi
     else
-        echo -e "${RED}回滚失败，请手动检查服务状态${NC}" | tee -a "$rollback_log"
+        echo -e "${RED}未找到可回滚的版本记录${NC}" | tee -a "$rollback_log"
         return 1
     fi
 }
@@ -376,9 +395,29 @@ generate_deployment_report() {
         echo "支付服务 CORS 配置: $(curl -s -X OPTIONS -H 'Origin: https://love.saga4v.com' -I https://payment.saga4v.com/api/stripe/create-payment-intent | grep -i 'access-control')"
         echo "Docker 网络状态: $(docker network inspect saga4v_network --format '{{.Name}} - {{.Driver}}')"
         
-        echo -e "\n---------- 容器状态列表 ----------"
-        docker ps --format "容器: {{.Names}}\n状态: {{.State}}\n" | grep -i "running"
+        echo -e "\n---------- 容器状态列表 ----------${NC}"
+        # 使用更详细的格式显示容器信息
+        docker ps --format "容器名称: {{.Names}}\n运行状态: {{.Status}}\n健康状态: {{.Health}}\n端口映射: {{.Ports}}\n----------------------------------------" | while read -r line; do
+            if [[ $line == *"healthy"* ]]; then
+                echo -e "${GREEN}$line${NC}"
+            elif [[ $line == *"unhealthy"* ]]; then
+                echo -e "${RED}$line${NC}"
+            else
+                echo -e "${YELLOW}$line${NC}"
+            fi
+        done
 
+        # 特别检查我们关心的容器
+        echo -e "\n${YELLOW}---------- 核心服务状态 ----------${NC}"
+        for container in "ai-chat-application-1113-main-frontend" "ai-chat-application-1113-main-payment-server"; do
+            status=$(docker ps -f name=$container --format "{{.Status}}")
+            if [ -n "$status" ]; then
+                echo -e "${GREEN}✓ $container: $status${NC}"
+            else
+                echo -e "${RED}✗ $container: 未运行${NC}"
+            fi
+        done
+        
         echo -e "\n---------- 重要提醒 ----------"
         echo "1. 请检查所有服务是否正常运行"
         echo "2. 确认所有端口是否正确暴露"
