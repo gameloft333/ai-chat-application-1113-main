@@ -216,6 +216,22 @@ deploy_containers() {
         echo -e "${RED}容器部署失败。保存错误日志...${NC}"
         # 保存部署时的错误日志
         docker-compose -f docker-compose.prod.yml logs > deployment_error.log
+
+        echo -e "${RED}开始尝试进行分步部署...${NC}"
+        
+        # 分步构建和启动
+        echo -e "${YELLOW}1. 重新构建镜像...${NC}"
+        docker-compose -f docker-compose.prod.yml build --no-cache
+        
+        echo -e "${YELLOW}2. 启动前端服务...${NC}"
+        docker-compose -f docker-compose.prod.yml up app -d
+        
+        echo -e "${YELLOW}3. 启动支付服务...${NC}"
+        docker-compose -f docker-compose.prod.yml up payment -d
+        
+        echo -e "${YELLOW}4. 检查容器状态...${NC}"
+        docker ps
+        
         return 1
     }
     
