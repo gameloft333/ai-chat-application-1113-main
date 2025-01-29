@@ -209,25 +209,27 @@ build_images() {
 
 # Deploy containers
 deploy_containers() {
-    echo -e "${GREEN}[DEPLOY] 部署容器...${NC}"
+    echo -e "${GREEN}[STEP 5/7] Deploying Containers${NC}"
     
-    # 添加 --verbose 参数来获取更多日志
-    docker-compose -f docker-compose.prod.yml up -d --build --verbose || {
-        echo -e "${RED}容器部署失败。保存错误日志...${NC}"
-        # 保存部署时的错误日志
-        docker-compose -f docker-compose.prod.yml logs > deployment_error.log
+    # 确保环境变量文件存在
+    if [ ! -f ".env.production" ]; then
+        echo -e "${RED}错误: .env.production 文件不存在${NC}"
         return 1
-    }
+    fi
     
-    # 添加容器启动日志收集
-    echo -e "${YELLOW}收集容器启动日志...${NC}"
-    for service in app payment; do
-        container_name="ai-chat-application-1113-main-${service}"
-        echo -e "${YELLOW}${container_name} 启动日志：${NC}"
-        docker-compose -f docker-compose.prod.yml logs ${service} || true
-    done
+    # 导出环境变量到当前会话
+    export_env_vars
     
-    return 0
+    # 使用 --env-file 参数确保环境变量传递给容器
+    docker-compose -f docker-compose.prod.yml --env-file .env.production up -d
+    
+    # 验证容器是否成功启动
+    if ! docker-compose -f docker-compose.prod.yml ps | grep -q "Up"; then
+        echo -e "${RED}容器启动失败${NC}"
+        return 1
+    fi
+    
+    echo -e "${GREEN}容器部署完成${NC}"
 }
 
 # Health check
@@ -245,30 +247,9 @@ cleanup() {
 
 # Rollback function
 rollback() {
-    echo -e "${RED}开始回滚...${NC}"
-    
-    # 保存容器日志（如果容器还存在）
-    echo -e "${YELLOW}保存容器日志...${NC}"
-    for service in app payment; do
-        container_name="ai-chat-application-1113-main-${service}"
-        if docker ps -a | grep -q ${container_name}; then
-            echo -e "${YELLOW}保存 ${container_name} 日志${NC}"
-            docker logs ${container_name} > ${container_name}_error.log 2>&1 || true
-        fi
-    done
-    
-    # 检查 healthcheck.sh 是否存在且可执行
-    if [ ! -x "./healthcheck.sh" ]; then
-        echo -e "${RED}错误: healthcheck.sh 不存在或没有执行权限${NC}"
-        ls -l healthcheck.sh || echo "healthcheck.sh 文件不存在"
-    fi
-    
-    # 停止并删除容器前先检查状态
-    docker-compose -f docker-compose.prod.yml ps
-    
+    echo -e "${RED}Deployment failed. Rolling back...${NC}"
     docker-compose -f docker-compose.prod.yml down
-    
-    echo -e "${GREEN}回滚完成${NC}"
+    # Optional: Restore from backup
 }
 
 # 生成部署报告
@@ -479,7 +460,7 @@ main() {
     }
     
     echo -e "${YELLOW}等待服务启动...${NC}"
-    sleep 60  # 从 30 改为 60 秒
+    sleep 30  # 从 10 改为 30
     
     verify_payment_service || {
         echo -e "${YELLOW}支付服务验证未通过，是否继续部署？[y/N] ${NC}"
