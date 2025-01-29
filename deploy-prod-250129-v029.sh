@@ -294,7 +294,7 @@ check_deployment() {
 
 # Cleanup
 cleanup() {
-    echo -e "${GREEN}[STEP 6/7] Cleanup${NC}"
+    echo -e "${GREEN}[STEP 7/7] Cleanup${NC}"
     docker system prune -f
 }
 
