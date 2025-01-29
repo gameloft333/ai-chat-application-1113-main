@@ -211,39 +211,56 @@ build_images() {
 deploy_containers() {
     echo -e "${GREEN}[DEPLOY] 部署容器...${NC}"
     
-    # 添加 --verbose 参数来获取更多日志
-    docker-compose -f docker-compose.prod.yml up -d --build --verbose || {
-        echo -e "${RED}容器部署失败。保存错误日志...${NC}"
-        # 保存部署时的错误日志
-        docker-compose -f docker-compose.prod.yml logs > deployment_error.log
-
-        echo -e "${RED}开始尝试进行分步部署...${NC}"
+    # 定义日志文件路径
+    local deploy_log="development_log/deployment_$(date +%Y%m%d_%H%M%S).log"
+    local build_log="development_log/build_$(date +%Y%m%d_%H%M%S).log"
+    local app_log="development_log/app_$(date +%Y%m%d_%H%M%S).log"
+    local payment_log="development_log/payment_$(date +%Y%m%d_%H%M%S).log"
+    
+    # 尝试一键部署并保存日志
+    if docker-compose -f docker-compose.prod.yml up -d --build --verbose > "$deploy_log" 2>&1; then
+        echo -e "${GREEN}一键部署成功${NC}"
+        return 0
+    else
+        echo -e "${RED}一键部署失败。错误日志如下：${NC}"
+        cat "$deploy_log"
         
-        # 分步构建和启动
+        echo -e "${RED}尝试分步部署...${NC}"
+        
+        # 分步构建并保存日志
         echo -e "${YELLOW}1. 重新构建镜像...${NC}"
-        docker-compose -f docker-compose.prod.yml build --no-cache
+        docker-compose -f docker-compose.prod.yml build --no-cache > "$build_log" 2>&1 || {
+            echo -e "${RED}构建失败。错误日志：${NC}"
+            cat "$build_log"
+            return 1
+        }
         
         echo -e "${YELLOW}2. 启动前端服务...${NC}"
-        docker-compose -f docker-compose.prod.yml up app -d
+        docker-compose -f docker-compose.prod.yml up app -d > "$app_log" 2>&1 || {
+            echo -e "${RED}前端服务启动失败。错误日志：${NC}"
+            cat "$app_log"
+            return 1
+        }
         
         echo -e "${YELLOW}3. 启动支付服务...${NC}"
-        docker-compose -f docker-compose.prod.yml up payment -d
+        docker-compose -f docker-compose.prod.yml up payment -d > "$payment_log" 2>&1 || {
+            echo -e "${RED}支付服务启动失败。错误日志：${NC}"
+            cat "$payment_log"
+            return 1
+        }
         
         echo -e "${YELLOW}4. 检查容器状态...${NC}"
         docker ps
         
-        return 1
-    }
-    
-    # 添加容器启动日志收集
-    echo -e "${YELLOW}收集容器启动日志...${NC}"
-    for service in app payment; do
-        container_name="ai-chat-application-1113-main-${service}"
-        echo -e "${YELLOW}${container_name} 启动日志：${NC}"
-        docker-compose -f docker-compose.prod.yml logs ${service} || true
-    done
-    
-    return 0
+        # 检查容器是否都启动成功
+        if docker-compose -f docker-compose.prod.yml ps | grep -q "Up"; then
+            echo -e "${GREEN}分步部署成功${NC}"
+            return 0
+        else
+            echo -e "${RED}分步部署失败${NC}"
+            return 1
+        fi
+    fi
 }
 
 # Health check
@@ -292,7 +309,7 @@ generate_deployment_report() {
     echo -e "\n${GREEN}[部署报告] 生成部署信息报告...${NC}"
     
     # 创建报告文件
-    local report_file="deployment_report_$(date +%Y%m%d_%H%M%S).log"
+    local report_file="deployment_reports/deployment_report_$(date +%Y%m%d_%H%M%S).log"
     
     {
         echo "==================== 部署报告 ===================="
