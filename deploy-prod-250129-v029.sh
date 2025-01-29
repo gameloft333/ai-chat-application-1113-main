@@ -395,9 +395,9 @@ generate_deployment_report() {
         echo "支付服务 CORS 配置: $(curl -s -X OPTIONS -H 'Origin: https://love.saga4v.com' -I https://payment.saga4v.com/api/stripe/create-payment-intent | grep -i 'access-control')"
         echo "Docker 网络状态: $(docker network inspect saga4v_network --format '{{.Name}} - {{.Driver}}')"
         
-        echo -e "\n---------- 容器状态列表 ----------${NC}"
-        # 使用更详细的格式显示容器信息
-        docker ps --format "容器名称: {{.Names}}\n运行状态: {{.Status}}\n健康状态: {{.Health}}\n端口映射: {{.Ports}}\n----------------------------------------" | while read -r line; do
+        echo -e "\n${YELLOW}---------- 容器状态列表 ----------${NC}"
+        # 使用更详细但兼容的格式显示容器信息
+        docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | while read -r line; do
             if [[ $line == *"healthy"* ]]; then
                 echo -e "${GREEN}$line${NC}"
             elif [[ $line == *"unhealthy"* ]]; then
@@ -405,6 +405,19 @@ generate_deployment_report() {
             else
                 echo -e "${YELLOW}$line${NC}"
             fi
+        done
+
+        echo -e "\n${YELLOW}---------- 服务健康状态 ----------${NC}"
+        for container in $(docker ps --format "{{.Names}}"); do
+            health_status=$(docker inspect --format "{{if .State.Health}}{{.State.Health.Status}}{{else}}无健康检查{{end}}" "$container")
+            status=$(docker ps --format "{{.Status}}" --filter "name=$container")
+            ports=$(docker ps --format "{{.Ports}}" --filter "name=$container")
+            
+            echo -e "容器: $container"
+            echo -e "状态: $status"
+            echo -e "健康检查: $health_status"
+            echo -e "端口: $ports"
+            echo -e "----------------------------------------"
         done
 
         # 特别检查我们关心的容器
