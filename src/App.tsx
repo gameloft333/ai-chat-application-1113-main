@@ -571,6 +571,7 @@ const AppContent: React.FC<AppContentProps> = ({
                   user={currentUser}
                   onLogout={logout}
                   themeColor={themeColor}
+                  onOpenSubscription={handleOpenSubscriptionModal}
                 />
               ) : (
                 <button
