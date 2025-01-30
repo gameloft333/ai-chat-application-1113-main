@@ -63,7 +63,8 @@ export const GenderSelector: React.FC<GenderSelectorProps> = ({
       popular: t('gender.popular'),
       female: t('gender.female'),
       male: t('gender.male'),
-      celebrity: t('gender.celebrity')
+      celebrity: t('gender.celebrity'),
+      pet: t('gender.pet')
     });
   }, [currentLanguage]);
 
@@ -71,7 +72,8 @@ export const GenderSelector: React.FC<GenderSelectorProps> = ({
     { key: 'popular', label: t('gender.popular') },
     { key: 'female', label: t('gender.female') },
     { key: 'male', label: t('gender.male') },
-    { key: 'celebrity', label: t('gender.celebrity') }
+    { key: 'celebrity', label: t('gender.celebrity') },
+    { key: 'pet', label: t('gender.pet') }
   ];
 
   return (

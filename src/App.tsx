@@ -57,6 +57,7 @@ interface AppRoutesProps {
 
 interface AppContentProps extends AppRoutesProps {
   showThemeToggle?: boolean; // 添加控制暗色模式按钮显示的属性
+  showFilterTags?: boolean; // 新增：控制筛选标签显示
 }
 
 const AppRoutes: React.FC<AppRoutesProps> = ({ themeColor }) => {
@@ -81,7 +82,8 @@ interface UserState {
 
 const AppContent: React.FC<AppContentProps> = ({ 
   themeColor, 
-  showThemeToggle = true  // 默认显示
+  showThemeToggle = true,  // 默认显示
+  showFilterTags = true    // 新增：控制筛选标签显示
 }) => {
   const { t } = useLanguage();
   const { currentUser, logout } = useAuth();
@@ -526,12 +528,14 @@ const AppContent: React.FC<AppContentProps> = ({
               </div>
               {/* 在移动端隐藏性别选择器 */}
               <div className="hidden md:block">
-                <GenderSelector
-                  selectedGender={selectedGender}
-                  onGenderChange={handleGenderChange}
-                  themeColor={themeColor}
-                  onPopularCharactersChange={setPopularCharacters}
-                />
+                {!selectedCharacter && (  // 只在未选择角色时显示
+                  <GenderSelector
+                    selectedGender={selectedGender}
+                    onGenderChange={handleGenderChange}
+                    themeColor={themeColor}
+                    onPopularCharactersChange={setPopularCharacters}
+                  />
+                )}
               </div>
             </div>
             

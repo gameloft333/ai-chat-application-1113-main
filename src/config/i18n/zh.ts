@@ -15,7 +15,8 @@ export default {
         popular: '热门',
         male: '男生',
         female: '女生',
-        celebrity: '名人堂（模仿）'
+        celebrity: '名人堂（模仿）',
+        pet: '宠物'
     },
     auth: {
         register: '注册',

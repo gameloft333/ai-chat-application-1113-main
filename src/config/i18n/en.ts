@@ -15,7 +15,8 @@ export default {
         popular: 'Popular',
         male: 'Male',
         female: 'Female',
-        celebrity: 'Celebrity(COSPLAY)'
+        celebrity: 'Celebrity(COSPLAY)',
+        pet: 'Pet'
     },
     auth: {
         register: 'Register',
