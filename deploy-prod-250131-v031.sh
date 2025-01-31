@@ -547,7 +547,7 @@ check_characters_import() {
     if [ ! -f "data/characters/characters.csv" ]; then
         echo -e "${RED}characters.csv 文件不存在${NC}"
         return 1
-    }
+    fi
     
     if [ ! -f "src/types/character.ts" ]; then
         echo -e "${RED}character.ts 文件不存在${NC}"
