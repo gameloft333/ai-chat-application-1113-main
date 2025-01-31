@@ -552,7 +552,7 @@ check_characters_import() {
     if [ ! -f "src/types/character.ts" ]; then
         echo -e "${RED}character.ts 文件不存在${NC}"
         return 1
-    }
+    fi
     
     # 询问是否需要导入
     echo -e "${YELLOW}是否需要将 characters.csv 导入到 character.ts? [y/N] ${NC}"
