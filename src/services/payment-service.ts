@@ -1,5 +1,7 @@
 import { TelegramPayment, SubscriptionPlan } from '../types/payment';
 import { currentCurrency } from '../config/pricing-config';
+import { toast } from 'react-hot-toast';
+import { UserStore } from '../stores/UserStore';
 
 const TELEGRAM_BOT_TOKEN = import.meta.env.VITE_TELEGRAM_BOT_TOKEN;
 const TELEGRAM_PAYMENT_PROVIDER_TOKEN = import.meta.env.VITE_TELEGRAM_PAYMENT_PROVIDER_TOKEN;
@@ -90,6 +92,29 @@ export class PaymentService {
     } catch (error) {
       console.error('支付验证失败:', error);
       return false;
+    }
+  }
+
+  static async handlePaymentResult(result) {
+    if (result.success) {
+      try {
+        // 1. 显示支付成功提示
+        toast.success('支付成功！');
+        
+        // 2. 更新本地用户状态
+        await UserStore.refreshUserInfo();
+        
+        // 3. 触发界面更新
+        const event = new CustomEvent('payment:completed', {
+          detail: result
+        });
+        window.dispatchEvent(event);
+      } catch (error) {
+        console.error('处理支付结果失败:', error);
+        toast.error('更新会员信息失败，请联系客服');
+      }
+    } else {
+      toast.error('支付失败，请重试或联系客服');
     }
   }
 }

@@ -4,6 +4,7 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import Stripe from 'stripe';
 import dotenv from 'dotenv';
+import { WebhookService } from '../services/webhook-service';
 
 dotenv.config();
 
@@ -125,6 +126,50 @@ app.post('/api/stripe/create-payment-intent', async (req, res) => {
             timestamp: new Date().toISOString()
         });
     }
+});
+
+// 添加 webhook 路由
+app.post('/webhook/stripe', express.raw({type: 'application/json'}), async (req, res) => {
+  console.log('收到 Stripe Webhook 请求:', {
+    path: req.path,
+    method: req.method,
+    headers: req.headers,
+    timestamp: new Date().toISOString()
+  });
+  
+  const sig = req.headers['stripe-signature'];
+
+  try {
+    const event = stripe.webhooks.constructEvent(
+      req.body,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET
+    );
+
+    // 处理 checkout.session.completed 事件
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object;
+      
+      // 获取客户信息和订阅信息
+      const customer = await stripe.customers.retrieve(session.customer);
+      const subscription = await stripe.subscriptions.retrieve(session.subscription);
+
+      // 更新用户订阅状态
+      await WebhookService.handleSubscriptionCreated({
+        userId: session.client_reference_id, // 确保在创建支付链接时设置这个值
+        email: session.customer_email,
+        subscriptionId: session.subscription,
+        planId: subscription.items.data[0].price.product,
+        duration: subscription.items.data[0].price.recurring.interval,
+        status: 'active'
+      });
+    }
+
+    res.json({received: true});
+  } catch (err) {
+    console.error('Webhook Error:', err);
+    res.status(400).send(`Webhook Error: ${err.message}`);
+  }
 });
 
 // 统一的健康检查路由
