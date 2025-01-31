@@ -7,6 +7,7 @@ import { PaymentRecordService } from '../services/payment-record-service';
 import { SubscriptionModal } from './SubscriptionModal';
 import { SUBSCRIPTION_CONFIG } from '../config/subscription-config';
 import { PAYMENT_CONFIG } from '../config/payment-config';
+import { StripeLinkService } from '../services/stripe-link-service';
 
 interface SubscriptionPlansProps {
   onClose: () => void;
@@ -164,24 +165,25 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
   };
 
   const handlePlanSelect = async (planId: string) => {
-    if (isProcessing) return;
-    setIsProcessing(true);
-    
     try {
-      if (!selectedDuration) {
-        throw new Error(t('alerts.error.selectDuration'));
-      }
-
-      setSelectedPlan(planId);
-      // 不关闭套餐选择界面，而是显示支付方式选择模态框
-      setSelectedPlanInfo({ planId, duration: selectedDuration });
-      setShowPaymentModal(true);
+      const stripeLinkService = StripeLinkService.getInstance();
+      const paymentMode = stripeLinkService.getPaymentMode();
       
+      if (paymentMode === 'stripeLink') {
+        // Stripe Link 模式
+        const stripeLinkUrl = stripeLinkService.getStripeLinkUrl(planId, selectedDuration);
+        if (!stripeLinkUrl) {
+          throw new Error(t('payment.stripe.error.linkNotFound'));
+        }
+        window.location.href = stripeLinkUrl;
+      } else {
+        // Payment Server 模式
+        setSelectedPlan(planId);
+        setShowPaymentModal(true);
+      }
     } catch (error) {
-      console.error('选择套餐失败:', error);
-      alert(error instanceof Error ? error.message : t('alerts.error.unknownError'));
-    } finally {
-      setIsProcessing(false);
+      console.error('处理计划选择时出错:', error);
+      alert(error instanceof Error ? error.message : t('payment.error.unknown'));
     }
   };
 

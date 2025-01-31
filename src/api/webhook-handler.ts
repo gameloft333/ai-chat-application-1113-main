@@ -3,9 +3,13 @@ import { WebhookService } from '../services/webhook-service';
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+<<<<<<< HEAD
   apiVersion: '2024-04-10',
   host: 'api.stripe.com',
   protocol: 'https'
+=======
+  apiVersion: '2024-04-10'
+>>>>>>> 1013e0ab2db5513f68c2e9e28d06ad31fd8caabf
 });
 
 const webhookHandler = express.Router();

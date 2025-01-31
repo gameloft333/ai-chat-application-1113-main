@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 
 interface UserProfileDropdownProps {
   themeColor: string;
+  onOpenSubscription: () => void;
 }
 
 interface SubscriptionStatus {
@@ -19,7 +20,10 @@ interface SubscriptionStatus {
   duration?: string;
 }
 
-const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({ themeColor }) => {
+const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({ 
+  themeColor,
+  onOpenSubscription 
+}) => {
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus>({
     isSubscribed: false
   });
@@ -92,10 +96,10 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({ themeColor })
     }
   };
 
-  const handleSubscriptionClick = () => {
-    if (!subscriptionStatus.isSubscribed) {
-      openSubscriptionModal();
-    }
+  const handleSubscriptionClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // 防止冒泡
+    onOpenSubscription(); // 使用传入的函数
+    setIsOpen(false); // 关闭下拉菜单
   };
 
   const getSubscriptionDisplay = () => {
@@ -145,7 +149,7 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({ themeColor })
       case 'basic': return 'text-blue-500';
       case 'pro': return 'text-purple-500';
       case 'premium': return 'text-orange-500';
-      default: return 'text-white-500';
+      default: return 'text-gray-500'; // 普通用户使用灰色
     }
   };
 
@@ -219,8 +223,8 @@ const getPlanLevelName = (planLevel?: string, duration?: string) => {
             {/* 会员等级显示 */}
             <div className="flex items-center text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50 p-2 rounded-lg">
               <Crown className="w-4 h-4 mr-2" />
-              <span className={`text-sm ${getPlanLevelColor(subscriptionStatus.planLevel)}`}>
-                {t(getPlanLevelName(subscriptionStatus.planLevel, subscriptionStatus.duration))}
+              <span className={`text-sm ${getPlanLevelColor(subscriptionStatus?.planLevel || 'normal')}`}>
+                {getPlanLevelName(subscriptionStatus?.planLevel)}
               </span>
             </div>
 
@@ -256,7 +260,7 @@ const getPlanLevelName = (planLevel?: string, duration?: string) => {
             <div className="flex items-center text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50 p-2 rounded-lg">
               <Clock className="w-4 h-4 mr-2" />
               <div className="flex flex-col">
-                {subscriptionStatus.isSubscribed ? (
+                {subscriptionStatus?.isSubscribed ? (
                   <>
                     <span className="text-sm">
                       {t('subscription.remainingTime')}：{subscriptionStatus.remainingDays} {t('subscription.days')}
@@ -266,12 +270,12 @@ const getPlanLevelName = (planLevel?: string, duration?: string) => {
                     </span>
                   </>
                 ) : (
-                  <span 
-                    className="text-sm text-blue-500 cursor-pointer hover:text-blue-600"
+                  <button 
                     onClick={handleSubscriptionClick}
+                    className="text-sm text-blue-500 cursor-pointer hover:text-blue-600"
                   >
-                    {t('subscription.subscribe')}
-                  </span>
+                    {t('subscription.choosePlan')}
+                  </button>
                 )}
               </div>
             </div>
