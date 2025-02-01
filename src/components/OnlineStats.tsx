@@ -204,11 +204,13 @@ const OnlineStats: React.FC<OnlineStatsProps> = ({
             {onlineCount.toLocaleString()}
           </span>
           {' '}{t('stats.online')}
+          {/* 用于在主页显示Firebase用户数
           {(import.meta.env.DEV && import.meta.env.VITE_SHOW_DEBUG_INFO === 'true') && (
             <span className="text-sm ml-2">
               (Firebase: {registeredUsers.toLocaleString()})
             </span>
           )}
+          */}
         </span>
         <span className="mx-4">|</span>
         <span>
