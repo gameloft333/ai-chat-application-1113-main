@@ -532,7 +532,7 @@ const AppContent: React.FC<AppContentProps> = ({
     <>
       {/* 添加跑马灯容器，确保在导航栏底部 */}
       <div 
-        className="fixed top-16 left-0 right-0 pointer-events-none z-[100000]"
+        className="fixed top-16 left-0 right-0 pointer-events-none z-40"
         style={{ 
           height: '40px'
         }}
@@ -546,8 +546,8 @@ const AppContent: React.FC<AppContentProps> = ({
 
       <DynamicFavicon selectedCharacter={selectedCharacter} />
       <div className="relative min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-        {/* 响应式顶部导航 */}
-        <header className="sticky top-0 z-40 backdrop-blur-lg bg-white/75 dark:bg-gray-900/75 border-b border-gray-200 dark:border-gray-800">
+        {/* 响应式顶部导航栏 */}
+        <header className="sticky top-0 z-50 backdrop-blur-lg bg-white/75 dark:bg-gray-900/75 border-b border-gray-200 dark:border-gray-800">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div className="flex items-center space-x-6">
               <div className="flex items-center space-x-3">

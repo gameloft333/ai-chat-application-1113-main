@@ -117,7 +117,7 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({
     }
     return (
       <span 
-        className="text-sm text-blue-500 cursor-pointer hover:text-blue-600"
+        className="text-sm z-40 text-blue-500 cursor-pointer hover:text-blue-600"
         onClick={handleSubscriptionClick}
       >
         {t('subscription.subscribe')}
@@ -222,7 +222,7 @@ const getPlanLevelName = (planLevel?: string, duration?: string) => {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
+        <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-60">
           <div className="px-4 py-2 space-y-3">
             {/* 会员等级显示 */}
             <div className="flex items-center text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50 p-2 rounded-lg">
