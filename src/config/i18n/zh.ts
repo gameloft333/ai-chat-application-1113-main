@@ -17,11 +17,7 @@ export default {
         female: '女生',
         celebrity: '名人堂（模仿）',
         pet: '宠物',
-<<<<<<< HEAD
-        god: '神'
-=======
         gods: '神明（模仿）'
->>>>>>> 468ddfcb1e71dd84494510da2fe70b415899f930
     },
     auth: {
         register: '注册',

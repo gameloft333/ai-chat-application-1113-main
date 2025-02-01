@@ -144,12 +144,16 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({
   };
 
   const getPlanLevelColor = (planLevel?: string) => {
+    if (!planLevel || planLevel === 'normal') {
+      return 'text-gray-500'; // 普通用户使用灰色
+    }
+    
     switch(planLevel) {
-      case 'trial': return 'text-green-500';
-      case 'basic': return 'text-blue-500';
-      case 'pro': return 'text-purple-500';
-      case 'premium': return 'text-orange-500';
-      default: return 'text-gray-500'; // 普通用户使用灰色
+      case 'trial': return 'text-green-500'; // 体验会员
+      case 'basic': return 'text-blue-500'; // 基础会员
+      case 'pro': return 'text-purple-500'; // 专业会员
+      case 'premium': return 'text-orange-500'; // 至尊会员
+      default: return 'text-gray-500'; // 普通用户
     }
   };
 
@@ -223,8 +227,10 @@ const getPlanLevelName = (planLevel?: string, duration?: string) => {
             {/* 会员等级显示 */}
             <div className="flex items-center text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50 p-2 rounded-lg">
               <Crown className="w-4 h-4 mr-2" />
-              <span className={`text-sm ${getPlanLevelColor(subscriptionStatus?.planLevel || 'normal')}`}>
-                {getPlanLevelName(subscriptionStatus?.planLevel)}
+              <span className={`text-sm ${getPlanLevelColor(subscriptionStatus?.isSubscribed ? subscriptionStatus?.planLevel : 'normal')}`}>
+                {subscriptionStatus?.isSubscribed 
+                  ? getPlanLevelName(subscriptionStatus?.planLevel)
+                  : t('memberLevel.normal')}
               </span>
             </div>
 
