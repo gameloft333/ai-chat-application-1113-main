@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { CharacterStatsService } from '../services/character-stats-service';
 import { characters } from '../types/character';
@@ -13,10 +13,27 @@ interface GenderSelectorProps {
 export const GenderSelector: React.FC<GenderSelectorProps> = ({
   selectedGender,
   onGenderChange,
-  themeColor,
   onPopularCharactersChange
 }) => {
   const { t, currentLanguage } = useLanguage();
+  const [buttonColors, setButtonColors] = useState<Record<string, string>>({});
+
+  // 生成符合 WCAG 标准的随机颜色
+  const generateAccessibleColor = (isDark = false) => {
+    const hue = Math.floor(Math.random() * 360);
+    const saturation = 70 + Math.random() * 20;
+    const lightness = isDark ? 65 + Math.random() * 15 : 45 + Math.random() * 10;
+    return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+  };
+
+  // 初始化每个按钮的颜色
+  useEffect(() => {
+    const colors: Record<string, string> = {};
+    ['popular', 'female', 'male', 'celebrity', 'pet', 'god'].forEach(key => {
+      colors[key] = generateAccessibleColor(true);
+    });
+    setButtonColors(colors);
+  }, []);
 
   useEffect(() => {
     const fetchStats = () => {
@@ -83,9 +100,11 @@ export const GenderSelector: React.FC<GenderSelectorProps> = ({
       {genderButtons.map(({ key, label }) => (
         <button
           key={key}
-          className={`px-4 py-2 rounded-full transition-all duration-300 ${
-            selectedGender === key ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-400'
-          }`}
+          className={`px-4 py-2 rounded-full transition-all duration-300`}
+          style={{
+            backgroundColor: selectedGender === key ? buttonColors[key] : 'rgba(55, 65, 81, 0.7)',
+            color: selectedGender === key ? 'white' : '#9CA3AF'
+          }}
           onClick={() => onGenderChange(key as string | null)}
         >
           {label}

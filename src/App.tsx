@@ -586,12 +586,14 @@ const AppContent: React.FC<AppContentProps> = ({
         </header>
           
         {/* 主内容区域，添加底部padding以适应移动导航栏 */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-[calc(100vh-4rem)] py-8 pb-24 md:pb-8 flex flex-col">
           {selectedCharacter ? (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 flex-grow">
               <div className="lg:col-span-1">
-                <button onClick={handleReturn} 
-                  className="group mb-4 inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
+                <button 
+                  onClick={handleReturn} 
+                  className="group mb-4 inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                >
                   <ArrowLeft className="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1" />
                   {t('common.back')}
                 </button>
@@ -603,7 +605,7 @@ const AppContent: React.FC<AppContentProps> = ({
                   />
                 </div>
               </div>
-              <div className="lg:col-span-2">
+              <div className="lg:col-span-2 h-full">
                 {currentUser ? (
                   <ChatInterface
                     selectedCharacter={selectedCharacter}
@@ -625,13 +627,11 @@ const AppContent: React.FC<AppContentProps> = ({
               </div>
             </div>
           ) : (
-            <>
-              {/* 角色选择器 */}
-              <CharacterSelector
-                onSelectCharacter={handleSelectCharacter}
-                selectedGender={selectedGender}
-              />
-            </>
+            <CharacterSelector
+              onSelectCharacter={handleSelectCharacter}
+              selectedGender={selectedGender}
+              className="flex-grow"
+            />
           )}
         </main>
 

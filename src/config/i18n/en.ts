@@ -289,5 +289,10 @@ export default {
         toggle: 'Toggle Mobile Preview',
         mobile: 'Mobile Mode',
         desktop: 'Desktop Mode'
+    },
+    stats: {
+        online: 'Online',
+        peak: 'Peak',
+        date: 'Date'
     }
 };

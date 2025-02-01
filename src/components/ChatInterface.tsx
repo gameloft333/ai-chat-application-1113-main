@@ -87,7 +87,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           <img
             src={selectedCharacter.avatarFile}
             alt={selectedCharacter.name}
-            className="w-12 h-12 rounded-full object-cover border-2 border-white dark:border-gray-800 shadow-lg"
+            className="w-12 h-12 rounded-full object-cover border-2 border-white dark:border-gray-800 shadow-lg aspect-square"
           />
           <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-green-500 border-2 border-white dark:border-gray-800"></div>
         </div>

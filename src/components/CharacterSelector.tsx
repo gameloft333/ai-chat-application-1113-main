@@ -4,6 +4,7 @@ import { Character, characters } from '../types/character';
 import { CharacterStatsService } from '../services/character-stats-service';
 import { marqueeService } from '../services/marquee-service';
 import MarqueeNotice from './MarqueeNotice';
+import OnlineStats from './OnlineStats';
 
 interface CharacterSelectorProps {
   onSelectCharacter: (character: Character) => void;
@@ -157,13 +158,14 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <OnlineStats className="mb-6" />
       <h2 className="text-2xl font-bold text-center mb-8">
-        {t('common.selectCharacter')} {/* 显示选择角色的标题 */}
+        {t('common.selectCharacter')}
       </h2>
-      <MarqueeNotice messages={marqueeMessages} /> {/* 显示跑马灯通知 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"> {/* 使用网格布局，根据屏幕大小显示不同数量的列 */}
-        {sortedCharacters.map((character) => { /* 遍历所有角色 */
-          const borderStyle = getBorderStyle(character); /* 获取角色的边框样式 */
+      <MarqueeNotice messages={marqueeMessages} />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {sortedCharacters.map((character) => {
+          const borderStyle = getBorderStyle(character);
           
           return (
             <div

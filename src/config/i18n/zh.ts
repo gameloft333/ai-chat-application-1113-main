@@ -17,7 +17,7 @@ export default {
         female: '女生',
         celebrity: '名人堂（模仿）',
         pet: '宠物',
-        gods: '神明（模仿）'
+        god: '神（模仿）'
     },
     auth: {
         register: '注册',
@@ -300,5 +300,10 @@ export default {
         toggle: '切换手机预览',
         mobile: '手机模式',
         desktop: '桌面模式'
+    },
+    stats: {
+        online: '在线',
+        peak: '峰值',
+        date: '日期'
     }
 };
