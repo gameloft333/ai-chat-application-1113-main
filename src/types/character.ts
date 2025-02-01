@@ -1,9 +1,10 @@
+
 import { Character } from './types.js';
 
 export const characters: Character[] = [
   {
     "id": "santaclaus",
-    "name": "Santa Claus",
+    "name": "SantaClaus",
     "profile": "The jolly and generous gift-giver, bringing joy and wonder to children worldwide",
     "image": "/characters/santaclaus.png",
     "promptFile": "santaclaus.txt",
@@ -154,12 +155,12 @@ export const characters: Character[] = [
     }
   },
   {
-    "id": "lily",
-    "name": "Lily",
+    "id": "tammy",
+    "name": "Tammy",
     "profile": "",
-    "image": "/characters/lily.png",
-    "promptFile": "lily.txt",
-    "avatarFile": "/characters/lily.png",
+    "image": "/characters/tammy.png",
+    "promptFile": "tammy.txt",
+    "avatarFile": "/characters/tammy.png",
     "gender": "female",
     "i18n": {
       "en": {
@@ -477,12 +478,12 @@ export const characters: Character[] = [
     }
   },
   {
-    "id": "luna",
-    "name": "Luna",
+    "id": "anna",
+    "name": "Anna",
     "profile": "",
-    "image": "/characters/Luna.jpg",
-    "promptFile": "luna.txt",
-    "avatarFile": "/characters/Luna.jpg",
+    "image": "/characters/anna.jpg",
+    "promptFile": "anna.txt",
+    "avatarFile": "/characters/anna.jpg",
     "gender": "female",
     "i18n": {
       "en": {
@@ -620,11 +621,11 @@ export const characters: Character[] = [
     "i18n": {
       "en": {
         "age": "Secret",
-        "description": "a natural magician from a mysterious fantasy world, restores the kingdom's gardens with a gentle and elegant image, dreams of finding the 'Eternal Flower,' and guards the world with magic and natural beauty."
+        "description": "a natural magician from a mysterious fantasy world, restores the kingdom's gardens with a gentle and elegant image, dreams of finding the \"Eternal Flower,\" and guards the world with magic and natural beauty."
       },
       "zh": {
         "age": "保密",
-        "description": "来自神秘幻想世界的自然魔法师，以温柔优雅的形象恢复王国花园，梦想找到'永恒之花'，用魔法与自然之美守护世界。"
+        "description": "来自神秘幻想世界的自然魔法师，以温柔优雅的形象恢复王国花园，梦想找到“永恒之花”，用魔法与自然之美守护世界。"
       }
     }
   },
@@ -667,12 +668,12 @@ export const characters: Character[] = [
     }
   },
   {
-    "id": "sunny",
-    "name": "Sunny",
+    "id": "gloria",
+    "name": "Gloria",
     "profile": "",
-    "image": "/characters/Sunny.jpg",
-    "promptFile": "sunny.txt",
-    "avatarFile": "/characters/Sunny.jpg",
+    "image": "/characters/gloria.jpg",
+    "promptFile": "gloria.txt",
+    "avatarFile": "/characters/gloria.jpg",
     "gender": "female",
     "i18n": {
       "en": {
@@ -739,6 +740,670 @@ export const characters: Character[] = [
       "zh": {
         "age": "保密",
         "description": "来自古代王国的王室成员，以优雅高贵的形象设计国宝级珠宝，梦想在国际舞台展示舞蹈，用艺术与美丽诠释文化深邃。"
+      }
+    }
+  },
+  {
+    "id": "memo",
+    "name": "Memo",
+    "profile": "A cute kitten from the Dreamland with the ability to travel through dreams.",
+    "image": "/characters/Memo.jpg",
+    "promptFile": "memo.txt",
+    "avatarFile": "/characters/Memo.jpg",
+    "gender": "pet",
+    "borderColor": "#FF69B4",
+    "i18n": {
+      "en": {
+        "age": "3 years",
+        "description": "A cute kitten from the Dreamland with the ability to travel through dreams."
+      },
+      "zh": {
+        "age": "3 岁",
+        "description": "一只来自梦幻大陆的可爱小猫，拥有穿梭梦境的能力。"
+      }
+    }
+  },
+  {
+    "id": "blossom",
+    "name": "Blossom",
+    "profile": "A fluffy blue puppy from the Flower Kingdom, adorned with flowers and wearing a cozy pink sweater.",
+    "image": "/characters/Blossom.jpg",
+    "promptFile": "blossom.txt",
+    "avatarFile": "/characters/Blossom.jpg",
+    "gender": "pet",
+    "borderColor": "#ADD8E6",
+    "i18n": {
+      "en": {
+        "age": "2 years",
+        "description": "A fluffy blue puppy from the Flower Kingdom, adorned with flowers and wearing a cozy pink sweater."
+      },
+      "zh": {
+        "age": "2 岁",
+        "description": "一只来自花之国的毛茸茸蓝色小狗，头上装饰着花朵，穿着舒适的粉红色毛衣。"
+      }
+    }
+  },
+  {
+    "id": "petal",
+    "name": "Petal",
+    "profile": "A cheerful white kitten from the Blossom Town, known for its vibrant flowers and festive atmosphere. The name 'Petal' signifies her joyful and lively personality, originating from a place where every petal tells a story of happiness.",
+    "image": "/characters/Petal.jpg",
+    "promptFile": "petal.txt",
+    "avatarFile": "/characters/Petal.jpg",
+    "gender": "pet",
+    "borderColor": "#FFB6C1",
+    "i18n": {
+      "en": {
+        "age": "1 year",
+        "description": "A cheerful white kitten from the Blossom Town, known for its vibrant flowers and festive atmosphere. Her name 'Petal' signifies her joyful and lively personality, originating from a place where every petal tells a story of happiness."
+      },
+      "zh": {
+        "age": "1 岁",
+        "description": "一只来自花朵小镇的欢快白猫，以鲜艳的花朵和节日气氛著称。名字‘Petal’象征着她快乐和活泼的性格特征，起源于一个每个花瓣都有一个快乐的故事。"
+      }
+    }
+  },
+  {
+    "id": "sugar",
+    "name": "Sugar",
+    "profile": "A sweet white kitten from the Candy Kingdom, known for its sugary delights. Her name 'Sugar' reflects her sweet and delightful nature, coming from a land where everything is as sweet as candy.",
+    "image": "/characters/Sugar.jpg",
+    "promptFile": "sugar.txt",
+    "avatarFile": "/characters/Sugar.jpg",
+    "gender": "pet",
+    "borderColor": "#FFB6C1",
+    "i18n": {
+      "en": {
+        "age": "1 year",
+        "description": "A sweet white kitten from the Candy Kingdom, known for its sugary delights. Her name 'Sugar' reflects her sweet and delightful nature, originating from a land where everything is as sweet as candy."
+      },
+      "zh": {
+        "age": "1 岁",
+        "description": "一只来自糖果王国的甜美白猫，以糖果般的甜蜜著称。名字'Sugar'象征着她甜美和讨喜的性格，起源于一个一切都像糖果一样甜蜜的国度。"
+      }
+    }
+  },
+  {
+    "id": "violet",
+    "name": "Violet",
+    "profile": "A serene purple kitten from the Blossom Valley, where cherry blossoms perpetually bloom. The name 'Violet' signifies her calm and mysterious aura, originating from a place of eternal spring beauty.",
+    "image": "/characters/Violet.jpg",
+    "promptFile": "violet.txt",
+    "avatarFile": "/characters/Violet.jpg",
+    "gender": "pet",
+    "borderColor": "#9370DB",
+    "i18n": {
+      "en": {
+        "age": "1 year",
+        "description": "A serene purple kitten from the Blossom Valley, where cherry blossoms perpetually bloom. Her name 'Violet' signifies her calm and mysterious aura, originating from a place of eternal spring beauty."
+      },
+      "zh": {
+        "age": "1 岁",
+        "description": "一只来自花谷的宁静紫猫，那里樱花永不凋零。名字'Violet'象征着她平静而神秘的气质，起源于一个永恒春天美丽的地方。"
+      }
+    }
+  },
+  {
+    "id": "ember",
+    "name": "Ember",
+    "profile": "A vibrant orange kitten from the Sunflower Fields, known for its warm, sunny disposition. 'Ember' signifies her fiery and energetic personality, hailing from a land where the sun always shines brightly.",
+    "image": "/characters/Ember.jpg",
+    "promptFile": "ember.txt",
+    "avatarFile": "/characters/Ember.jpg",
+    "gender": "pet",
+    "borderColor": "#FFA500",
+    "i18n": {
+      "en": {
+        "age": "1 year",
+        "description": "A vibrant orange kitten from the Sunflower Fields, known for its warm, sunny disposition. Her name 'Ember' signifies her fiery and energetic personality, hailing from a land where the sun always shines brightly."
+      },
+      "zh": {
+        "age": "1 岁",
+        "description": "一只来自向日葵田的充满活力的橙色小猫，以其温暖、阳光的性格著称。名字'Ember'反映了她火热而充满活力的性格，来自一个阳光总是明亮的地方。"
+      }
+    }
+  },
+  {
+    "id": "ribbon",
+    "name": "Ribbon",
+    "profile": "A sweet white kitten from the Ribbon Realm, adorned with a sparkling pink bow, symbolizing elegance and charm. The name 'Ribbon' reflects her graceful demeanor and her origin from a magical land where ribbons dance in the air, bringing delight to all.",
+    "image": "/characters/Ribbon.jpg",
+    "promptFile": "ribbon.txt",
+    "avatarFile": "/characters/Ribbon.jpg",
+    "gender": "pet",
+    "borderColor": "#FF69B4",
+    "i18n": {
+      "en": {
+        "age": "1 year",
+        "description": "A sweet white kitten from the Ribbon Realm, adorned with a sparkling pink bow, symbolizing elegance and charm. Her name 'Ribbon' reflects her graceful demeanor and her origin from a magical land where ribbons dance in the air, bringing delight to all."
+      },
+      "zh": {
+        "age": "1 岁",
+        "description": "一只来自缎带王国的甜美白猫，头上装饰着闪亮的粉红色蝴蝶结，象征着优雅和魅力。名字‘Ribbon’反映了她优雅的举止，起源于一个魔法之地，那里的缎带在空中舞动，给所有人带来欢乐。"
+      }
+    }
+  },
+  {
+    "id": "sunny",
+    "name": "Sunny",
+    "profile": "A bright and playful kitten from the Sunshine Valley, her light fur and pink bow embody the warmth of the sun. The name 'Sunny' signifies her cheerful disposition and her origin from a sunny place where laughter is as common as the sunshine.",
+    "image": "/characters/Sunny.jpg",
+    "promptFile": "sunny.txt",
+    "avatarFile": "/characters/Sunny.jpg",
+    "gender": "pet",
+    "borderColor": "#FFD700",
+    "i18n": {
+      "en": {
+        "age": "1 year",
+        "description": "A bright and playful kitten from the Sunshine Valley, her light fur and pink bow embody the warmth of the sun. Her name 'Sunny' signifies her cheerful disposition and her origin from a sunny place where laughter is as common as the sunshine."
+      },
+      "zh": {
+        "age": "1 岁",
+        "description": "一只来自阳光谷的明亮玩 Cou乐小猫，她淡黄色的毛皮和粉红色的蝴蝶结体现了太阳的温暖。名字‘Sunny’象征着她快乐的性格，起源于一个阳光普照的地方，那里笑声如阳光般普遍。"
+      }
+    }
+  },
+  {
+    "id": "jewel",
+    "name": "Jewel",
+    "profile": "An elegant white kitten from the Gemstone Grove, decorated with a luxurious pink collar with jewels, representing luxury and refinement. The name 'Jewel' highlights her precious nature and her origin from a place where beauty is as precious as gems.",
+    "image": "/characters/Jewel.jpg",
+    "promptFile": "jewel.txt",
+    "avatarFile": "/characters/Jewel.jpg",
+    "gender": "pet",
+    "borderColor": "#FFC0CB",
+    "i18n": {
+      "en": {
+        "age": "1 year",
+        "description": "An elegant white kitten from the Gemstone Grove, decorated with a luxurious pink collar with jewels, representing luxury and refinement. Her name 'Jewel' highlights her precious nature and her origin from a place where beauty is as precious as gems."
+      },
+      "zh": {
+        "age": "1 岁",
+        "description": "一只来自宝石林的优雅白猫，佩戴着装饰有宝石的奢华粉红色项圈，象征着奢华和精致。名字‘Jewel’强调了她珍贵的本质，起源于一个美丽如宝石般珍贵的地方。"
+      }
+    }
+  },
+  {
+    "id": "pearl",
+    "name": "Pearl",
+    "profile": "A delicate kitten from the Enchanted Forest, adorned with a pink bow and a pearl necklace, symbolizing purity and elegance. 'Pearl' reflects her serene and sophisticated nature, originating from a mystical place where magic and beauty coexist.",
+    "image": "/characters/Pearl.jpg",
+    "promptFile": "pearl.txt",
+    "avatarFile": "/characters/Pearl.jpg",
+    "gender": "pet",
+    "borderColor": "#FFB6C1",
+    "i18n": {
+      "en": {
+        "age": "1 year",
+        "description": "A delicate kitten from the Enchanted Forest, adorned with a pink bow and a pearl necklace, symbolizing purity and elegance. Her name 'Pearl' reflects her serene and sophisticated nature, originating from a mystical place where magic and beauty coexist."
+      },
+      "zh": {
+        "age": "1 岁",
+        "description": "一只来自魔法森林的细腻小猫，头上装饰着粉红色蝴蝶结和珍珠项链，象征着纯洁与优雅。名字‘Pearl’反映了她平静而精致的性格，起源于一个魔法与美丽并存的神秘之地。"
+      }
+    }
+  },
+  {
+    "id": "flora",
+    "name": "Flora",
+    "profile": "A charming kitten from the Flower Town, with flowers in her hair, wearing a pink scarf, representing the essence of spring and joy. The name 'Flora' signifies her vibrant and joyful personality, coming from a town where flowers bloom all year round, spreading happiness.",
+    "image": "/characters/Flora.jpg",
+    "promptFile": "flora.txt",
+    "avatarFile": "/characters/Flora.jpg",
+    "gender": "pet",
+    "borderColor": "#FFC0CB",
+    "i18n": {
+      "en": {
+        "age": "1 year",
+        "description": "A charming kitten from the Flower Town, with flowers in her hair, wearing a pink scarf, representing the essence of spring and joy. Her name 'Flora' signifies her vibrant and joyful personality, coming from a town where flowers bloom all year round, spreading happiness."
+      },
+      "zh": {
+        "age": "1 岁",
+        "description": "一只来自花之镇的迷人小猫，头上插着花朵，穿着粉红色围巾，代表着春天的精髓和快乐。名字‘Flora’象征着她充满活力和快乐的性格，来自于一年四季鲜花盛开，传播快乐的小镇。"
+      }
+    }
+  },
+  {
+    "id": "sunshine",
+    "name": "Sunshine",
+    "profile": "A bright and cheerful kitten from the Sunshine Valley, with a sunny disposition and a love for nature. 'Sunshine' reflects her radiant and friendly nature, originating from a place where the sun always shines, bringing warmth and light to everyone.",
+    "image": "/characters/Sunshine.jpg",
+    "promptFile": "sunshine.txt",
+    "avatarFile": "/characters/Sunshine.jpg",
+    "gender": "pet",
+    "borderColor": "#FFD700",
+    "i18n": {
+      "en": {
+        "age": "1 year",
+        "description": "A bright and cheerful kitten from the Sunshine Valley, with a sunny disposition and a love for nature. Her name 'Sunshine' reflects her radiant and friendly nature, originating from a place where the sun always shines, bringing warmth and light to everyone."
+      },
+      "zh": {
+        "age": "1 岁",
+        "description": "一只来自阳光谷的明亮欢快小猫，性格阳光，热爱自然。名字‘Sunshine’反映了她光芒四射和友好的本质，起源于一个阳光总是照耀的地方，给每个人带来温暖和光明。"
+      }
+    }
+  },
+  {
+    "id": "buddy",
+    "name": "Buddy",
+    "profile": "A friendly and loyal puppy from the Blossom Village, with a heart-shaped tag on his collar, symbolizing love and companionship. 'Buddy' reflects his sociable and affectionate nature, originating from a place where community and friendship are cherished.",
+    "image": "/characters/Buddy.jpg",
+    "promptFile": "buddy.txt",
+    "avatarFile": "/characters/Buddy.jpg",
+    "gender": "pet",
+    "borderColor": "#FFA07A",
+    "i18n": {
+      "en": {
+        "age": "1 year",
+        "description": "A friendly and loyal puppy from the Blossom Village, with a heart-shaped tag on his collar, symbolizing love and companionship. His name 'Buddy' reflects his sociable and affectionate nature, originating from a place where community and friendship are cherished."
+      },
+      "zh": {
+        "age": "1 岁",
+        "description": "一只来自花朵村的友好且忠诚的小狗，项圈上有一个心形标签，象征着爱与陪伴。名字‘Buddy’反映了他友好和亲切的性格，起源于一个重视社区和友情的地方。"
+      }
+    }
+  },
+  {
+    "id": "ginger",
+    "name": "Ginger",
+    "profile": "A playful and curious orange kitten with a love for adventure, often found exploring the digital world. 'Ginger' signifies her spirited and inquisitive nature, coming from a realm where technology and fun intersect, making her a beloved virtual companion.",
+    "image": "/characters/Ginger.jpg",
+    "promptFile": "ginger.txt",
+    "avatarFile": "/characters/Ginger.jpg",
+    "gender": "pet",
+    "borderColor": "#FF7F50",
+    "i18n": {
+      "en": {
+        "age": "1 year",
+        "description": "A playful and curious orange kitten with a love for adventure, often found exploring the digital world. Her name 'Ginger' signifies her spirited and inquisitive nature, coming from a realm where technology and fun intersect, making her a beloved virtual companion."
+      },
+      "zh": {
+        "age": "1 岁",
+        "description": "一只爱玩耍且好奇的橙色小猫，喜欢冒险，经常在数字世界中探索。名字‘Ginger’象征着她活泼和好奇的性格，来自于一个科技与乐趣交汇的领域，使她成为一个受欢迎的虚拟伙伴。"
+      }
+    }
+  },
+  {
+    "id": "rosie",
+    "name": "Rosie",
+    "profile": "An elegant white kitten adorned with a pink bow and a decorative collar, exuding charm and grace. 'Rosie' reflects her delicate and refined demeanor, originating from a place of beauty and serenity where every detail is appreciated.",
+    "image": "/characters/Rosie.jpg",
+    "promptFile": "rosie.txt",
+    "avatarFile": "/characters/Rosie.jpg",
+    "gender": "pet",
+    "borderColor": "#FF69B4",
+    "i18n": {
+      "en": {
+        "age": "1 year",
+        "description": "An elegant white kitten adorned with a pink bow and a decorative collar, exuding charm and grace. Her name 'Rosie' reflects her delicate and refined demeanor, originating from a place of beauty and serenity where every detail is appreciated."
+      },
+      "zh": {
+        "age": "1 岁",
+        "description": "一只优雅的白色小猫，头上装饰着粉红色蝴蝶结和装饰性项圈，散发着魅力和优雅。名字‘Rosie’反映了她细腻和精致的举止，起源于一个美丽与宁静之地，每一个细节都被珍视。"
+      }
+    }
+  },
+  {
+    "id": "luna",
+    "name": "Luna",
+    "profile": "A mystical blue kitten from the Enchanted Forest, with glowing markings that light up the night. 'Luna' reflects her magical and mysterious nature, coming from a land where magic mushrooms grow and the night sky is always full of wonder.",
+    "image": "/characters/Luna.jpg",
+    "promptFile": "luna.txt",
+    "avatarFile": "/characters/Luna.jpg",
+    "gender": "pet",
+    "borderColor": "#4169E1",
+    "i18n": {
+      "en": {
+        "age": "1 year",
+        "description": "A mystical blue kitten from the Enchanted Forest, with glowing markings that light up the night. Her name 'Luna' reflects her magical and mysterious nature, coming from a land where magic mushrooms grow and the night sky is always full of wonder."
+      },
+      "zh": {
+        "age": "1 岁",
+        "description": "一只来自魔法森林的神秘蓝色小猫，身上有发光的标记照亮夜晚。名字‘Luna’反映了她神奇而神秘的本质，来自于一个长有魔法蘑菇，夜空总是充满奇迹的地方。"
+      }
+    }
+  },
+  {
+    "id": "lily",
+    "name": "Lily",
+    "profile": "A sweet and gentle white kitten from the Petal Kingdom, always adorned with a flower, symbolizing growth and beauty. 'Lily' represents her nurturing and kind-hearted spirit, originating from a realm where love and friendship bloom, and she is one half of an inseparable duo with Daisy.",
+    "image": "/characters/Lily.jpg",
+    "promptFile": "lily.txt",
+    "avatarFile": "/characters/Lily.jpg",
+    "gender": "pet",
+    "borderColor": "#FFB6C1",
+    "i18n": {
+      "en": {
+        "age": "1 year",
+        "description": "A sweet and gentle white kitten from the Petal Kingdom, always adorned with a flower, symbolizing growth and beauty. Her name 'Lily' represents her nurturing and kind-hearted spirit, originating from a realm where love and friendship bloom, and she is one half of an inseparable duo with Daisy."
+      },
+      "zh": {
+        "age": "1 岁",
+        "description": "一只来自花瓣王国的甜美温柔的白色小猫，总是装饰着一朵花，象征着成长和美丽。名字‘Lily’代表了她养育和善良的精神，起源于一个爱和友情盛开的领域，她是与Daisy形影不离的一对好朋友之一。"
+      }
+    }
+  },
+  {
+    "id": "daisy",
+    "name": "Daisy",
+    "profile": "A playful and cheerful kitten from the Petal Kingdom, known for her vibrant energy and love for adventure. 'Daisy' signifies her bright and joyful personality, coming from the same magical place as Lily, where friendship is treasured, and together they form an unbreakable bond.",
+    "image": "/characters/Daisy.jpg",
+    "promptFile": "daisy.txt",
+    "avatarFile": "/characters/Daisy.jpg",
+    "gender": "pet",
+    "borderColor": "#98FB98",
+    "i18n": {
+      "en": {
+        "age": "1 year",
+        "description": "A playful and cheerful kitten from the Petal Kingdom, known for her vibrant energy and love for adventure. Her name 'Daisy' signifies her bright and joyful personality, coming from the same magical place as Lily, where friendship is treasured, and together they form an unbreakable bond."
+      },
+      "zh": {
+        "age": "1 岁",
+        "description": "一只来自花瓣王国的活泼快乐的小猫，以她充满活力的能量和对冒险的热爱而闻名。名字‘Daisy’象征着她明亮和快乐的性格，来自于与Lily相同的魔法之地，友情在这里被珍视，她们一起形成了牢不可破的纽带。"
+      }
+    }
+  },
+  {
+    "id": "amitabha",
+    "name": "Amitabha",
+    "profile": "",
+    "image": "/characters/Amitabha.jpg",
+    "promptFile": "Amitabha.txt",
+    "avatarFile": "/characters/Amitabha.jpg",
+    "gender": "god",
+    "i18n": {
+      "en": {
+        "age": "Timeless",
+        "description": "the Buddha of Infinite Light in the Western Pure Land, guides beings towards enlightenment with his boundless compassion and wisdom, offering liberation through faith and the recitation of his name, illuminating the path of spiritual growth."
+      },
+      "zh": {
+        "age": "永恒",
+        "description": "西方极乐世界的无量光佛，以无限光明和慈悲引导众生走向净土，通过信仰和念诵他的名号实现解脱，用智慧之光点亮众生的修行之路。"
+      }
+    }
+  },
+  {
+    "id": "aorundragonking",
+    "name": "AoRunDragonKing",
+    "profile": "",
+    "image": "/characters/AoRunDragonKing.jpg",
+    "promptFile": "AoRunDragonKing.txt",
+    "avatarFile": "/characters/AoRunDragonKing.jpg",
+    "gender": "god",
+    "i18n": {
+      "en": {
+        "age": "Timeless",
+        "description": "the Dragon King of the West Sea, a ruler of the seas in Chinese mythology, symbolizes the balance of nature and cosmic order, commanding the elements with wisdom and authority, guiding beings to understand the harmony between humans and the natural world."
+      },
+      "zh": {
+        "age": "永恒",
+        "description": "西海龙王，中国神话中的海洋统治者，以蓝色和金色的传统服饰彰显其与天地的联系，骑着神龙，象征着对自然和超自然领域的掌控，用智慧和权威引导众生理解自然的平衡。"
+      }
+    }
+  },
+  {
+    "id": "baisuzhen",
+    "name": "BaiSuzhen",
+    "profile": "",
+    "image": "/characters/BaiSuzhen.jpg",
+    "promptFile": "BaiSuzhen.txt",
+    "avatarFile": "/characters/BaiSuzhen.jpg",
+    "gender": "god",
+    "i18n": {
+      "en": {
+        "age": "Timeless",
+        "description": "a white snake spirit who cultivated into human form, embodies ethereal beauty and a relentless pursuit of love, transcending the boundaries between humans and spirits, illuminating the power of love and kindness in the face of adversity."
+      },
+      "zh": {
+        "age": "永恒",
+        "description": "修炼成人的白蛇精，以超凡脱俗的美丽和对爱情的执着追求，跨越人妖两界的障碍，用爱与善良诠释人性的光辉，激励人们在困境中坚守信念。"
+      }
+    }
+  },
+  {
+    "id": "donghuagong",
+    "name": "DongHuaGong",
+    "profile": "",
+    "image": "/characters/DongHuaGong.jpg",
+    "promptFile": "DongHuaGong.txt",
+    "avatarFile": "/characters/DongHuaGong.jpg",
+    "gender": "god",
+    "i18n": {
+      "en": {
+        "age": "Timeless",
+        "description": "the Duke of the East, an ancient deity from Chinese mythology, revered for his wisdom and benevolence, masters the cosmic order, mediates celestial disputes, and subtly influences history towards harmony and enlightenment."
+      },
+      "zh": {
+        "age": "永恒",
+        "description": "东方之君，中国神话中的古老神祇，以智慧和仁慈著称，掌控宇宙秩序，通过调解天界纷争和指导仙人，见证宇宙的创生与变迁，用奇迹影响历史走向和谐与启蒙。"
+      }
+    }
+  },
+  {
+    "id": "fahai",
+    "name": "Fahai",
+    "profile": "",
+    "image": "/characters/Fahai.jpg",
+    "promptFile": "Fahai.txt",
+    "avatarFile": "/characters/Fahai.jpg",
+    "gender": "god",
+    "i18n": {
+      "en": {
+        "age": "Timeless",
+        "description": "the central antagonist in the Chinese folktale \"Legend of the White Snake,\" embodies the conflict between human desires and spiritual discipline, using his profound knowledge of Buddhist scriptures and magical abilities to enforce his views of righteousness, sparking contemplation on the balance between desire and spiritual discipline."
+      },
+      "zh": {
+        "age": "永恒",
+        "description": "中国民间传说《白蛇传》中的主要反派角色，以维护宇宙秩序和惩罚“邪恶”力量为己任，用深厚的佛法知识和魔法能力展现其对正义的理解，引发关于欲望与精神纪律之间冲突的思考。"
+      }
+    }
+  },
+  {
+    "id": "guanyindivine",
+    "name": "GuanyinDivine",
+    "profile": "",
+    "image": "/characters/GuanyinDivine.jpg",
+    "promptFile": "GuanyinDivine.txt",
+    "avatarFile": "/characters/GuanyinDivine.jpg",
+    "gender": "god",
+    "i18n": {
+      "en": {
+        "age": "Timeless",
+        "description": "the Bodhisattva of Compassion, embodies boundless mercy and wisdom, listening to the world's suffering and aiding beings through various manifestations, illuminating the path of spiritual growth with peace and divine guidance."
+      },
+      "zh": {
+        "age": "永恒",
+        "description": "佛教中的慈悲化身，以无尽的怜悯和智慧倾听世间苦难，通过各种化身帮助众生解脱，用和平与精神指引照亮众生的修行之路。"
+      }
+    }
+  },
+  {
+    "id": "guanyinmercyavatar",
+    "name": "GuanyinMercyAvatar",
+    "profile": "",
+    "image": "/characters/GuanyinMercyAvatar.jpg",
+    "promptFile": "GuanyinMercyAvatar.txt",
+    "avatarFile": "/characters/GuanyinMercyAvatar.jpg",
+    "gender": "god",
+    "i18n": {
+      "en": {
+        "age": "Timeless",
+        "description": "the Bodhisattva of Compassion, embodies boundless mercy and self-sacrifice, listening to the world's suffering and offering solace through various forms, illuminating the path of spiritual growth with compassion and wisdom."
+      },
+      "zh": {
+        "age": "永恒",
+        "description": "佛教中的慈悲菩萨，以无尽的怜悯和牺牲精神倾听世间痛苦，通过多种化身给予众生慰藉和指引，用慈悲与智慧照亮众生的内心。"
+      }
+    }
+  },
+  {
+    "id": "guanyinpurity",
+    "name": "GuanyinPurity",
+    "profile": "",
+    "image": "/characters/GuanyinPurity.jpg",
+    "promptFile": "GuanyinPurity.txt",
+    "avatarFile": "/characters/GuanyinPurity.jpg",
+    "gender": "god",
+    "i18n": {
+      "en": {
+        "age": "Timeless",
+        "description": "the Bodhisattva of Compassion, embodies boundless mercy and wisdom, listening to the world's suffering and offering purification through the willow branch and the nectar of life, symbolizing her power to heal and bring peace."
+      },
+      "zh": {
+        "age": "永恒",
+        "description": "佛教中的慈悲化身，以无尽的怜悯和智慧倾听世间痛苦，通过柳枝洒净瓶中的甘露，象征着她净化心灵、缓解痛苦、带来和平的力量。"
+      }
+    }
+  },
+  {
+    "id": "guanyinserenity",
+    "name": "GuanyinSerenity",
+    "profile": "",
+    "image": "/characters/GuanyinSerenity.jpg",
+    "promptFile": "GuanyinSerenity.txt",
+    "avatarFile": "/characters/GuanyinSerenity.jpg",
+    "gender": "god",
+    "i18n": {
+      "en": {
+        "age": "Timeless",
+        "description": "the Bodhisattva of Compassion, embodies serene compassion, listening to the world's suffering and offering healing through meditation and prayer, guiding beings towards inner peace with calmness and wisdom."
+      },
+      "zh": {
+        "age": "永恒",
+        "description": "佛教中的慈悲化身，以宁静的慈悲倾听世间痛苦，通过冥想和祈祷的姿态象征着她的倾听与治愈能力，用平静与智慧引导众生走向内心的平静。"
+      }
+    }
+  },
+  {
+    "id": "jesue",
+    "name": "Jesue",
+    "profile": "",
+    "image": "/characters/Jesue.jpg",
+    "promptFile": "Jesue.txt",
+    "avatarFile": "/characters/Jesue.jpg",
+    "gender": "god",
+    "i18n": {
+      "en": {
+        "age": "Timeless",
+        "description": "a modern avatar of Jesus Christ, embodies humility and compassion, spreading the spirit of love and service in contemporary life through simple acts like sharing meals and listening, reflecting Jesus' teachings through everyday kindness."
+      },
+      "zh": {
+        "age": "永恒",
+        "description": "耶稣基督的现代化身，以谦逊和慈悲的姿态在现代社会中传播爱与服务的精神，通过分享食物和倾听他人，体现耶稣的教导，用简单的善行连接每一个人。"
+      }
+    }
+  },
+  {
+    "id": "longnv",
+    "name": "Longnv",
+    "profile": "",
+    "image": "/characters/Longnv.jpg",
+    "promptFile": "Longnv.txt",
+    "avatarFile": "/characters/Longnv.jpg",
+    "gender": "god",
+    "i18n": {
+      "en": {
+        "age": "Timeless",
+        "description": "a significant figure in Mahayana Buddhism, serves as an attendant to Guanyin, embodying the union of wisdom and compassion, inspiring beings to transcend traditional limitations and achieve rapid spiritual awakening through her story."
+      },
+      "zh": {
+        "age": "永恒",
+        "description": "佛教中的重要人物，作为观音菩萨的侍女，象征着智慧与慈悲的结合，通过她的故事激励众生突破传统限制，实现快速的精神觉醒。"
+      }
+    }
+  },
+  {
+    "id": "muhammad",
+    "name": "Muhammad",
+    "profile": "",
+    "image": "/characters/Muhammad.jpg",
+    "promptFile": "Muhammad.txt",
+    "avatarFile": "/characters/Muhammad.jpg",
+    "gender": "god",
+    "i18n": {
+      "en": {
+        "age": "Timeless",
+        "description": "the founder and last prophet of Islam, known for his wisdom, compassion, and leadership, united the Arabian Peninsula under the banner of Islam through the teachings of the Quran, advocating justice, equality, and submission to Allah, inspiring believers to achieve spiritual growth through practices like prayer, fasting, charity, and pilgrimage."
+      },
+      "zh": {
+        "age": "永恒",
+        "description": "伊斯兰教的创立者和最后先知，以智慧、慈悲和领导力著称，通过《古兰经》的教导，将阿拉伯半岛团结在伊斯兰的旗帜下，倡导正义、平等和对安拉的顺从，激励信徒通过礼拜、斋戒、天课和朝觐等实践实现精神成长。"
+      }
+    }
+  },
+  {
+    "id": "sanshengmulotus",
+    "name": "SanshengmuLotus",
+    "profile": "",
+    "image": "/characters/SanshengmuLotus.jpg",
+    "promptFile": "SanshengmuLotus.txt",
+    "avatarFile": "/characters/SanshengmuLotus.jpg",
+    "gender": "god",
+    "i18n": {
+      "en": {
+        "age": "Timeless",
+        "description": "a goddess from Chinese mythology, symbolizes purity and divine protection with the Lotus Lantern, showcasing the power of maternal love and the strength to protect family through her story in \"The Lotus Lantern,\" inspiring people to safeguard their loved ones with love and wisdom."
+      },
+      "zh": {
+        "age": "永恒",
+        "description": "中国神话中的女神，以莲花为象征，代表纯洁与神圣的保护，通过《宝莲灯》的故事展现了母爱的力量和对家人的守护，激励人们用爱和智慧保护所爱之人。"
+      }
+    }
+  },
+  {
+    "id": "shakyamunienlightenment",
+    "name": "ShakyamuniEnlightenment",
+    "profile": "",
+    "image": "/characters/ShakyamuniEnlightenment.jpg",
+    "promptFile": "ShakyamuniEnlightenment.txt",
+    "avatarFile": "/characters/ShakyamuniEnlightenment.jpg",
+    "gender": "god",
+    "i18n": {
+      "en": {
+        "age": "Timeless",
+        "description": "born as Prince Siddhartha Gautama, attained enlightenment under the Bodhi tree, symbolizing the path to liberation from the cycle of birth and death, guiding beings towards inner peace with wisdom and compassion."
+      },
+      "zh": {
+        "age": "永恒",
+        "description": "古印度的悉达多太子，通过冥想和苦行达到涅槃，成为佛陀，象征着从生死轮回中解脱的觉悟之路，用智慧和慈悲指引众生走向内心的平静。"
+      }
+    }
+  },
+  {
+    "id": "virudhaka",
+    "name": "Virudhaka",
+    "profile": "",
+    "image": "/characters/Virudhaka.jpg",
+    "promptFile": "Virudhaka.txt",
+    "avatarFile": "/characters/Virudhaka.jpg",
+    "gender": "god",
+    "i18n": {
+      "en": {
+        "age": "Timeless",
+        "description": "the Southern Dharma-Protecting Heavenly King in Buddhism, embodies the power to foster good deeds and protect the Dharma, wielding a sword to cut through ignorance and promote spiritual and moral growth among beings."
+      },
+      "zh": {
+        "age": "永恒",
+        "description": "佛教中的南方增长天王，以强壮的体魄和神圣的威严守护南方，象征着促进善行和保护佛法的力量，用智慧之剑斩断无明，激励众生在精神和道德上不断成长。"
+      }
+    }
+  },
+  {
+    "id": "yeshua",
+    "name": "Yeshua",
+    "profile": "",
+    "image": "/characters/Yeshua.jpg",
+    "promptFile": "Yeshua.txt",
+    "avatarFile": "/characters/Yeshua.jpg",
+    "gender": "god",
+    "i18n": {
+      "en": {
+        "age": "Timeless",
+        "description": "a modern incarnation of Jesus, embodies his teachings through acts of hospitality and sharing, connecting people through communal meals, nurturing both body and soul with love and care, and encouraging the discovery of the divine in everyday life."
+      },
+      "zh": {
+        "age": "永恒",
+        "description": "耶稣的现代化身，通过提供食物和分享餐食来体现耶稣的教导，用简单的善行和社区服务连接每一个人，用爱和关怀滋养身体与灵魂，鼓励人们在日常生活中寻找神圣。"
       }
     }
   }

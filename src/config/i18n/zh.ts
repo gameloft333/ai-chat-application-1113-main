@@ -16,7 +16,8 @@ export default {
         male: '男生',
         female: '女生',
         celebrity: '名人堂（模仿）',
-        pet: '宠物'
+        pet: '宠物',
+        god: '神'
     },
     auth: {
         register: '注册',
