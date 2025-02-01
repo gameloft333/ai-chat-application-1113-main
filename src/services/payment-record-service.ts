@@ -1,6 +1,7 @@
 import { db } from '../config/firebase-config';
 import { collection, doc, setDoc, getDoc, query, where, getDocs, updateDoc, addDoc, limit, orderBy } from 'firebase/firestore';
 import { PaymentRecord, PaymentChannel } from '../types/payment';
+import { auth } from '../config/firebase-config';
 
 interface SubscriptionStatus {
   isSubscribed: boolean;
@@ -120,46 +121,66 @@ export class PaymentRecordService {
     }
 
     static async getActiveSubscription(uid: string): Promise<PaymentRecord | null> {
-        try {
-            if (!uid) {
-                console.warn('getActiveSubscription: uid is undefined');
-                return null;
-            }
+        let retryCount = 0;
+        const maxRetries = 3;
+        
+        while (retryCount < maxRetries) {
+            try {
+                console.log(`尝试获取活跃订阅 (尝试 ${retryCount + 1}/${maxRetries})`, { uid });
+                
+                const paymentsRef = collection(db, this.COLLECTION);
+                const q = query(
+                    paymentsRef,
+                    where('uid', '==', uid),
+                    where('status', '==', 'completed'),
+                    orderBy('expiredAt', 'desc'),
+                    limit(1)
+                );
 
-            const paymentsRef = collection(db, 'paymentRecords');
-            // 使用正确的索引顺序
-            const q = query(
-                paymentsRef,
-                where('status', '==', 'completed'),
-                where('uid', '==', uid),
-                orderBy('expiredAt', 'desc'),
-                limit(1)  // 只获取最新的一条记录
-            );
-
-            const querySnapshot = await getDocs(q);
-            const now = new Date();
-
-            if (!querySnapshot.empty) {
-                const doc = querySnapshot.docs[0];
-                const record = {
-                    id: doc.id,
-                    ...doc.data(),
-                    createdAt: new Date(doc.data().createdAt),
-                    expiredAt: new Date(doc.data().expiredAt),
-                    completedAt: doc.data().completedAt ? new Date(doc.data().completedAt) : undefined
-                } as PaymentRecord;
-
-                // 只返回未过期的订阅
-                if (record.expiredAt > now) {
-                    console.log('找到有效订阅:', record);
-                    return record;
+                const querySnapshot = await getDocs(q);
+                
+                if (!querySnapshot.empty) {
+                    const doc = querySnapshot.docs[0];
+                    const data = doc.data();
+                    
+                    console.log('获取到订阅数据:', {
+                        id: doc.id,
+                        expiredAt: data.expiredAt,
+                        status: data.status
+                    });
+                    
+                    return {
+                        id: doc.id,
+                        ...data,
+                        createdAt: new Date(data.createdAt),
+                        expiredAt: new Date(data.expiredAt),
+                        completedAt: data.completedAt ? new Date(data.completedAt) : undefined
+                    } as PaymentRecord;
                 }
+                
+                console.log('未找到活跃订阅');
+                return null;
+                
+            } catch (error) {
+                console.error(`获取活跃订阅失败 (尝试 ${retryCount + 1}/${maxRetries}):`, error);
+                
+                if (error instanceof Error && error.message.includes('PERMISSION_DENIED')) {
+                    console.error('权限被拒绝，请检查用户认证状态');
+                    return null;
+                }
+                
+                retryCount++;
+                if (retryCount === maxRetries) {
+                    console.error('达到最大重试次数，获取活跃订阅失败');
+                    return null;
+                }
+                
+                // 等待一段时间后重试
+                await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
             }
-            return null;
-        } catch (error) {
-            console.error('获取活跃订阅失败:', error);
-            return null;
         }
+        
+        return null;
     }
 
     static async updatePaymentStatus(
@@ -200,16 +221,46 @@ export class PaymentRecordService {
 
     static async getActiveSubscriptionByEmail(email: string): Promise<PaymentRecord | null> {
         try {
+            // 添加调试日志
+            const validateUserAuth = () => {
+                const user = auth.currentUser;
+                console.log('认证状态:', {
+                    isAuthenticated: !!user,
+                    uid: user?.uid,
+                    email: user?.email,
+                    emailVerified: user?.emailVerified
+                });
+                return !!user;
+            };
+
+            // 在调用获取订阅记录之前验证
+            if (!validateUserAuth()) {
+                console.error('用户未登录或认证失败');
+                return null;
+            }
+
+            // 确保查询的邮箱与当前用户匹配
+            if (email !== auth.currentUser.email) {
+                console.warn('getActiveSubscriptionByEmail: 无权访问其他用户的订阅记录');
+                return null;
+            }
+
+            console.log('开始查询订阅记录:', {
+                email,
+                currentUser: auth.currentUser.uid,
+                isAuthenticated: !!auth.currentUser
+            });
+
             const paymentsRef = collection(db, 'paymentRecords');
             const q = query(
-                paymentsRef, 
+                paymentsRef,
                 where('paymentAccount', '==', email),
                 where('status', '==', 'completed')
             );
-            
+
             const querySnapshot = await getDocs(q);
             const now = new Date();
-            
+
             const validRecords = querySnapshot.docs
                 .map(doc => ({
                     id: doc.id,
@@ -242,7 +293,7 @@ export class PaymentRecordService {
     }
 
     // for payment server mode
-    /*static async handlePaymentSuccess(orderId: string, paymentAccount: string): Promise<void> {
+    static async handlePaymentSuccess(orderId: string, paymentAccount: string): Promise<void> {
         try {
             // 先更新支付状态
             await this.updatePaymentStatus(orderId, 'completed', paymentAccount);
@@ -267,9 +318,9 @@ export class PaymentRecordService {
             throw error;
         }
     }
-    */
+
    
-    // for payment link mode
+    /*// for payment link mode
     static async handlePaymentSuccess(orderId: string, userEmail: string) {
         const paymentRecord = await this.getPaymentRecordByOrderId(orderId);
         if (!paymentRecord) return;
@@ -294,7 +345,7 @@ export class PaymentRecordService {
         
         await batch.commit();
     }
-
+*/
     static async getSubscriptionStatus(uid: string, userEmail?: string): Promise<SubscriptionStatus> {
         try {
             console.log('开始查询订阅状态:', { uid, userEmail });

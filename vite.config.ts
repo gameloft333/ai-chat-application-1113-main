@@ -3,31 +3,34 @@ import react from '@vitejs/plugin-react'
 import path from 'path'
 
 export default defineConfig(({ mode }) => {
-  // Load env file based on `mode`
+  // 根据模式加载对应的环境变量
   const env = loadEnv(mode, process.cwd(), '')
   
+  console.log('Vite配置初始化:', {
+    环境: mode,
+    API地址: env.VITE_API_URL,
+    应用地址: env.VITE_APP_URL,
+    WebSocket地址: env.VITE_SOCKET_URL
+  })
+
   return {
-    plugins: [
-      react({
-        babel: {
-          plugins: [
-            ['@babel/plugin-transform-react-jsx', {
-              runtime: 'automatic'
-            }]
-          ]
-        },
-        fastRefresh: true,
-        include: '**/*.{jsx,tsx}'
-      })
-    ],
+    plugins: [react()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src')
       }
     },
     server: {
-      port: 4173,
-      host: true
+      port: Number(env.VITE_PORT) || 4173,
+      host: true,
+      proxy: {
+        '/socket.io': {
+          target: env.VITE_API_URL,
+          ws: true,
+          changeOrigin: true,
+          secure: false
+        }
+      }
     },
     build: {
       sourcemap: true,

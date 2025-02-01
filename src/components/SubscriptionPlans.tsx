@@ -50,7 +50,10 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
   const [selectedPlan, setSelectedPlan] = useState(defaultSelection.planId);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [selectedPlanInfo, setSelectedPlanInfo] = useState<{planId: string, duration: string} | null>(null);
+  const [selectedPlanInfo, setSelectedPlanInfo] = useState<{
+    planId: string;
+    duration: string;
+  } | null>(null);
 
   useEffect(() => {
     const fetchCurrentSubscription = async () => {
@@ -75,6 +78,13 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
       setPaymentMethods(enabledMethods.sort(() => Math.random() - 0.5)); // 在显示支付模态框时随机排序支付方式
     }
   }, [showPaymentModal]);
+
+  useEffect(() => {
+    console.log('状态更新:', {
+      showPaymentModal,
+      selectedPlanInfo
+    });
+  }, [showPaymentModal, selectedPlanInfo]);
 
   // 获取可用的时长选项
   const getAvailableDurations = () => {
@@ -165,33 +175,37 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
   };
 
   const handlePlanSelect = async (planId: string) => {
+    console.log('选择套餐:', planId); // 添加日志
+    
     try {
-      const stripeLinkService = StripeLinkService.getInstance();
-      const paymentMode = stripeLinkService.getPaymentMode();
+      setSelectedPlanInfo({
+        planId,
+        duration: selectedDuration
+      });
+      console.log('设置选中套餐信息:', { planId, duration: selectedDuration }); // 添加日志
       
-      if (paymentMode === 'stripeLink') {
-        // Stripe Link 模式
-        const stripeLinkUrl = stripeLinkService.getStripeLinkUrl(planId, selectedDuration);
-        if (!stripeLinkUrl) {
-          throw new Error(t('payment.stripe.error.linkNotFound'));
-        }
-        window.location.href = stripeLinkUrl;
-      } else {
-        // Payment Server 模式
-        setSelectedPlan(planId);
-        setShowPaymentModal(true);
-      }
+      setShowPaymentModal(true);
+      console.log('显示支付模态框状态:', true); // 添加日志
     } catch (error) {
-      console.error('处理计划选择时出错:', error);
-      alert(error instanceof Error ? error.message : t('payment.error.unknown'));
+      console.error('选择套餐失败:', error);
+      alert(error instanceof Error ? error.message : '选择套餐失败');
     }
   };
 
   const handlePaymentSelect = async (method: 'paypal' | 'stripe' | 'ton') => {
-    if (!selectedPlanInfo) return;
+    console.log('选择支付方式:', method); // 添加日志
+    if (!selectedPlanInfo) {
+      console.error('未选择套餐信息'); // 添加日志
+      return;
+    }
     
     try {
-      // 调用父组件传入的订阅处理函数，传入支付方式
+      console.log('调用订阅函数，参数:', {
+        planId: selectedPlanInfo.planId,
+        duration: selectedPlanInfo.duration,
+        method
+      }); // 添加日志
+      
       await onSubscribe(selectedPlanInfo.planId, selectedPlanInfo.duration, method);
       setShowPaymentModal(false);
     } catch (error) {
@@ -365,6 +379,7 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, onSubscr
 
         {/* 支付方式选择模态框 */}
         {showPaymentModal && selectedPlanInfo && (
+          console.log('渲染支付模态框:', { showPaymentModal, selectedPlanInfo }), // 添加日志
           <div className="fixed inset-0 flex items-center justify-center z-[60]">
             <div className="bg-[#1E1F23] rounded-2xl p-6 w-full max-w-md relative">
               <button 

@@ -44,6 +44,12 @@ import { MobileNavBar } from './components/MobileNavBar';
 import { MobilePreviewToggle } from './components/MobilePreviewToggle';
 import './styles/payment.css';
 import { THEME_CONFIG } from './config/theme-config';
+import { logger } from './utils/logger';
+import { SocketService } from './services/socket-service';
+import { PAYMENT_CONFIG } from './config/payment-config';
+import { MARQUEE_CONFIG } from './config/marquee-config';
+import { Marquee } from './components/Marquee';
+import { getActiveMarqueeMessages } from './config/marquee-config';
 
 const API_KEY = import.meta.env.VITE_API_KEY || '';
 const API_URL = import.meta.env.VITE_APP_URL || import.meta.env.VITE_PAYMENT_API_URL;
@@ -124,6 +130,7 @@ const AppContent: React.FC<AppContentProps> = ({
     userId: string;
     expiredAt: Date;
   } | null>(null);
+  const [showPaymentSelector, setShowPaymentSelector] = useState(false);
   
   const generateThemeColor = () => {
     const hue = Math.floor(Math.random() * 360);
@@ -512,12 +519,35 @@ const AppContent: React.FC<AppContentProps> = ({
     document.documentElement.setAttribute('data-theme', THEME_CONFIG.defaultTheme);
   }, []);
 
+  const handleSubscribeClick = () => {
+    logger.debug('点击订阅按钮');
+    logger.debug('支付配置:', PAYMENT_CONFIG);
+    logger.debug('Socket状态:', SocketService.getSocket()?.connected);
+    
+    // 显示支付方式选择器
+    setShowPaymentSelector(true);
+  };
+
   return (
     <>
+      {/* 添加跑马灯容器，确保在导航栏底部 */}
+      <div 
+        className="fixed top-16 left-0 right-0 pointer-events-none z-[100000]"
+        style={{ 
+          height: '40px'
+        }}
+      >
+        <Marquee 
+          messages={getActiveMarqueeMessages()}
+          themeColor={themeColor}
+          className="h-full"
+        />
+      </div>
+
       <DynamicFavicon selectedCharacter={selectedCharacter} />
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+      <div className="relative min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
         {/* 响应式顶部导航 */}
-        <header className="sticky top-0 z-50 backdrop-blur-lg bg-white/75 dark:bg-gray-900/75 border-b border-gray-200 dark:border-gray-800">
+        <header className="sticky top-0 z-40 backdrop-blur-lg bg-white/75 dark:bg-gray-900/75 border-b border-gray-200 dark:border-gray-800">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div className="flex items-center space-x-6">
               <div className="flex items-center space-x-3">

@@ -18,7 +18,7 @@ export const PAYMENT_CONFIG = {
     }
   },
   enabledMethods: {
-    paypal: false,
+    paypal: true,
     stripe: true,
     ton: false
   },

@@ -7,7 +7,7 @@
     "dev": "vite",
     "dev:test": "vite --mode test",
     "dev:prod": "vite --mode production",
-    "dev:server": "nodemon server/index.js",
+    "dev:server": "cross-env NODE_ENV=development nodemon --env-file=.env.development server/index.js",
     "dev:ton": "nodemon --exec ts-node-esm ton-payment/index.ts",
     "build": "vite build",
     "build:test": "vite build --mode test",

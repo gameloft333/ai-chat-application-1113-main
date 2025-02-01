@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { getFirestore, collection, query, where, getCountFromServer } from 'firebase/firestore';
 
 interface OnlineStatsProps {
   className?: string;
@@ -10,6 +11,7 @@ interface OnlineStatsProps {
   baseTimeFactor?: number; // 基础时间系数
   peakUpdateInterval?: number; // 新增：峰值更新间隔，默认30分钟
   peakFluctuationRange?: number; // 新增：峰值波动范围，默认10-30%
+  firebaseMultiplier?: number; // Firebase用户数的倍数因子
 }
 
 const OnlineStats: React.FC<OnlineStatsProps> = ({ 
@@ -20,7 +22,8 @@ const OnlineStats: React.FC<OnlineStatsProps> = ({
   timeWaveFactor = 0.3,   // 默认时间波动因子，更大的时间波动因子，波动范围越大，0-1之间
   baseTimeFactor = 0.7,   // 默认基础时间系数，更大的基础时间系数，波动范围越大，0-1之间
   peakUpdateInterval = 1800000, // 30分钟
-  peakFluctuationRange = 0.2 // 20%
+  peakFluctuationRange = 0.2, // 20%
+  firebaseMultiplier = 2.5, // 默认Firebase用户数倍数
 }) => {
   const { t, currentLanguage } = useLanguage();
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -28,6 +31,7 @@ const OnlineStats: React.FC<OnlineStatsProps> = ({
   const [peakCount, setPeakCount] = useState(0);
   const [onlineColor, setOnlineColor] = useState('');
   const [peakColor, setPeakColor] = useState('');
+  const [registeredUsers, setRegisteredUsers] = useState(0);
   
   // 格式化日期时间
   const formatDateTime = (date: Date) => {
@@ -50,6 +54,24 @@ const OnlineStats: React.FC<OnlineStatsProps> = ({
     return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
   };
 
+  // 新增: 获取Firebase注册用户数
+  const fetchRegisteredUsers = async () => {
+    try {
+      const db = getFirestore();
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef, where('status', '==', 'active'));
+      console.log('正在查询Firebase用户数...');
+      const snapshot = await getCountFromServer(q);
+      const count = snapshot.data().count;
+      console.log('Firebase用户数查询成功:', count);
+      return count;
+    } catch (error) {
+      console.error('获取Firebase用户数失败:', error);
+      // 返回默认值而不是0，避免显示异常
+      return minOnlineCount / firebaseMultiplier;
+    }
+  };
+
   /**
    * 计算在线人数
    * 算法说明：
@@ -64,17 +86,36 @@ const OnlineStats: React.FC<OnlineStatsProps> = ({
    *      * 早晚高峰(7-9点,17-19点)：约(baseTimeFactor+timeWaveFactor)的基础人数
    *      * 日间时段(10-16点)：约baseTimeFactor的基础人数
    *      * 夜间时段(20-23点)：约baseTimeFactor的基础人数
+   * 1. 获取Firebase用户数
+   * 2. 计算原有算法的基础人数
+   * 3. 计算时间影响因子
+   * 4. 合并计算
    */
-  const calculateOnlineCount = () => {
-    // 基础人数计算
+  const calculateOnlineCount = async () => {
+    // 1. 获取Firebase用户数
+    const firebaseUsers = await fetchRegisteredUsers();
+    setRegisteredUsers(firebaseUsers);
+    
+    // 2. 计算原有算法的基础人数
     const baseCount = minOnlineCount + Math.floor(Math.random() * maxOnlineRange);
     
-    // 时间影响因子计算
-    const hourAngle = (currentTime.getHours() / 24) * Math.PI * 2; // 将24小时转换为0-2π
+    // 3. 计算时间影响因子
+    const hourAngle = (currentTime.getHours() / 24) * Math.PI * 2;
     const timeMultiplier = Math.sin(hourAngle) * timeWaveFactor + baseTimeFactor;
     
-    // 确保返回整数
-    return Math.floor(baseCount * timeMultiplier);
+    // 4. 合并计算
+    const firebaseBonus = firebaseUsers * firebaseMultiplier; // Firebase用户数的贡献
+    const finalCount = Math.floor((baseCount + firebaseBonus) * timeMultiplier);
+    
+    console.log('在线人数计算:', {
+      Firebase用户数: firebaseUsers,
+      基础人数: baseCount,
+      时间系数: timeMultiplier,
+      Firebase加成: firebaseBonus,
+      最终人数: finalCount
+    });
+
+    return finalCount;
   };
 
   /**
@@ -109,18 +150,27 @@ const OnlineStats: React.FC<OnlineStatsProps> = ({
   };
 
   useEffect(() => {
+    const initializeStats = async () => {
+      const initialOnlineCount = await calculateOnlineCount();
+      setOnlineCount(initialOnlineCount);
+      setPeakCount(calculatePeakCount(initialOnlineCount));
+      setOnlineColor(generateAccessibleColor(true));
+      setPeakColor(generateAccessibleColor(true));
+    };
+
+    initializeStats();
+
     // 更新时间
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
 
     // 更新在线人数和颜色
-    const statsTimer = setInterval(() => {
-      const newOnlineCount = calculateOnlineCount();
+    const statsTimer = setInterval(async () => {
+      const newOnlineCount = await calculateOnlineCount();
       setOnlineCount(newOnlineCount);
       setOnlineColor(generateAccessibleColor(true));
       
-      // 实时检查并更新峰值，确保峰值始终大于在线人数
       setPeakCount(prev => {
         const currentPeak = Math.max(prev, calculatePeakCount(newOnlineCount));
         return currentPeak;
@@ -136,13 +186,6 @@ const OnlineStats: React.FC<OnlineStatsProps> = ({
       });
       setPeakColor(generateAccessibleColor(true));
     }, peakUpdateInterval);
-
-    // 初始化数据
-    const initialOnlineCount = calculateOnlineCount();
-    setOnlineCount(initialOnlineCount);
-    setPeakCount(calculatePeakCount(initialOnlineCount));
-    setOnlineColor(generateAccessibleColor(true));
-    setPeakColor(generateAccessibleColor(true));
 
     return () => {
       clearInterval(timer);
@@ -161,6 +204,11 @@ const OnlineStats: React.FC<OnlineStatsProps> = ({
             {onlineCount.toLocaleString()}
           </span>
           {' '}{t('stats.online')}
+          {(import.meta.env.DEV && import.meta.env.VITE_SHOW_DEBUG_INFO === 'true') && (
+            <span className="text-sm ml-2">
+              (Firebase: {registeredUsers.toLocaleString()})
+            </span>
+          )}
         </span>
         <span className="mx-4">|</span>
         <span>

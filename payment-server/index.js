@@ -12,11 +12,14 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: process.env.CORS_ORIGIN,
+        origin: process.env.NODE_ENV === 'development' 
+            ? ['http://localhost:5173', 'http://localhost:4173', 'http://localhost:4242']
+            : [process.env.CORS_ORIGIN],
         methods: ["GET", "POST"],
         credentials: true
     },
-    path: '/socket.io/'
+    path: '/socket.io/',
+    transports: ['websocket', 'polling']
 });
 
 // 添加错误处理中间件
@@ -202,15 +205,23 @@ app.use((err, req, res, next) => {
 
 // WebSocket 事件处理
 io.on('connection', (socket) => {
-    console.log('Client connected:', socket.id);
+    console.log('客户端连接成功:', socket.id);
     
     socket.on('disconnect', () => {
-        console.log('Client disconnected:', socket.id);
+        console.log('客户端断开连接:', socket.id);
+    });
+    
+    socket.on('error', (error) => {
+        console.error('Socket 错误:', error);
     });
 });
 
-// 启动服务器
-const PORT = process.env.PORT || 4242;
+// 统一使用一个端口配置
+const PORT = process.env.SOCKET_PORT || 4242;
+
+// 启动服务器（只保留一个启动调用）
 server.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`支付服务器运行在端口 ${PORT}`);
+    console.log(`Socket.IO 服务已启动`);
+    console.log(`CORS origin: ${process.env.CORS_ORIGIN}`);
 });

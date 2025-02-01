@@ -60,4 +60,5 @@ export const MARQUEE_CONFIG = {
   animationDuration: Number(import.meta.env.VITE_MARQUEE_ANIMATION_DURATION) || 20000,
   websocketUrl: import.meta.env.VITE_MARQUEE_WEBSOCKET_URL,
   transitionDuration: 500, // 过渡动画持续时间（毫秒）
+  zIndex: 99999, // 提高 z-index 值
 };

@@ -1,4 +1,5 @@
 import { PAYPAL_CONFIG } from '../config/paypal-config';
+import { PaymentRecordService } from './payment-record-service';
 
 export class PayPalService {
     private static instance: PayPalService;
@@ -17,10 +18,14 @@ export class PayPalService {
     private async getAccessToken(): Promise<string> {
         try {
             if (this.accessToken && Date.now() < this.tokenExpiry) {
+                console.log('使用缓存的 PayPal access token');
                 return this.accessToken;
             }
 
+            console.log('开始获取新的 PayPal access token');
+            
             if (!PAYPAL_CONFIG.CLIENT_ID || !PAYPAL_CONFIG.CLIENT_SECRET) {
+                console.error('PayPal 配置错误: 缺少凭证');
                 throw new Error('PayPal credentials are not configured');
             }
 
@@ -28,7 +33,7 @@ export class PayPalService {
                 `${PAYPAL_CONFIG.CLIENT_ID}:${PAYPAL_CONFIG.CLIENT_SECRET}`
             );
 
-            console.log('Using PayPal API URL:', PAYPAL_CONFIG.API_URL);
+            console.log('PayPal API URL:', PAYPAL_CONFIG.API_URL);
             
             const response = await fetch(`${PAYPAL_CONFIG.API_URL}/v1/oauth2/token`, {
                 method: 'POST',
@@ -56,7 +61,7 @@ export class PayPalService {
             this.tokenExpiry = Date.now() + ((data.expires_in || 3600) * 1000);
             return this.accessToken;
         } catch (error) {
-            console.error('获取 PayPal token 失败:', error);
+            console.error('获取 PayPal access token 失败:', error);
             throw error;
         }
     }
@@ -67,7 +72,14 @@ export class PayPalService {
         description: string;
     }): Promise<{orderId: string; approvalUrl: string}> {
         try {
-            console.log('Creating PayPal order:', { price, currency, description });
+            console.log('创建 PayPal 订单，参数:', {
+                price: price,
+                currency: currency,
+                description: description
+            });
+
+            const accessToken = await this.getAccessToken();
+            console.log('获取到 PayPal access token');
             
             // 确保金额大于等于 0.01
             if (price < 0.01) {
@@ -79,7 +91,6 @@ export class PayPalService {
                 throw new Error('货币代码不能为空');
             }
 
-            const accessToken = await this.getAccessToken();
             const response = await fetch(`${PAYPAL_CONFIG.API_URL}/v2/checkout/orders`, {
                 method: 'POST',
                 headers: {
@@ -119,13 +130,19 @@ export class PayPalService {
                 throw new Error('无法获取 PayPal 支付链接');
             }
 
+            console.log('PayPal 订单创建响应:', data);
+            
             return {
                 orderId: data.id,
                 approvalUrl
             };
         } catch (error) {
-            console.error('PayPal createPaymentOrder error:', error);
-            throw error;
+            console.error('PayPal 订单创建失败:', {
+                error: error.message,
+                response: error.response?.data,
+                status: error.response?.status
+            });
+            throw new Error('PayPal API error: ' + (error.response?.data?.message || error.message));
         }
     }
 

@@ -8,15 +8,22 @@ import http from 'http';
 import { generateRandomColor } from './utils/color-generator.js';
 import WebhookService from './services/WebhookService.js';
 
-// 根据环境加载对应的环境变量文件
-const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.test';
-dotenv.config({ path: path.resolve(process.cwd(), envFile) });
+// 根据 NODE_ENV 加载对应的环境变量文件
+const envFile = process.env.NODE_ENV === 'production' 
+  ? '.env.production'
+  : process.env.NODE_ENV === 'test'
+    ? '.env.test'
+    : '.env.development';
+
+// 加载环境变量
+const envPath = path.resolve(process.cwd(), envFile);
+dotenv.config({ path: envPath });
 
 const app = express();
 const port = process.env.PORT || 4242;
 
 console.log('当前环境:', process.env.NODE_ENV);
-console.log('环境文件路径:', path.resolve(process.cwd(), envFile));
+console.log('环境文件路径:', envPath);
 console.log('Stripe密钥配置:', !!process.env.STRIPE_SECRET_KEY);
 console.log('Webhook密钥配置:', !!process.env.STRIPE_WEBHOOK_SECRET);
 
@@ -32,16 +39,12 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 // console.log('Stripe模式:', process.env.VITE_STRIPE_MODE);
 
 app.use(cors({
-  origin: [
-    'http://localhost:5173', 
-    'http://localhost:4173', 
-    'http://localhost:4242',
-    'http://payment:4242',
-    'http://localhost:4243'
-  ],
+  origin: process.env.NODE_ENV === 'development' 
+    ? ['http://localhost:5173', 'http://localhost:4173', 'http://localhost:4242']
+    : [process.env.CORS_ORIGIN],
   methods: ['GET', 'POST', 'OPTIONS'],
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Accept', 'Origin', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.post('/webhook/stripe', express.raw({type: 'application/json'}), async (req, res) => {
@@ -114,19 +117,18 @@ app.post('/api/stripe/create-payment-intent', async (req, res) => {
 
 const server = http.createServer(app);
 const io = new Server(server, {
+  path: process.env.VITE_WEBSOCKET_PATH || '/socket.io',
   cors: {
-    origin: [
-      'http://localhost:5173', 
-      'http://localhost:4173', 
-      'http://localhost:4242',
-      'http://payment:4242',
-      'http://localhost:4243'
-    ],
-    methods: ['GET', 'POST', 'OPTIONS'],
-    credentials: true,
-    allowedHeaders: ['Content-Type', 'Accept', 'Origin', 'Authorization']
+    origin: process.env.NODE_ENV === 'development' 
+      ? ['http://localhost:5173', 'http://localhost:4173']
+      : [process.env.CORS_ORIGIN],
+    methods: ["GET", "POST"],
+    credentials: true
   },
-  transports: ['websocket', 'polling']
+  transports: ['websocket'],
+  pingTimeout: Number(process.env.VITE_SOCKET_TIMEOUT) || 60000,
+  pingInterval: 25000,
+  connectTimeout: 45000
 });
 
 // 跑马灯消息存储
@@ -169,20 +171,10 @@ const marqueeMessages = [
 // 跑马灯 WebSocket 处理
 io.on('connection', (socket) => {
   console.log('跑马灯客户端已连接');
-  
-  // 立即发送现有消息
   socket.emit('marquee:update', marqueeMessages);
   
-  // 每5秒重新发送一次消息，确保循环播放
   const messageInterval = setInterval(() => {
-    const updatedMessages = marqueeMessages.map(msg => ({
-      ...msg,
-      shadowColor: process.env.VITE_MARQUEE_RANDOM_COLORS === 'true' 
-        ? generateRandomColor() 
-        : msg.shadowColor
-    }));
-    socket.emit('marquee:update', updatedMessages);
-    // console.log('发送跑马灯消息:', updatedMessages);
+    socket.emit('marquee:update', marqueeMessages);
   }, Number(process.env.VITE_MARQUEE_REFRESH_INTERVAL) || 5000);
 
   socket.on('disconnect', () => {
@@ -191,10 +183,11 @@ io.on('connection', (socket) => {
   });
 });
 
-// 修改监听部分
+// 错误处理
+io.engine.on('connection_error', (err) => {
+  console.error('Socket.IO连接错误:', err);
+});
+
 server.listen(port, () => {
-  console.log(`服务器运行模式: ${process.env.NODE_ENV}`);
-  console.log(`Stripe模式: ${process.env.VITE_STRIPE_MODE}`);
-  console.log(`跑马灯服务状态: ${process.env.VITE_MARQUEE_ENABLED === 'true' ? '已启用' : '未启用'}`);
   console.log(`服务器运行在 http://localhost:${port}`);
 });

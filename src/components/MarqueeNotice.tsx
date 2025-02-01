@@ -53,8 +53,9 @@ const MarqueeNotice: React.FC<MarqueeNoticeProps> = ({ messages }) => {
   const displayLanguage = currentLanguage || defaultLanguage;
   console.log('使用显示语言:', displayLanguage);
 
+  // 跑马灯容器刷新位置 top-16 是跑马灯到顶部的距离，z-40 是跑马灯的层级（现在和导航栏一样）
   return (
-    <div className={`fixed z-40 top-8 transition-opacity duration-500 ${isVisible ? 'opacity-100' : 'opacity-0'}`} 
+    <div className={`fixed z-40 top-16 transition-opacity duration-500 ${isVisible ? 'opacity-100' : 'opacity-0'}`} 
       style={{ 
         width: '100%',  // 控制宽度
         left: '0%',   // 控制左边距，使其居中

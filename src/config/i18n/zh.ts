@@ -89,7 +89,7 @@ export default {
         remainingTime: '剩余时间',
         days: '天',
         expiryDate: '到期日期',
-        choosePlan: '选择套餐',
+        choosePlan: '加入会员',
         payment: {
             selectMethod: '选择支付方式',
             processing: '处理中...',

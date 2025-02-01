@@ -3,6 +3,21 @@ import react from '@vitejs/plugin-react'
 import path from 'path'
 
 export default defineConfig(({ mode }) => {
+  const isDevelopment = mode === 'development';
+  
+  // 根据环境确定代理目标
+  const wsTarget = isDevelopment 
+    ? 'ws://localhost:4242'
+    : 'wss://love.saga4v.com';
+    
+  const apiTarget = isDevelopment
+    ? 'http://localhost:4242'
+    : 'https://love.saga4v.com';
+
+  console.log('当前环境:', mode);
+  console.log('WebSocket代理目标:', wsTarget);
+  console.log('API代理目标:', apiTarget);
+
   // 加载环境变量
   const env = loadEnv(mode, process.cwd(), '')
   
@@ -91,13 +106,37 @@ export default defineConfig(({ mode }) => {
       },
       proxy: {
         '/socket.io': {
-          target: 'wss://love.saga4v.com',
+          target: wsTarget,
           ws: true,
-          changeOrigin: true
+          changeOrigin: true,
+          // 添加代理日志
+          configure: (proxy, options) => {
+            proxy.on('error', (err, req, res) => {
+              console.error('代理错误:', err);
+            });
+            proxy.on('proxyReq', (proxyReq, req, res) => {
+              console.log('代理请求:', {
+                url: req.url,
+                target: options.target
+              });
+            });
+          }
         },
         '/api': {
-          target: 'https://love.saga4v.com',
-          changeOrigin: true
+          target: apiTarget,
+          changeOrigin: true,
+          // 添加代理日志
+          configure: (proxy, options) => {
+            proxy.on('error', (err, req, res) => {
+              console.error('API代理错误:', err);
+            });
+            proxy.on('proxyReq', (proxyReq, req, res) => {
+              console.log('API代理请求:', {
+                url: req.url,
+                target: options.target
+              });
+            });
+          }
         }
       }
     }

@@ -5,6 +5,7 @@ import { PaymentRecordService } from '../services/payment-record-service';
 import { PayPalService } from '../services/paypal-service';
 import { TonService } from '../services/ton-service';
 import { useTranslation } from 'react-i18next';
+import io from 'socket.io-client';
 
 export const PaymentResult: React.FC = () => {
   const navigate = useNavigate();
@@ -12,6 +13,21 @@ export const PaymentResult: React.FC = () => {
   const { currentUser } = useAuth();
   const [message, setMessage] = useState<string>('正在处理支付结果...');
   const { t } = useTranslation();
+
+  const socketUrl = import.meta.env.VITE_SOCKET_URL;
+  const socket = io(socketUrl, {
+    transports: ['websocket', 'polling'],
+    path: '/socket.io/'
+  });
+
+  // 添加连接状态日志
+  socket.on('connect', () => {
+    console.log('Socket.IO 连接成功');
+  });
+
+  socket.on('connect_error', (error) => {
+    console.error('Socket.IO 连接错误:', error);
+  });
 
   useEffect(() => {
     const handlePaymentResult = async () => {
