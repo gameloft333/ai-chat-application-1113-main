@@ -1,6 +1,7 @@
 import { STRIPE_LINK_CONFIG } from '../config/stripe-link-config';
 import { PaymentRecordService } from './payment-record-service';
 import { calculateExpiredAt } from '../utils/payment-utils';
+import { STRIPE_CONFIG } from '../config/stripe-config';
 
 export class StripeLinkService {
   private static instance: StripeLinkService;
@@ -16,12 +17,13 @@ export class StripeLinkService {
 
   // 获取支付模式
   public getPaymentMode() {
-    const { stripeLink, paymentServer } = STRIPE_LINK_CONFIG.paymentMode;
+    console.log('Payment mode config:', {
+      mode: STRIPE_CONFIG.PAYMENT_MODE,
+      stripeLinkEnabled: STRIPE_LINK_CONFIG.paymentMode.stripeLink.enabled,
+      paymentServerEnabled: STRIPE_LINK_CONFIG.paymentMode.paymentServer.enabled
+    });
     
-    if (stripeLink.enabled && (!paymentServer.enabled || stripeLink.priority < paymentServer.priority)) {
-      return 'stripeLink';
-    }
-    return 'paymentServer';
+    return STRIPE_CONFIG.PAYMENT_MODE === 'stripe_link' ? 'stripeLink' : 'paymentServer';
   }
 
   // 获取 Stripe Link URL

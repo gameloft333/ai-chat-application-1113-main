@@ -241,7 +241,8 @@ export class PaymentRecordService {
         }
     }
 
-    static async handlePaymentSuccess(orderId: string, paymentAccount: string): Promise<void> {
+    // for payment server mode
+    /*static async handlePaymentSuccess(orderId: string, paymentAccount: string): Promise<void> {
         try {
             // 先更新支付状态
             await this.updatePaymentStatus(orderId, 'completed', paymentAccount);
@@ -265,6 +266,33 @@ export class PaymentRecordService {
             console.error('处理支付成功失败:', error);
             throw error;
         }
+    }
+    */
+   
+    // for payment link mode
+    static async handlePaymentSuccess(orderId: string, userEmail: string) {
+        const paymentRecord = await this.getPaymentRecordByOrderId(orderId);
+        if (!paymentRecord) return;
+
+        const batch = db.batch();
+        
+        // 更新支付记录
+        const paymentRef = db.collection('payments').doc(orderId);
+        batch.update(paymentRef, { 
+          status: 'completed',
+          completedAt: new Date()
+        });
+        
+        // 更新用户信息
+        const userRef = db.collection('users').doc(paymentRecord.uid);
+        batch.update(userRef, {
+          planLevel: paymentRecord.planId,
+          planDuration: paymentRecord.duration,
+          expiredAt: paymentRecord.expiredAt,
+          updatedAt: new Date()
+        });
+        
+        await batch.commit();
     }
 
     static async getSubscriptionStatus(uid: string, userEmail?: string): Promise<SubscriptionStatus> {

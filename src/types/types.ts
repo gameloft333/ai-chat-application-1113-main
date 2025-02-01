@@ -10,7 +10,7 @@ export interface Character {
   image: string;
   promptFile: string;
   avatarFile: string;
-  gender: 'male' | 'female' | 'celebrity' | 'pet' | undefined;
+  gender: 'male' | 'female' | 'celebrity' | 'pet' | 'gods' | undefined;
   borderColor?: string;
   i18n: {
     en: CharacterI18n;

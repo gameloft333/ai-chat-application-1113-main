@@ -1110,7 +1110,11 @@ export const characters: Character[] = [
     "image": "/characters/Amitabha.jpg",
     "promptFile": "Amitabha.txt",
     "avatarFile": "/characters/Amitabha.jpg",
+<<<<<<< HEAD
     "gender": "god",
+=======
+    "gender": "gods",
+>>>>>>> 468ddfcb1e71dd84494510da2fe70b415899f930
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1129,7 +1133,11 @@ export const characters: Character[] = [
     "image": "/characters/AoRunDragonKing.jpg",
     "promptFile": "AoRunDragonKing.txt",
     "avatarFile": "/characters/AoRunDragonKing.jpg",
+<<<<<<< HEAD
     "gender": "god",
+=======
+    "gender": "gods",
+>>>>>>> 468ddfcb1e71dd84494510da2fe70b415899f930
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1148,7 +1156,11 @@ export const characters: Character[] = [
     "image": "/characters/BaiSuzhen.jpg",
     "promptFile": "BaiSuzhen.txt",
     "avatarFile": "/characters/BaiSuzhen.jpg",
+<<<<<<< HEAD
     "gender": "god",
+=======
+    "gender": "gods",
+>>>>>>> 468ddfcb1e71dd84494510da2fe70b415899f930
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1167,7 +1179,11 @@ export const characters: Character[] = [
     "image": "/characters/DongHuaGong.jpg",
     "promptFile": "DongHuaGong.txt",
     "avatarFile": "/characters/DongHuaGong.jpg",
+<<<<<<< HEAD
     "gender": "god",
+=======
+    "gender": "gods",
+>>>>>>> 468ddfcb1e71dd84494510da2fe70b415899f930
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1186,7 +1202,11 @@ export const characters: Character[] = [
     "image": "/characters/Fahai.jpg",
     "promptFile": "Fahai.txt",
     "avatarFile": "/characters/Fahai.jpg",
+<<<<<<< HEAD
     "gender": "god",
+=======
+    "gender": "gods",
+>>>>>>> 468ddfcb1e71dd84494510da2fe70b415899f930
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1205,7 +1225,11 @@ export const characters: Character[] = [
     "image": "/characters/GuanyinDivine.jpg",
     "promptFile": "GuanyinDivine.txt",
     "avatarFile": "/characters/GuanyinDivine.jpg",
+<<<<<<< HEAD
     "gender": "god",
+=======
+    "gender": "gods",
+>>>>>>> 468ddfcb1e71dd84494510da2fe70b415899f930
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1224,7 +1248,11 @@ export const characters: Character[] = [
     "image": "/characters/GuanyinMercyAvatar.jpg",
     "promptFile": "GuanyinMercyAvatar.txt",
     "avatarFile": "/characters/GuanyinMercyAvatar.jpg",
+<<<<<<< HEAD
     "gender": "god",
+=======
+    "gender": "gods",
+>>>>>>> 468ddfcb1e71dd84494510da2fe70b415899f930
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1243,7 +1271,11 @@ export const characters: Character[] = [
     "image": "/characters/GuanyinPurity.jpg",
     "promptFile": "GuanyinPurity.txt",
     "avatarFile": "/characters/GuanyinPurity.jpg",
+<<<<<<< HEAD
     "gender": "god",
+=======
+    "gender": "gods",
+>>>>>>> 468ddfcb1e71dd84494510da2fe70b415899f930
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1262,7 +1294,11 @@ export const characters: Character[] = [
     "image": "/characters/GuanyinSerenity.jpg",
     "promptFile": "GuanyinSerenity.txt",
     "avatarFile": "/characters/GuanyinSerenity.jpg",
+<<<<<<< HEAD
     "gender": "god",
+=======
+    "gender": "gods",
+>>>>>>> 468ddfcb1e71dd84494510da2fe70b415899f930
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1281,7 +1317,11 @@ export const characters: Character[] = [
     "image": "/characters/Jesue.jpg",
     "promptFile": "Jesue.txt",
     "avatarFile": "/characters/Jesue.jpg",
+<<<<<<< HEAD
     "gender": "god",
+=======
+    "gender": "gods",
+>>>>>>> 468ddfcb1e71dd84494510da2fe70b415899f930
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1300,7 +1340,11 @@ export const characters: Character[] = [
     "image": "/characters/Longnv.jpg",
     "promptFile": "Longnv.txt",
     "avatarFile": "/characters/Longnv.jpg",
+<<<<<<< HEAD
     "gender": "god",
+=======
+    "gender": "gods",
+>>>>>>> 468ddfcb1e71dd84494510da2fe70b415899f930
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1319,7 +1363,11 @@ export const characters: Character[] = [
     "image": "/characters/Muhammad.jpg",
     "promptFile": "Muhammad.txt",
     "avatarFile": "/characters/Muhammad.jpg",
+<<<<<<< HEAD
     "gender": "god",
+=======
+    "gender": "gods",
+>>>>>>> 468ddfcb1e71dd84494510da2fe70b415899f930
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1338,7 +1386,11 @@ export const characters: Character[] = [
     "image": "/characters/SanshengmuLotus.jpg",
     "promptFile": "SanshengmuLotus.txt",
     "avatarFile": "/characters/SanshengmuLotus.jpg",
+<<<<<<< HEAD
     "gender": "god",
+=======
+    "gender": "gods",
+>>>>>>> 468ddfcb1e71dd84494510da2fe70b415899f930
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1357,7 +1409,11 @@ export const characters: Character[] = [
     "image": "/characters/ShakyamuniEnlightenment.jpg",
     "promptFile": "ShakyamuniEnlightenment.txt",
     "avatarFile": "/characters/ShakyamuniEnlightenment.jpg",
+<<<<<<< HEAD
     "gender": "god",
+=======
+    "gender": "gods",
+>>>>>>> 468ddfcb1e71dd84494510da2fe70b415899f930
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1376,7 +1432,11 @@ export const characters: Character[] = [
     "image": "/characters/Virudhaka.jpg",
     "promptFile": "Virudhaka.txt",
     "avatarFile": "/characters/Virudhaka.jpg",
+<<<<<<< HEAD
     "gender": "god",
+=======
+    "gender": "gods",
+>>>>>>> 468ddfcb1e71dd84494510da2fe70b415899f930
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1395,7 +1455,11 @@ export const characters: Character[] = [
     "image": "/characters/Yeshua.jpg",
     "promptFile": "Yeshua.txt",
     "avatarFile": "/characters/Yeshua.jpg",
+<<<<<<< HEAD
     "gender": "god",
+=======
+    "gender": "gods",
+>>>>>>> 468ddfcb1e71dd84494510da2fe70b415899f930
     "i18n": {
       "en": {
         "age": "Timeless",

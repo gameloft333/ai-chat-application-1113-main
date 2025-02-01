@@ -147,7 +147,11 @@ export function importCharactersFromCSV(inputPath: string = 'characters.csv'): C
         image: record.image,
         promptFile: record.promptFile,
         avatarFile: record.avatarFile,
+<<<<<<< HEAD
         gender: record.gender as 'male' | 'female' | 'god' | 'pet' | 'celebrity' | 'popular' | undefined,
+=======
+        gender: record.gender as 'male' | 'female' | 'celebrity' | 'pet' | 'gods' | undefined,
+>>>>>>> 468ddfcb1e71dd84494510da2fe70b415899f930
         borderColor: record.borderColor as Character['borderColor'] || undefined,
         i18n: {
           en: {

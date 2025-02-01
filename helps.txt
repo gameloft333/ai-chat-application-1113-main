@@ -1,0 +1,14 @@
+# 安装 ngrok
+npm install -g ngrok
+
+# 启动 ngrok，转发到你的本地服务器端口
+ngrok http 4242
+
+# 获取 ngrok 的公共 URL
+ngrok http https://love.saga4v.com
+
+# 将 ngrok 的公共 URL 添加到 Stripe 的 Webhook 配置中
+# 例如：https://love.saga4v.com/webhook/stripe
+
+# 在本地服务器上运行 ngrok
+ngrok http http://localhost:4242
