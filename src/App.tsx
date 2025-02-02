@@ -50,6 +50,7 @@ import { PAYMENT_CONFIG } from './config/payment-config';
 import { MARQUEE_CONFIG } from './config/marquee-config';
 import { Marquee } from './components/Marquee';
 import { getActiveMarqueeMessages } from './config/marquee-config';
+import { SocialButtons } from './components/SocialButtons';
 
 const API_KEY = import.meta.env.VITE_API_KEY || '';
 const API_URL = import.meta.env.VITE_APP_URL || import.meta.env.VITE_PAYMENT_API_URL;
@@ -734,6 +735,9 @@ const AppContent: React.FC<AppContentProps> = ({
             />
           </div>
         )}
+
+        {/* 添加社交媒体按钮 */}
+        <SocialButtons />
 
         {/* 添加反馈按钮 */}
         {currentUser && <FeedbackButton themeColor={themeColor} />}
