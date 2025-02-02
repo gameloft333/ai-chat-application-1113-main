@@ -29,6 +29,12 @@ export default defineConfig(({ mode }) => {
           ws: true,
           changeOrigin: true,
           secure: false
+        },
+        '/stripe': {
+          target: 'https://js.stripe.com',
+          changeOrigin: true,
+          secure: false,
+          rewrite: (path) => path.replace(/^\/stripe/, '')
         }
       }
     },
@@ -44,7 +50,8 @@ export default defineConfig(({ mode }) => {
             'react-vendor': ['react', 'react-dom']
           }
         }
-      }
+      },
+      outDir: 'dist'
     },
     optimizeDeps: {
       include: ['react', 'react-dom']

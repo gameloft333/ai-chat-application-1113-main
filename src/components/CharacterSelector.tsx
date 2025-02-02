@@ -5,6 +5,11 @@ import { CharacterStatsService } from '../services/character-stats-service';
 import { marqueeService } from '../services/marquee-service';
 import MarqueeNotice from './MarqueeNotice';
 import OnlineStats from './OnlineStats';
+import { useAuth } from '../contexts/AuthContext';
+import { PaymentRecordService } from '../services/payment-record-service';
+import { Modal } from 'antd';
+import { SUBSCRIPTION_PLANS } from '../config/subscription-config';
+import { useSubscription } from '../contexts/SubscriptionContext';
 
 interface CharacterSelectorProps {
   onSelectCharacter: (character: Character) => void;
@@ -14,13 +19,17 @@ interface CharacterSelectorProps {
 
 const CharacterSelector: React.FC<CharacterSelectorProps> = ({
   onSelectCharacter,
-  maxCharacters = characters.length,
+  maxCharacters = SUBSCRIPTION_PLANS.CHARACTER_LIMITS.trial,
   selectedGender
 }) => {
   const { t, currentLanguage } = useLanguage();
   const [sortedCharacters, setSortedCharacters] = useState<Character[]>([]);
   const [marqueeMessages, setMarqueeMessages] = useState<MarqueeMessage[]>([]);
   const [randomColors, setRandomColors] = useState<Record<string, string>>({});
+  const { currentUser } = useAuth();
+  const { subscriptionType } = useSubscription();
+  const [usedCharacters, setUsedCharacters] = useState<number>(0);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState<boolean>(false);
 
   useEffect(() => {
     console.log('Language Check:', {
@@ -100,11 +109,12 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
         return countB - countA;
       });
 
-      setSortedCharacters(sorted.slice(0, maxCharacters));
+      // 显示所有角色，不再使用 maxCharacters 限制
+      setSortedCharacters(sorted);
     };
 
     sortCharactersByPopularity();
-  }, [selectedGender, maxCharacters]);
+  }, [selectedGender]); // 移除 maxCharacters 依赖
 
   // 每次渲染时重新随机排序相同对话人数的角色
   useEffect(() => {
@@ -131,6 +141,116 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
     return () => unsubscribe();
   }, []);
 
+  // 获取当前用户可用的最大角色数
+  const getMaxCharacters = () => {
+    const maxChars = !currentUser 
+      ? SUBSCRIPTION_PLANS.CHARACTER_LIMITS.trial 
+      : SUBSCRIPTION_PLANS.CHARACTER_LIMITS[subscriptionType || 'trial'];
+    
+    console.log('获取最大角色数:', {
+      currentUser: !!currentUser,
+      subscriptionType,
+      maxChars
+    });
+    
+    return maxChars;
+  };
+
+  // 检查是否超出限制
+  const checkCharacterLimit = (character: Character) => {
+    const maxCharacters = getMaxCharacters();
+    if (usedCharacters >= maxCharacters && maxCharacters !== -1) {
+      Modal.warning({
+        title: '角色数量已达上限',
+        content: '请升级会员以解锁更多角色',
+        okText: '了解详情',
+        onOk: () => {
+          // 导航到订阅页面
+          window.location.href = '/subscription';
+        }
+      });
+      return false;
+    }
+    return true;
+  };
+
+  // 修改选择角色的处理函数
+  const handleSelectCharacter = async (character: Character) => {
+    if (!currentUser) {
+      console.log('用户未登录');
+      return;
+    }
+
+    // 获取当前用户可用的最大角色数
+    const maxAllowedCharacters = SUBSCRIPTION_PLANS.CHARACTER_LIMITS[subscriptionType || 'trial'];
+    
+    // 添加详细的调试日志
+    console.log('角色限制检查:', {
+      currentUser: currentUser.uid,
+      subscriptionType,
+      maxAllowedCharacters,
+      usedCharacters,
+      i18nParams: { maxCount: maxAllowedCharacters }
+    });
+
+    if (usedCharacters >= maxAllowedCharacters) {
+      // 添加更多调试信息
+      console.log('i18next 详细信息:', {
+        interpolation: t.i18n?.options?.interpolation,
+        currentLanguage: t.i18n?.language,
+        loadedResources: t.i18n?.store?.data
+      });
+
+      // 添加调试日志
+      console.log('翻译模板:', {
+        template: t('character.limitReached.description'),
+        params: { maxCount: maxAllowedCharacters },
+        result: t('character.limitReached.description', { maxCount: maxAllowedCharacters })
+      });
+
+      // 尝试不同的插值方式
+      const message = t('character.limitReached.description').replace('{{maxCount}}', String(maxAllowedCharacters));
+
+      console.log('插值参数:', {
+        maxCount: maxAllowedCharacters,
+        messageTemplate: t('character.limitReached.description'),
+        result: message
+      });
+
+      Modal.warning({
+        title: t('character.limitReached.title'),
+        content: message,
+        okText: t('subscription.choosePlan'),
+        onOk: () => window.location.href = '/subscription'
+      });
+      return;
+    }
+
+    // 更新使用统计
+    const success = await CharacterStatsService.incrementCharacterChat(character.id);
+    if (!success) {
+      console.log('更新角色统计失败');
+      return;
+    }
+
+    setUsedCharacters(usedCount + 1);
+    onSelectCharacter(character);
+  };
+
+  // 获取已使用的角色数量
+  useEffect(() => {
+    const fetchUsedCharacters = async () => {
+      if (currentUser) {
+        const stats = await CharacterStatsService.getUserCharacterStats(currentUser.uid);
+        const used = Object.keys(stats).length;
+        setUsedCharacters(used);
+        
+        console.log('已使用角色数:', used, '最大限制:', maxCharacters);
+      }
+    };
+    fetchUsedCharacters();
+  }, [currentUser]);
+
   const renderCharacterInfo = (character: Character) => {
     // 从 i18n 数据中获取描述信息
     const description = character.i18n?.[currentLanguage]?.description;
@@ -156,6 +276,14 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
     );
   };
 
+  console.log('显示的角色数量:', sortedCharacters.length);
+  console.log('所有可用角色:', characters.length);
+  console.log('当前订阅类型:', subscriptionType);
+  console.log('当前用户:', currentUser?.uid);
+  console.log('订阅类型:', subscriptionType);
+  console.log('角色限制:', SUBSCRIPTION_PLANS.CHARACTER_LIMITS[subscriptionType || 'normal']);
+  console.log('已使用角色:', usedCharacters);
+
   return (
     <div className="container mx-auto px-4 py-8">
       <OnlineStats className="mb-6" />
@@ -170,7 +298,7 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
           return (
             <div
               key={character.id}
-              onClick={() => onSelectCharacter(character)}
+              onClick={() => handleSelectCharacter(character)}
               className={`relative cursor-pointer rounded-lg overflow-hidden transition-transform hover:scale-105 ${getBorderClass(character.borderColor)}`}
               style={typeof borderStyle === 'object' ? borderStyle : {}}
             >

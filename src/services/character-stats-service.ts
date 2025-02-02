@@ -1,22 +1,50 @@
 import { characters } from '../types/character';
 import { auth } from '../config/firebase-config';
+import { SUBSCRIPTION_PLANS } from '../config/subscription-config';
 
 export class CharacterStatsService {
   private static STORAGE_KEY = 'character_chat_stats';
 
-  static async incrementCharacterChat(characterId: string): Promise<void> {
+  static async incrementCharacterChat(characterId: string): Promise<boolean> {
     try {
       const userId = auth.currentUser?.uid;
-      if (!userId) return;
-
-      const stats = this.getStats();
-      if (!stats[characterId]) {
-        stats[characterId] = new Set();
+      if (!userId) {
+        console.log('用户未登录，无法更新角色统计');
+        return false;
       }
-      stats[characterId].add(userId);
-      this.saveStats(stats);
+
+      // 获取用户订阅类型
+      const userSubscription = await this.getUserSubscriptionType(userId);
+      console.log('当前用户订阅类型:', userSubscription);
+      
+      // 获取角色限制
+      const characterLimit = SUBSCRIPTION_PLANS.CHARACTER_LIMITS[userSubscription];
+      console.log('角色数量限制:', characterLimit);
+
+      // 获取已使用的角色统计
+      const stats = await this.getUserCharacterStats(userId);
+      const usedCount = Object.keys(stats).length;
+      console.log('已使用角色数:', usedCount);
+
+      // 严格检查限制
+      if (characterLimit !== -1 && usedCount >= characterLimit) {
+        console.log('超出角色使用限制');
+        return false;
+      }
+
+      // 更新统计
+      const newStats = { ...stats };
+      newStats[characterId] = (newStats[characterId] || 0) + 1;
+      
+      // 使用单独的key存储用户角色统计
+      const userStatsKey = `character_stats_${userId}`;
+      localStorage.setItem(userStatsKey, JSON.stringify(newStats));
+      
+      console.log('角色统计更新成功:', newStats);
+      return true;
     } catch (error) {
-      console.error('Error incrementing character chat:', error);
+      console.error('更新角色统计失败:', error);
+      return false;
     }
   }
 
@@ -38,31 +66,27 @@ export class CharacterStatsService {
     }
   }
 
-  static getCharacterCounts(): { [key: string]: number } {
+  public static async getUserCharacterStats(userId: string): Promise<Record<string, number>> {
     try {
-      const stats = this.getStats();
-      const counts: { [key: string]: number } = {};
+      // 添加调试日志
+      console.log('获取用户角色统计:', userId);
       
-      // 确保所有角色都有初始值
-      characters.forEach(char => {
-        counts[char.id] = 0; // 默认值为0
-      });
-      
-      // 添加统计数据
-      Object.entries(stats).forEach(([id, users]) => {
-        if (counts.hasOwnProperty(id)) {
-          counts[id] = (users as Set<string>).size;
-        }
-      });
-      
-      return counts;
+      // 从本地存储获取数据
+      const stats = localStorage.getItem(`character_stats_${userId}`);
+      return stats ? JSON.parse(stats) : {};
     } catch (error) {
-      console.error('Error getting character counts:', error);
-      // 发生错误时返回所有角色的默认统计
-      return characters.reduce((acc, char) => {
-        acc[char.id] = 0;
-        return acc;
-      }, {} as Record<string, number>);
+      console.error('获取角色统计失败:', error);
+      return {};
+    }
+  }
+
+  public static getCharacterCounts(): Record<string, number> {
+    try {
+      const stats = localStorage.getItem('character_counts');
+      return stats ? JSON.parse(stats) : {};
+    } catch (error) {
+      console.error('获取角色计数失败:', error);
+      return {};
     }
   }
 
@@ -76,6 +100,23 @@ export class CharacterStatsService {
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(saveableStats));
     } catch (error) {
       console.error('Error saving character stats:', error);
+    }
+  }
+
+  private static async getUserSubscriptionType(userId: string): Promise<string> {
+    try {
+      // 优先从 localStorage 获取
+      const localData = localStorage.getItem(`subscription_${userId}`);
+      if (localData) {
+        const parsed = JSON.parse(localData);
+        return parsed.type || 'normal';
+      }
+      
+      // 如果没有订阅信息，返回普通用户类型
+      return 'normal';
+    } catch (error) {
+      console.error('获取用户订阅类型失败:', error);
+      return 'normal';
     }
   }
 }

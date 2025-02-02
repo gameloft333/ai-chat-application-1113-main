@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState } from 'react';
 import zh from '../config/i18n/zh';
 import en from '../config/i18n/en';
+import i18n from 'i18next';
 
 const languages = { zh, en };
 type LanguageType = keyof typeof languages;
@@ -21,7 +22,6 @@ export const useLanguage = () => {
     }
     return context;
 };
-
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [language, setLanguage] = useState<LanguageType>('zh');
 
@@ -50,6 +50,24 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         t,
         setLanguage
     };
+
+    // 添加调试日志
+    console.log('i18next 配置:', {
+        interpolation: i18n.options.interpolation,
+        resources: i18n.options.resources,
+        debug: true
+    });
+
+    i18n.init({
+        interpolation: {
+            escapeValue: false,
+            prefix: '{{',
+            suffix: '}}',
+            // 添加更多插值选项
+            skipOnVariables: false
+        },
+        debug: true  // 启用调试模式
+    });
 
     return (
         <LanguageContext.Provider value={contextValue}>

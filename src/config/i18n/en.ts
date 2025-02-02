@@ -294,5 +294,11 @@ export default {
         online: 'Online',
         peak: 'Peak',
         date: 'Date'
+    },
+    character: {
+        limitReached: {
+            title: "Character Limit Reached",
+            description: "Your current membership level allows up to {{maxCount}} characters. Upgrade your membership to unlock more amazing characters!"
+        }
     }
 };

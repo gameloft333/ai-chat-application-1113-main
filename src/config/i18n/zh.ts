@@ -305,5 +305,11 @@ export default {
         online: '在线',
         peak: '峰值',
         date: '日期'
+    },
+    character: {
+        limitReached: {
+            title: '角色数量已达上限',
+            description: '您当前的会员等级最多可以使用 {{maxCount}} 个角色。升级会员等级以解锁更多精彩角色！'
+        }
     }
 };

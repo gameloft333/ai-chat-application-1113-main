@@ -103,7 +103,7 @@ const AppContent: React.FC<AppContentProps> = ({
   const [selectedGender, setSelectedGender] = useState<string | null>('popular');
   const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
-  const { openSubscriptionModal } = useSubscription();
+  const { openSubscriptionModal, subscriptionType } = useSubscription();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPlanInfo, setSelectedPlanInfo] = useState<{planId: string, duration: string} | null>(null);
   const [showStripePaymentModal, setShowStripePaymentModal] = useState(false);
@@ -528,6 +528,22 @@ const AppContent: React.FC<AppContentProps> = ({
     // 显示支付方式选择器
     setShowPaymentSelector(true);
   };
+
+  useEffect(() => {
+    // 添加调试日志
+    console.log('当前用户:', currentUser);
+    console.log('订阅状态:', subscriptionType);
+    
+    if (currentUser) {
+      CharacterStatsService.getUserCharacterStats(currentUser.uid)
+        .then(stats => {
+          console.log('获取到的角色统计:', stats);
+        })
+        .catch(error => {
+          console.error('获取角色统计失败:', error);
+        });
+    }
+  }, [currentUser]);
 
   return (
     <>

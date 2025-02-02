@@ -244,17 +244,18 @@ async function updateCharacterStats(characterId: string) {
 }
 
 function filterAIResponse(text: string, characterId: string): string {
+  console.log('过滤前:', text);
+  
+  // 应用过滤规则
   let filteredText = text;
   
   // 应用AI身份过滤规则
   AI_IDENTITY_FILTERS.forEach(rule => {
-    if (typeof rule.pattern === 'string') {
-      filteredText = filteredText.replace(new RegExp(rule.pattern, 'g'), 
-        rule.replacement || '');
-    } else {
-      filteredText = filteredText.replace(rule.pattern, 
-        typeof rule.replacement === 'function' ? rule.replacement() : 
-        (rule.replacement || ''));
+    if (rule.pattern.test(filteredText)) {
+      console.log('匹配到规则:', rule.pattern);
+      console.log('替换前文本:', filteredText);
+      filteredText = filteredText.replace(rule.pattern, rule.replacement || '');
+      console.log('替换后文本:', filteredText);
     }
   });
   
@@ -375,7 +376,9 @@ export async function getLLMResponse(characterId: string, userInput: string): Pr
 }
 
 // 保持其他辅助函数不变
-async function processLLMResponse(text: string, characterPrompt: string, voice: string): Promise<string> {
-  // ... 保持原有的响应处理逻辑 ...
-  return text;
+async function processLLMResponse(text: string, prompt: string, voice: string) {
+  console.log('过滤前的回复:', text);
+  const filteredText = filterAIResponse(text, '');
+  console.log('过滤后的回复:', filteredText);
+  return filteredText;
 }
