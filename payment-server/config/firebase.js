@@ -10,76 +10,75 @@ import dotenv from 'dotenv';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// 添加调试日志
+console.log('环境变量检查开始...');
+console.log('当前目录:', process.cwd());
+
+// 使用 ES Module 方式读取目录
 try {
-    // 添加调试日志
-    console.log('环境变量检查开始...');
-    console.log('当前目录:', process.cwd());
-    
-    // 使用 ES Module 方式读取目录
-    try {
-        const files = readdirSync(process.cwd());
-        console.log('当前目录文件列表:', files);
-    } catch (err) {
-        console.error('读取目录失败:', err);
-    }
-
-    // 环境变量检查
-    console.log('Firebase 配置检查:', {
-        projectId: process.env.FIREBASE_PROJECT_ID ? '已设置' : '未设置',
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL ? '已设置' : '未设置',
-        privateKey: process.env.FIREBASE_PRIVATE_KEY ? '已设置' : '未设置',
-        NODE_ENV: process.env.NODE_ENV,
-        环境变量详情: {
-            projectId: process.env.FIREBASE_PROJECT_ID,
-            clientEmail: process.env.FIREBASE_CLIENT_EMAIL?.substring(0, 5) + '...',
-            privateKey: process.env.FIREBASE_PRIVATE_KEY ? '存在' : '不存在',
-            当前环境: process.env.NODE_ENV
-        }
-    });
-
-    // 初始化 Firebase Admin
-    if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
-        throw new Error('缺少必要的 Firebase 配置');
-    }
-
-    const app = initializeApp({
-        credential: cert({
-            projectId: process.env.FIREBASE_PROJECT_ID,
-            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-            privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
-        })
-    });
-
-    const db = getFirestore(app);
-
-    // 配置 Firestore
-    db.settings({
-        ignoreUndefinedProperties: true,
-        retry: {
-            maxRetries: 5,
-            retryDelayMs: 1000
-        },
-        timeout: 30000
-    });
-
-    const withRetry = async (operation, maxAttempts = 5) => {
-        let lastError;
-        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-            try {
-                console.log(`尝试执行操作 (${attempt}/${maxAttempts})`);
-                return await operation();
-            } catch (error) {
-                lastError = error;
-                console.error(`操作失败 (${attempt}/${maxAttempts}):`, error);
-                await new Promise(resolve => setTimeout(resolve, attempt * 1000));
-            }
-        }
-        throw lastError;
-    };
-
-    export { db, withRetry };
-
-} catch (error) {
-    console.error('Firebase 初始化失败:', error);
-    throw error;
+    const files = readdirSync(process.cwd());
+    console.log('当前目录文件列表:', files);
+} catch (err) {
+    console.error('读取目录失败:', err);
 }
+
+// 环境变量检查
+console.log('Firebase 配置检查:', {
+    projectId: process.env.FIREBASE_PROJECT_ID ? '已设置' : '未设置',
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL ? '已设置' : '未设置',
+    privateKey: process.env.FIREBASE_PRIVATE_KEY ? '已设置' : '未设置',
+    NODE_ENV: process.env.NODE_ENV,
+    环境变量详情: {
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL?.substring(0, 5) + '...',
+        privateKey: process.env.FIREBASE_PRIVATE_KEY ? '存在' : '不存在',
+        当前环境: process.env.NODE_ENV
+    }
+});
+
+// 初始化 Firebase Admin
+if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
+    throw new Error('缺少必要的 Firebase 配置');
+}
+
+const app = initializeApp({
+    credential: cert({
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+    })
+});
+
+const db = getFirestore(app);
+
+// 配置 Firestore
+db.settings({
+    ignoreUndefinedProperties: true,
+    retry: {
+        maxRetries: 5,
+        retryDelayMs: 1000
+    },
+    timeout: 30000
+});
+
+const withRetry = async (operation, maxAttempts = 5) => {
+    let lastError;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+            console.log(`尝试执行操作 (${attempt}/${maxAttempts})`);
+            return await operation();
+        } catch (error) {
+            lastError = error;
+            console.error(`操作失败 (${attempt}/${maxAttempts}):`, error);
+            await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+        }
+    }
+    throw lastError;
+};
+
+const firebase = {
+    db,
+    withRetry
+};
+
+export default firebase;
