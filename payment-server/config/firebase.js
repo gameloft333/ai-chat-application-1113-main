@@ -76,9 +76,5 @@ const withRetry = async (operation, maxAttempts = 5) => {
     throw lastError;
 };
 
-const firebase = {
-    db,
-    withRetry
-};
-
-export default firebase;
+// 改为具名导出
+export { db, withRetry };
