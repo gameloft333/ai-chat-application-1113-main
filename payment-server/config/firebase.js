@@ -4,13 +4,21 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+// 添加调试日志
+console.log('Firebase 配置检查:', {
+  projectId: process.env.FIREBASE_PROJECT_ID ? '已设置' : '未设置',
+  clientEmail: process.env.FIREBASE_CLIENT_EMAIL ? '已设置' : '未设置',
+  privateKey: process.env.FIREBASE_PRIVATE_KEY ? '已设置' : '未设置'
+});
+
 // 初始化 Firebase Admin
 const app = initializeApp({
   credential: cert({
     projectId: process.env.FIREBASE_PROJECT_ID,
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
     privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
-  })
+  }),
+  databaseURL: process.env.FIREBASE_DATABASE_URL
 });
 
 // 获取 Firestore 实例
