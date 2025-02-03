@@ -4,7 +4,7 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import Stripe from 'stripe';
 import dotenv from 'dotenv';
-import webhookService from './services/webhook-service.js';
+import WebhookService from './services/WebhookService.js';
 
 dotenv.config();
 
@@ -158,7 +158,7 @@ app.post('/webhook/stripe', express.raw({type: 'application/json'}), async (req,
       const subscription = await stripe.subscriptions.retrieve(session.subscription);
 
       // 更新用户订阅状态
-      await webhookService.handleSubscriptionCreated({
+      await WebhookService.handleSubscriptionCreated({
         userId: session.client_reference_id, // 确保在创建支付链接时设置这个值
         email: session.customer_email,
         subscriptionId: session.subscription,

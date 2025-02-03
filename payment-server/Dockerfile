@@ -10,10 +10,9 @@ RUN npm install
 
 # 创建 services 目录
 RUN mkdir -p /app/services
-
+ENV PORT=4242
 COPY . .
 
-ENV PORT=4242
 ENV HOST=0.0.0.0
 
 EXPOSE 4242
