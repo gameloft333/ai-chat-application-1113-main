@@ -10,9 +10,14 @@ import dotenv from 'dotenv';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// 根据环境加载配置
+const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.test';
+dotenv.config({ path: path.resolve(process.cwd(), envFile) });
+
 // 添加调试日志
 console.log('环境变量检查开始...');
 console.log('当前目录:', process.cwd());
+console.log('环境文件路径:', path.resolve(process.cwd(), envFile));
 
 // 使用 ES Module 方式读取目录
 try {
@@ -38,6 +43,12 @@ console.log('Firebase 配置检查:', {
 
 // 初始化 Firebase Admin
 if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
+    console.error('环境变量加载失败，请检查以下配置：');
+    console.error('- FIREBASE_PROJECT_ID');
+    console.error('- FIREBASE_CLIENT_EMAIL');
+    console.error('- FIREBASE_PRIVATE_KEY');
+    console.error('当前环境:', process.env.NODE_ENV);
+    console.error('环境文件路径:', path.resolve(process.cwd(), envFile));
     throw new Error('缺少必要的 Firebase 配置');
 }
 
