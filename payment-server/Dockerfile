@@ -8,12 +8,19 @@ RUN apk add --no-cache curl
 COPY package*.json ./
 RUN npm install
 
+# 创建 services 目录
+RUN mkdir -p /app/services
+
 COPY . .
 
 ENV PORT=4242
 ENV HOST=0.0.0.0
 
 EXPOSE 4242
+
+# 添加调试信息
+RUN ls -la /app
+RUN ls -la /app/services
 
 # 添加健康检查脚本
 COPY healthcheck.sh /healthcheck.sh
