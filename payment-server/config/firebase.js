@@ -3,18 +3,22 @@ import { getFirestore } from 'firebase-admin/firestore';
 import dotenv from 'dotenv';
 import path from 'path';
 
-// 根据环境加载配置
-const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.test';
-dotenv.config({ path: path.resolve(process.cwd(), envFile) });
-
 // 添加调试日志
-console.log('当前工作目录:', process.cwd());
-console.log('环境文件路径:', path.resolve(process.cwd(), envFile));
+console.log('环境变量检查开始...');
+console.log('当前目录文件列表:');
+console.log(require('fs').readdirSync(process.cwd()));
+
+// 直接使用环境变量（因为已经在 docker-compose 中设置）
 console.log('Firebase 配置检查:', {
   projectId: process.env.FIREBASE_PROJECT_ID ? '已设置' : '未设置',
   clientEmail: process.env.FIREBASE_CLIENT_EMAIL ? '已设置' : '未设置',
   privateKey: process.env.FIREBASE_PRIVATE_KEY ? '已设置' : '未设置',
-  NODE_ENV: process.env.NODE_ENV
+  NODE_ENV: process.env.NODE_ENV,
+  环境变量值: {
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL?.substring(0, 5) + '...',
+    privateKey: process.env.FIREBASE_PRIVATE_KEY ? '存在' : '不存在'
+  }
 });
 
 // 初始化 Firebase Admin
