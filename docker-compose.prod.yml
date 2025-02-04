@@ -47,7 +47,7 @@ services:
       # Firebase 配置 - 直接使用值而不是变量引用
       - FIREBASE_PROJECT_ID=luna-games-445108
       - FIREBASE_CLIENT_EMAIL=firebase-adminsdk-5b8pg@luna-games-445108.iam.gserviceaccount.com
-      - FIREBASE_PRIVATE_KEY=-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCQ5jE9MxQHlhtE\n...
+      - FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCQ5jE9MxQHlhtE\n..."
       - FIREBASE_DATABASE_URL=https://luna-games-445108.firebaseio.com
     ports:
       - "4242:4242"
