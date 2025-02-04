@@ -9,7 +9,15 @@ const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.en
 dotenv.config({ path: path.resolve(process.cwd(), envFile) });
 
 // 加载后端环境配置
-dotenv.config({ path: path.resolve(process.cwd(), 'server/.env.server') });
+dotenv.config({ path: path.resolve(process.cwd(), '.env.server') });
+
+// 添加调试日志
+console.log('环境文件加载检查：', {
+    envPath: path.resolve(process.cwd(), '.env.server'),
+    exists: require('fs').existsSync(path.resolve(process.cwd(), '.env.server')),
+    currentDir: process.cwd(),
+    dirContents: require('fs').readdirSync(process.cwd())
+});
 
 // 初始化 Firebase Admin
 const app = initializeApp({

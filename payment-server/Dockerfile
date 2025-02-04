@@ -13,6 +13,12 @@ RUN npm install
 
 COPY . .
 
+# 添加环境文件调试信息
+RUN echo "检查环境文件:"
+RUN ls -la /app/.env*
+RUN echo "当前目录结构:"
+RUN find /app -type f -name ".env*"
+
 # 添加调试信息
 RUN ls -la /app
 RUN ls -la /app/config
