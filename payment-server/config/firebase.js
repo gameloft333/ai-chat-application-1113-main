@@ -14,7 +14,23 @@ const __dirname = dirname(__filename);
 // 根据环境加载配置
 const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.test';
 console.log('当前环境:', process.env.NODE_ENV);
-console.log('尝试加载环境文件:', envFile);
+
+// 先加载 .env.server 配置
+console.log('尝试加载 .env.server 配置...');
+dotenv.config({ path: path.resolve(process.cwd(), '.env.server') });
+
+// 添加调试日志
+console.log('环境变量检查开始...');
+console.log('当前目录:', process.cwd());
+console.log('环境文件路径:', path.resolve(process.cwd(), '.env.server'));
+
+// 环境变量检查
+console.log('Firebase 配置检查:', {
+    FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID || '未设置',
+    FIREBASE_CLIENT_EMAIL: process.env.FIREBASE_CLIENT_EMAIL ? '已设置' : '未设置',
+    FIREBASE_PRIVATE_KEY: process.env.FIREBASE_PRIVATE_KEY ? '已设置' : '未设置',
+    NODE_ENV: process.env.NODE_ENV || '未设置'
+});
 
 // 添加环境变量映射
 const mapEnvironmentVariables = () => {
@@ -71,11 +87,6 @@ console.log('Docker Compose 环境变量检查:', {
 // 加载支付服务器配置
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
-// 添加调试日志
-console.log('环境变量检查开始...');
-console.log('当前目录:', process.cwd());
-console.log('环境文件路径:', path.resolve(process.cwd(), envFile));
-
 // 使用 ES Module 方式读取目录
 try {
     const files = readdirSync(process.cwd());
@@ -83,14 +94,6 @@ try {
 } catch (err) {
     console.error('读取目录失败:', err);
 }
-
-// 环境变量检查
-console.log('Firebase 配置检查:', {
-    FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID || '未设置',
-    FIREBASE_CLIENT_EMAIL: process.env.FIREBASE_CLIENT_EMAIL ? '已设置' : '未设置',
-    FIREBASE_PRIVATE_KEY: process.env.FIREBASE_PRIVATE_KEY ? '已设置' : '未设置',
-    NODE_ENV: process.env.NODE_ENV || '未设置'
-});
 
 // 初始化 Firebase Admin
 if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
