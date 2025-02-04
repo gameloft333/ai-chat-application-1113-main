@@ -33,26 +33,18 @@ try {
 
 // 环境变量检查
 console.log('Firebase 配置检查:', {
-    projectId: process.env.FIREBASE_PROJECT_ID ? '已设置' : '未设置',
-    clientEmail: process.env.FIREBASE_CLIENT_EMAIL ? '已设置' : '未设置',
-    privateKey: process.env.FIREBASE_PRIVATE_KEY ? '已设置' : '未设置',
-    NODE_ENV: process.env.NODE_ENV,
-    环境变量详情: {
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL?.substring(0, 5) + '...',
-        privateKey: process.env.FIREBASE_PRIVATE_KEY ? '存在' : '不存在',
-        当前环境: process.env.NODE_ENV
-    }
+    FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID || '未设置',
+    FIREBASE_CLIENT_EMAIL: process.env.FIREBASE_CLIENT_EMAIL ? '已设置' : '未设置',
+    FIREBASE_PRIVATE_KEY: process.env.FIREBASE_PRIVATE_KEY ? '已设置' : '未设置',
+    NODE_ENV: process.env.NODE_ENV || '未设置'
 });
 
 // 初始化 Firebase Admin
 if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
-    console.error('环境变量加载失败，请检查以下配置：');
-    console.error('- FIREBASE_PROJECT_ID');
-    console.error('- FIREBASE_CLIENT_EMAIL');
-    console.error('- FIREBASE_PRIVATE_KEY');
-    console.error('当前环境:', process.env.NODE_ENV);
-    console.error('环境文件路径:', path.resolve(process.cwd(), envFile));
+    console.error('环境变量加载失败，请检查 docker-compose.prod.yml 中的配置：');
+    console.error('- FIREBASE_PROJECT_ID:', process.env.FIREBASE_PROJECT_ID);
+    console.error('- FIREBASE_CLIENT_EMAIL:', process.env.FIREBASE_CLIENT_EMAIL ? '已设置' : '未设置');
+    console.error('- FIREBASE_PRIVATE_KEY:', process.env.FIREBASE_PRIVATE_KEY ? '已设置' : '未设置');
     throw new Error('缺少必要的 Firebase 配置');
 }
 
