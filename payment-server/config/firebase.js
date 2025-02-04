@@ -96,10 +96,10 @@ const formatPrivateKey = (key) => {
 };
 
 // 初始化 Firebase Admin 之前添加验证
-const privateKey = formatPrivateKey(process.env.FIREBASE_PRIVATE_KEY);
+/*const privateKey = formatPrivateKey(process.env.FIREBASE_PRIVATE_KEY);
 if (!privateKey) {
     throw new Error('私钥格式化失败');
-}
+}*/
 
 // 初始化 Firebase Admin
 const app = initializeApp({
