@@ -2,7 +2,7 @@ import { initializeApp, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-import { readFileSync, readdirSync } from 'fs';
+import { readFileSync, readdirSync, existsSync } from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
 import https from 'https';
@@ -16,16 +16,31 @@ const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.en
 console.log('当前环境:', process.env.NODE_ENV);
 console.log('尝试加载环境文件:', envFile);
 
-// 添加文件存在性检查
+// 添加环境变量映射
+const mapEnvironmentVariables = () => {
+    if (!process.env.FIREBASE_PROJECT_ID && process.env.VITE_FIREBASE_PROJECT_ID) {
+        process.env.FIREBASE_PROJECT_ID = process.env.VITE_FIREBASE_PROJECT_ID;
+    }
+    if (!process.env.FIREBASE_CLIENT_EMAIL && process.env.VITE_FIREBASE_CLIENT_EMAIL) {
+        process.env.FIREBASE_CLIENT_EMAIL = process.env.VITE_FIREBASE_CLIENT_EMAIL;
+    }
+    if (!process.env.FIREBASE_PRIVATE_KEY && process.env.VITE_FIREBASE_PRIVATE_KEY) {
+        process.env.FIREBASE_PRIVATE_KEY = process.env.VITE_FIREBASE_PRIVATE_KEY;
+    }
+};
+
+// 文件检查部分修改
 try {
     const envPath = path.resolve(process.cwd(), envFile);
     console.log('环境文件完整路径:', envPath);
-    console.log('文件是否存在:', require('fs').existsSync(envPath));
+    console.log('文件是否存在:', existsSync(envPath));
     
-    // 读取并打印文件内容（仅用于调试）
-    const envContent = require('fs').readFileSync(envPath, 'utf8');
+    const envContent = readFileSync(envPath, 'utf8');
     console.log('环境文件内容预览 (前5行):', 
         envContent.split('\n').slice(0, 5).join('\n'));
+        
+    // 映射环境变量
+    mapEnvironmentVariables();
 } catch (err) {
     console.error('环境文件读取错误:', err);
 }
