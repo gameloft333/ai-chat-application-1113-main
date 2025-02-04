@@ -3,6 +3,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 import dotenv from 'dotenv';
 import path from 'path';
 import https from 'https';
+import { existsSync, readFileSync } from 'fs';
 
 // 根据环境加载配置
 const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.test';
@@ -18,6 +19,26 @@ console.log('环境文件加载检查：', {
     currentDir: process.cwd(),
     dirContents: require('fs').readdirSync(process.cwd())
 });
+
+// 环境变量检查
+console.log('Firebase 配置检查:', {
+    FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID || '未设置',
+    FIREBASE_CLIENT_EMAIL: process.env.FIREBASE_CLIENT_EMAIL ? '已设置' : '未设置',
+    FIREBASE_PRIVATE_KEY: process.env.FIREBASE_PRIVATE_KEY ? '已设置' : '未设置',
+    NODE_ENV: process.env.NODE_ENV || '未设置'
+});
+
+// 验证必要的配置
+if (!process.env.FIREBASE_PROJECT_ID || 
+    !process.env.FIREBASE_CLIENT_EMAIL || 
+    !process.env.FIREBASE_PRIVATE_KEY) {
+    console.error('环境变量加载失败，请检查配置：', {
+        PROJECT_ID: !!process.env.FIREBASE_PROJECT_ID,
+        CLIENT_EMAIL: !!process.env.FIREBASE_CLIENT_EMAIL,
+        PRIVATE_KEY: !!process.env.FIREBASE_PRIVATE_KEY
+    });
+    throw new Error('缺少必要的 Firebase 配置');
+}
 
 // 初始化 Firebase Admin
 const app = initializeApp({
