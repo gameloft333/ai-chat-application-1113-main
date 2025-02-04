@@ -13,7 +13,45 @@ const __dirname = dirname(__filename);
 
 // 根据环境加载配置
 const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.test';
+console.log('当前环境:', process.env.NODE_ENV);
+console.log('尝试加载环境文件:', envFile);
+
+// 添加文件存在性检查
+try {
+    const envPath = path.resolve(process.cwd(), envFile);
+    console.log('环境文件完整路径:', envPath);
+    console.log('文件是否存在:', require('fs').existsSync(envPath));
+    
+    // 读取并打印文件内容（仅用于调试）
+    const envContent = require('fs').readFileSync(envPath, 'utf8');
+    console.log('环境文件内容预览 (前5行):', 
+        envContent.split('\n').slice(0, 5).join('\n'));
+} catch (err) {
+    console.error('环境文件读取错误:', err);
+}
+
+// 加载环境变量
 dotenv.config({ path: path.resolve(process.cwd(), envFile) });
+
+// 打印所有环境变量（用于调试）
+console.log('所有环境变量:', {
+    NODE_ENV: process.env.NODE_ENV,
+    FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID,
+    FIREBASE_CLIENT_EMAIL: process.env.FIREBASE_CLIENT_EMAIL,
+    FIREBASE_PRIVATE_KEY: process.env.FIREBASE_PRIVATE_KEY?.substring(0, 20) + '...',
+    // docker-compose中的环境变量
+    DOCKER_FIREBASE_PROJECT_ID: process.env.VITE_FIREBASE_PROJECT_ID,
+    DOCKER_FIREBASE_CLIENT_EMAIL: process.env.VITE_FIREBASE_CLIENT_EMAIL,
+    DOCKER_FIREBASE_PRIVATE_KEY: process.env.VITE_FIREBASE_PRIVATE_KEY?.substring(0, 20) + '...'
+});
+
+// 检查 docker-compose.prod.yml 中的环境变量传递
+console.log('Docker Compose 环境变量检查:', {
+    'process.env 中的键值:', Object.keys(process.env).filter(key => key.includes('FIREBASE')),
+    '环境变量来源文件:', envFile,
+    '当前工作目录:', process.cwd(),
+    'NODE_ENV:', process.env.NODE_ENV
+});
 
 // 加载支付服务器配置
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
