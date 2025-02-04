@@ -40,12 +40,29 @@ if (!process.env.FIREBASE_PROJECT_ID ||
     throw new Error('缺少必要的 Firebase 配置');
 }
 
+// 在初始化 Firebase Admin 之前添加
+console.log('私钥格式检查:', {
+    length: process.env.FIREBASE_PRIVATE_KEY?.length,
+    startsWith: process.env.FIREBASE_PRIVATE_KEY?.startsWith('-----BEGIN PRIVATE KEY-----'),
+    endsWith: process.env.FIREBASE_PRIVATE_KEY?.endsWith('-----END PRIVATE KEY-----\n'),
+    containsNewlines: process.env.FIREBASE_PRIVATE_KEY?.includes('\\n')
+});
+
+// 格式化私钥
+const formatPrivateKey = (key) => {
+    if (!key) return null;
+    // 移除多余的引号
+    key = key.replace(/^["']|["']$/g, '');
+    // 确保换行符正确
+    return key.includes('\\n') ? key : key.replace(/\\n/g, '\n');
+};
+
 // 初始化 Firebase Admin
 const app = initializeApp({
   credential: cert({
     projectId: process.env.FIREBASE_PROJECT_ID,
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-    privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+    privateKey: formatPrivateKey(process.env.FIREBASE_PRIVATE_KEY)
   }),
   databaseURL: process.env.FIREBASE_DATABASE_URL,
   httpAgent: new https.Agent({
