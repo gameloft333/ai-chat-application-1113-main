@@ -211,6 +211,13 @@ build_images() {
 deploy_containers() {
     echo -e "${GREEN}[DEPLOY] 部署容器...${NC}"
     
+    # 复制环境配置文件到支付服务器目录
+    echo -e "${YELLOW}复制环境配置文件到支付服务器...${NC}"
+    cp .env.production payment-server/.env.production || {
+        echo -e "${RED}复制环境配置文件失败${NC}"
+        return 1
+    }
+    
     # 定义日志文件路径
     local deploy_log="development_log/deployment_$(date +%Y%m%d_%H%M%S).log"
     local build_log="development_log/build_$(date +%Y%m%d_%H%M%S).log"
