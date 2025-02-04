@@ -45,23 +45,20 @@ services:
       - CORS_ORIGIN=${VITE_APP_URL}
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
       # Firebase 配置 - 直接使用值而不是变量引用
-      - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID}
-      - FIREBASE_CLIENT_EMAIL=${FIREBASE_CLIENT_EMAIL}
-      - FIREBASE_PRIVATE_KEY=${FIREBASE_PRIVATE_KEY}
-      - FIREBASE_DATABASE_URL=${FIREBASE_DATABASE_URL}
+      - FIREBASE_PROJECT_ID=luna-games-445108
+      - FIREBASE_CLIENT_EMAIL=firebase-adminsdk-5b8pg@luna-games-445108.iam.gserviceaccount.com
+      - FIREBASE_PRIVATE_KEY='-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCQ5jE9MxQHlhtE\nYOUR_FULL_PRIVATE_KEY_HERE\nVQIDAQAB\n-----END PRIVATE KEY-----\n'
+      - FIREBASE_DATABASE_URL=https://luna-games-445108.firebaseio.com
     ports:
       - "4242:4242"
     volumes:
       - ./payment-server/logs:/app/logs
     healthcheck:
-      # 健康检查命令，通过curl请求http://localhost:4242/来检查服务是否健康
-      # 如果请求失败，curl命令将返回非0的退出代码，导致健康检查失败
-      # 使用"|| exit 0"确保即使curl命令失败，健康检查也会返回0，表示服务健康
-      test: ["CMD-SHELL", "curl -f http://localhost:4242/ || exit 0"]
-      interval: 60s
-      timeout: 30s
-      retries: 2
-      start_period: 120s
+      test: ["CMD-SHELL", "curl -f http://localhost:4242/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     networks:
       - saga4v_network
     deploy:

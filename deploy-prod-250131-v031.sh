@@ -240,6 +240,14 @@ deploy_containers() {
         
         echo -e "${GREEN}已保存部署版本: ${current_tag}${NC}"
         docker-compose -f docker-compose.prod.yml logs >> "$deploy_log" 2>&1
+        
+        # 添加健康检查
+        echo -e "${YELLOW}5. 检查服务健康状态...${NC}"
+        check_deployment || {
+            echo -e "${RED}服务健康检查失败，请检查日志${NC}"
+            return 1
+        }
+        
         return 0
     else
         echo -e "${RED}一键部署失败。错误日志如下：${NC}"
@@ -284,6 +292,14 @@ deploy_containers() {
             echo "$current_tag" > "deployment_reports/last_successful_deploy.txt"
             
             echo -e "${GREEN}已保存部署版本: ${current_tag}${NC}"
+            
+            # 添加健康检查
+            echo -e "${YELLOW}5. 检查服务健康状态...${NC}"
+            check_deployment || {
+                echo -e "${RED}服务健康检查失败，请检查日志${NC}"
+                return 1
+            }
+            
             return 0
         else
             echo -e "${RED}分步部署失败${NC}"
