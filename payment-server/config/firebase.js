@@ -47,10 +47,10 @@ console.log('所有环境变量:', {
 
 // 检查 docker-compose.prod.yml 中的环境变量传递
 console.log('Docker Compose 环境变量检查:', {
-    'process.env 中的键值:', Object.keys(process.env).filter(key => key.includes('FIREBASE')),
-    '环境变量来源文件:', envFile,
-    '当前工作目录:', process.cwd(),
-    'NODE_ENV:', process.env.NODE_ENV
+    firebaseKeys: Object.keys(process.env).filter(key => key.includes('FIREBASE')),
+    envFile: envFile,
+    currentDir: process.cwd(),
+    nodeEnv: process.env.NODE_ENV
 });
 
 // 加载支付服务器配置
