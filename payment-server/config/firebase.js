@@ -39,7 +39,7 @@ console.log('环境文件路径:', path.resolve(process.cwd(), '.env.production'
 console.log('环境文件是否存在:', existsSync(path.resolve(process.cwd(), '.env.production')));
 
 // 验证必要的配置
-if (process.env.SKIP_FIREBASE_CHECK !== 'true') {
+/*if (process.env.SKIP_FIREBASE_CHECK !== 'true') {
     if (!process.env.FIREBASE_PROJECT_ID || 
         !process.env.FIREBASE_CLIENT_EMAIL || 
         !process.env.FIREBASE_PRIVATE_KEY) {
@@ -52,7 +52,7 @@ if (process.env.SKIP_FIREBASE_CHECK !== 'true') {
     }
   } else {
     console.log('跳过 Firebase 配置检查');
-  }
+  }*/
 
 // 格式化私钥
 const formatPrivateKey = (key) => {
