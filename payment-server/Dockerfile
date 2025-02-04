@@ -11,7 +11,11 @@ RUN mkdir -p /app/config /app/services
 COPY package*.json ./
 RUN npm install
 
+# 复制源代码和环境变量文件
 COPY . .
+
+# 复制环境变量文件
+COPY .env.production .env
 
 # 添加环境文件调试信息
 RUN echo "检查环境文件:"

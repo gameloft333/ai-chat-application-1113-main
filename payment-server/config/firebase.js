@@ -34,17 +34,25 @@ console.log('Firebase 配置检查:', {
     NODE_ENV: process.env.NODE_ENV || '未设置'
 });
 
+console.log('当前目录:', process.cwd());
+console.log('环境文件路径:', path.resolve(process.cwd(), '.env.production'));
+console.log('环境文件是否存在:', existsSync(path.resolve(process.cwd(), '.env.production')));
+
 // 验证必要的配置
-if (!process.env.FIREBASE_PROJECT_ID || 
-    !process.env.FIREBASE_CLIENT_EMAIL || 
-    !process.env.FIREBASE_PRIVATE_KEY) {
-    console.error('环境变量加载失败，请检查配置：', {
-        PROJECT_ID: !!process.env.FIREBASE_PROJECT_ID,
-        CLIENT_EMAIL: !!process.env.FIREBASE_CLIENT_EMAIL,
-        PRIVATE_KEY: !!process.env.FIREBASE_PRIVATE_KEY
-    });
-    throw new Error('缺少必要的 Firebase 配置');
-}
+if (process.env.SKIP_FIREBASE_CHECK !== 'true') {
+    if (!process.env.FIREBASE_PROJECT_ID || 
+        !process.env.FIREBASE_CLIENT_EMAIL || 
+        !process.env.FIREBASE_PRIVATE_KEY) {
+      console.error('环境变量加载失败，请检查配置：', {
+          PROJECT_ID: !!process.env.FIREBASE_PROJECT_ID,
+          CLIENT_EMAIL: !!process.env.FIREBASE_CLIENT_EMAIL,
+          PRIVATE_KEY: !!process.env.FIREBASE_PRIVATE_KEY
+      });
+      throw new Error('缺少必要的 Firebase 配置');
+    }
+  } else {
+    console.log('跳过 Firebase 配置检查');
+  }
 
 // 格式化私钥
 const formatPrivateKey = (key) => {
