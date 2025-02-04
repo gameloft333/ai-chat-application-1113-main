@@ -46,33 +46,59 @@ if (!process.env.FIREBASE_PROJECT_ID ||
     throw new Error('缺少必要的 Firebase 配置');
 }
 
-// 在初始化 Firebase Admin 之前添加
-console.log('私钥格式检查:', {
-    length: process.env.FIREBASE_PRIVATE_KEY?.length,
-    startsWith: process.env.FIREBASE_PRIVATE_KEY?.startsWith('-----BEGIN PRIVATE KEY-----'),
-    endsWith: process.env.FIREBASE_PRIVATE_KEY?.endsWith('-----END PRIVATE KEY-----\n'),
-    containsNewlines: process.env.FIREBASE_PRIVATE_KEY?.includes('\\n')
-});
-
 // 格式化私钥
 const formatPrivateKey = (key) => {
-    if (!key) return null;
-    // 移除可能存在的引号
-    key = key.replace(/^["']|["']$/g, '');
-    // 确保私钥格式正确
-    if (!key.includes('-----BEGIN PRIVATE KEY-----')) {
+    if (!key) {
+        console.error('私钥未设置');
         return null;
     }
+
+    // 移除可能存在的引号
+    key = key.replace(/^["']|["']$/g, '');
+    
+    // 检查私钥格式
+    if (!key.includes('-----BEGIN PRIVATE KEY-----')) {
+        console.error('私钥格式错误：缺少开始标记');
+        return null;
+    }
+    
+    if (!key.includes('-----END PRIVATE KEY-----')) {
+        console.error('私钥格式错误：缺少结束标记');
+        return null;
+    }
+
+    // 添加调试日志
+    console.log('私钥格式检查:', {
+        length: key.length,
+        hasStartMarker: key.includes('-----BEGIN PRIVATE KEY-----'),
+        hasEndMarker: key.includes('-----END PRIVATE KEY-----'),
+        containsNewlines: key.includes('\\n')
+    });
+
     // 处理换行符
-    return key.replace(/\\n/g, '\n');
+    const formattedKey = key.replace(/\\n/g, '\n');
+    
+    // 验证格式化后的私钥
+    if (!formattedKey.startsWith('-----BEGIN PRIVATE KEY-----\n')) {
+        console.error('格式化后的私钥格式错误');
+        return null;
+    }
+
+    return formattedKey;
 };
+
+// 初始化 Firebase Admin 之前添加验证
+const privateKey = formatPrivateKey(process.env.FIREBASE_PRIVATE_KEY);
+if (!privateKey) {
+    throw new Error('私钥格式化失败');
+}
 
 // 初始化 Firebase Admin
 const app = initializeApp({
     credential: cert({
         projectId: process.env.FIREBASE_PROJECT_ID,
         clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: formatPrivateKey(process.env.FIREBASE_PRIVATE_KEY)
+        privateKey: privateKey
     }),
     databaseURL: process.env.FIREBASE_DATABASE_URL,
     httpAgent: new https.Agent({
