@@ -64,6 +64,8 @@ services:
       - PORT=4242
       - CORS_ORIGIN=${VITE_APP_URL}
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      # 添加调试标记
+      - DEBUG=true
       # Firebase 配置
       - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID}
       - FIREBASE_CLIENT_EMAIL=${FIREBASE_CLIENT_EMAIL}
