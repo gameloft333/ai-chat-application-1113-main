@@ -3,7 +3,7 @@
 services:
   nginx:
     build:
-      context: ./nginx_global_config
+      context: .  # Current project directory
       dockerfile: Dockerfile.nginx
     container_name: saga4v-nginx
     ports:
