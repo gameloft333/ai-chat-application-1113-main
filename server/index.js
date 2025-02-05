@@ -115,6 +115,16 @@ app.post('/api/stripe/create-payment-intent', async (req, res) => {
   }
 });
 
+// 健康检查端点
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV,
+    port: port
+  });
+});
+
 const server = http.createServer(app);
 const io = new Server(server, {
   path: process.env.VITE_WEBSOCKET_PATH || '/socket.io',
@@ -190,4 +200,9 @@ io.engine.on('connection_error', (err) => {
 
 server.listen(port, () => {
   console.log(`服务器运行在 http://localhost:${port}`);
+});
+
+// 在服务器启动后记录健康状态
+server.on('listening', () => {
+  console.log(`服务器健康检查就绪，运行在 http://localhost:${port}/health`);
 });
