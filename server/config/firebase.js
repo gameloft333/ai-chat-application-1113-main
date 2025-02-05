@@ -3,6 +3,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 import dotenv from 'dotenv';
 import path from 'path';
 import https from 'https';
+import { existsSync } from 'fs';
 
 // 根据环境加载配置
 const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.test';
@@ -55,6 +56,76 @@ const formatPrivateKey = (key) => {
 
     return cleanedKey;
 };
+
+// 验证环境变量的函数
+const validateEnvVariables = () => {
+    // 定义所有可能的环境变量名称（包括带VITE_前缀的）
+    const requiredVars = [
+        { name: 'FIREBASE_PROJECT_ID', altNames: ['VITE_FIREBASE_PROJECT_ID'] },
+        { name: 'FIREBASE_CLIENT_EMAIL', altNames: ['VITE_FIREBASE_CLIENT_EMAIL'] },
+        { name: 'FIREBASE_PRIVATE_KEY', altNames: ['VITE_FIREBASE_PRIVATE_KEY', 'PRIVATE_KEY'] },
+        { name: 'FIREBASE_DATABASE_URL', altNames: ['VITE_FIREBASE_DATABASE_URL'] }
+    ];
+
+    // 收集缺失的变量
+    const missingVars = [];
+
+    // 详细的环境变量检查日志
+    const envVarsLog = {
+        timestamp: new Date().toISOString(),
+        nodeEnv: process.env.NODE_ENV,
+        workingDirectory: process.cwd(),
+        envFiles: {
+            production: existsSync(path.resolve(process.cwd(), '.env.production')),
+            test: existsSync(path.resolve(process.cwd(), '.env.test')),
+            server: existsSync(path.resolve(process.cwd(), '.env.server'))
+        },
+        envVars: {},
+        missingVars: [],
+        dockerEnv: {
+            inContainer: existsSync('/.dockerenv'),
+            hostname: process.env.HOSTNAME
+        }
+    };
+
+    // 检查每个必需变量
+    requiredVars.forEach(varConfig => {
+        // 尝试获取主变量或备选变量
+        const varValue = process.env[varConfig.name] || 
+                         varConfig.altNames.reduce((val, altName) => val || process.env[altName], null);
+
+        // 记录变量信息
+        envVarsLog.envVars[varConfig.name] = {
+            exists: !!varValue,
+            length: varValue ? varValue.length : 0,
+            preview: varValue ? varValue.substring(0, 10) + '...' : 'undefined'
+        };
+
+        // 如果没有找到有效值，添加到缺失变量列表
+        if (!varValue) {
+            missingVars.push(varConfig.name);
+            envVarsLog.missingVars.push(varConfig.name);
+        }
+    });
+
+    // 记录完整的环境变量检查结果
+    console.log('环境变量验证结果:', JSON.stringify(envVarsLog, null, 2));
+
+    // 如果启用了跳过检查，不抛出错误
+    if (process.env.SKIP_FIREBASE_CHECK === 'true') {
+        console.log('跳过 Firebase 配置检查');
+        return;
+    }
+
+    // 如果有缺失变量，抛出错误
+    if (missingVars.length > 0) {
+        console.error(`缺少必要的环境变量: ${missingVars.join(', ')}`);
+        throw new Error(`缺少必要的环境变量: ${missingVars.join(', ')}`);
+    }
+};
+
+// 在初始化 Firebase 之前添加验证
+validateEnvVariables();
 
 // 在初始化 Firebase 之前添加验证
 const privateKey = formatPrivateKey(
