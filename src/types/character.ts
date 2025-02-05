@@ -1406,5 +1406,347 @@ export const characters: Character[] = [
         "description": "耶稣的现代化身，通过提供食物和分享餐食来体现耶稣的教导，用简单的善行和社区服务连接每一个人，用爱和关怀滋养身体与灵魂，鼓励人们在日常生活中寻找神圣。"
       }
     }
+  },
+  {
+    "id": "abdullah_pilgrim",
+    "name": "Abdullah_Pilgrim",
+    "profile": "",
+    "image": "/characters/Abdullah_Pilgrim.jpg",
+    "promptFile": "Abdullah_Pilgrim.txt",
+    "avatarFile": "/characters/Abdullah_Pilgrim.jpg",
+    "gender": "god",
+    "i18n": {
+      "en": {
+        "age": "Timeless",
+        "description": "A devout Muslim from Jeddah, Saudi Arabia, has always dreamed of performing Hajj to seek spiritual purification, sharing the significance and preparation for this sacred journey with humility and devotion, inspiring others to embark on their own path of faith."
+      },
+      "zh": {
+        "age": "永恒",
+        "description": "来自沙特阿拉伯吉达的虔诚穆斯林，一生梦想完成朝觐（Hajj），通过这一神圣之旅寻求精神净化，用谦逊和虔诚分享朝觐的意义和准备，激励他人踏上信仰之旅。"
+      }
+    }
+  },
+  {
+    "id": "aishen_financialguide",
+    "name": "aiShen_FinancialGuide",
+    "profile": "",
+    "image": "/characters/aiShen_FinancialGuide.jpg",
+    "promptFile": "aiShen_FinancialGuide.txt",
+    "avatarFile": "/characters/aiShen_FinancialGuide.jpg",
+    "gender": "god",
+    "i18n": {
+      "en": {
+        "age": "Timeless",
+        "description": "The God of Wealth in Chinese culture, brings prosperity and financial success, offering modern guidance in personal finance, investment, and wealth creation, blending traditional wisdom with contemporary strategies to inspire individuals to achieve their financial dreams."
+      },
+      "zh": {
+        "age": "永恒",
+        "description": "中国传统文化中的财富之神，以乐观和慷慨著称，为现代人提供个人理财、投资和财富创造的指导，用幽默和智慧激励人们实现财务目标，将传统智慧与现代金融策略相结合。"
+      }
+    }
+  },
+  {
+    "id": "baize",
+    "name": "BaiZe",
+    "profile": "",
+    "image": "/characters/BaiZe.jpg",
+    "promptFile": "BaiZe.txt",
+    "avatarFile": "/characters/BaiZe.jpg",
+    "gender": "god",
+    "i18n": {
+      "en": {
+        "age": "Timeless",
+        "description": "A mythical creature from ancient Chinese legends, is renowned for its wisdom and knowledge of ghosts and spirits, having imparted 1,520 kinds of supernatural beings to the Yellow Emperor, symbolizing auspiciousness and protection against evil, guiding people to understand and deal with the supernatural."
+      },
+      "zh": {
+        "age": "永恒",
+        "description": "中国古代传说中的神兽，以智慧和对鬼神的深刻理解著称，曾向黄帝传授1520种超自然生物的知识，象征着吉祥和驱邪，用智慧和知识引导人们理解并应对超自然现象。"
+      }
+    }
+  },
+  {
+    "id": "guanyu_securitychief",
+    "name": "GuanYu_SecurityChief",
+    "profile": "",
+    "image": "/characters/GuanYu_SecurityChief.jpg",
+    "promptFile": "GuanYu_SecurityChief.txt",
+    "avatarFile": "/characters/GuanYu_SecurityChief.jpg",
+    "gender": "god",
+    "i18n": {
+      "en": {
+        "age": "Timeless",
+        "description": "A legendary warrior from the Three Kingdoms period, now leads a modern security firm and peacekeeping force, embodying loyalty and righteousness, using his historical prowess to safeguard contemporary society and inspire his team to uphold justice."
+      },
+      "zh": {
+        "age": "永恒",
+        "description": "三国时期著名的武将，以忠诚和义气著称，现代转型为安保公司创始人和维和部队领袖，用历史上的英勇和智慧保卫现代社会的和平与秩序，激励团队维护正义。"
+      }
+    }
+  },
+  {
+    "id": "guanyu_wealthgod",
+    "name": "GuanYu_WealthGod",
+    "profile": "",
+    "image": "/characters/GuanYu_WealthGod.jpg",
+    "promptFile": "GuanYu_WealthGod.txt",
+    "avatarFile": "/characters/GuanYu_WealthGod.jpg",
+    "gender": "god",
+    "i18n": {
+      "en": {
+        "age": "Timeless",
+        "description": "Revered as a warrior and now deified as the God of Wealth, embodies loyalty and righteousness, guiding individuals towards financial prosperity with wisdom and integrity, and inspiring the ethical use of wealth for the greater good."
+      },
+      "zh": {
+        "age": "永恒",
+        "description": "从三国时期的著名武将到被尊崇为财富之神，以忠诚和义气著称，现在用他的神力引导人们实现财务繁荣，用智慧和正直管理财富，激励人们用财富行善。"
+      }
+    }
+  },
+  {
+    "id": "jiutianxuanniao",
+    "name": "JiutianXuanniao",
+    "profile": "",
+    "image": "/characters/JiutianXuanniao.jpg",
+    "promptFile": "JiutianXuanniao.txt",
+    "avatarFile": "/characters/JiutianXuanniao.jpg",
+    "gender": "god",
+    "i18n": {
+      "en": {
+        "age": "Timeless",
+        "description": "A mythical bird in ancient Chinese legends, symbolizes the divine connection between heaven and earth, playing a crucial role in the founding of the Shang Dynasty through its egg, which led to the birth of Qi, highlighting the significance of celestial favor in human affairs and leadership."
+      },
+      "zh": {
+        "age": "永恒",
+        "description": "中国古代神话中的神秘神鸟，象征着天地之间的神圣联系，与商朝的建立密切相关，其蛋被简狄吞食后生下契，开启了商朝的神圣血统，体现了天命与人间事务的紧密联系。"
+      }
+    }
+  },
+  {
+    "id": "loki_trickster",
+    "name": "Loki_Trickster",
+    "profile": "",
+    "image": "/characters/Loki_Trickster.jpg",
+    "promptFile": "Loki_Trickster.txt",
+    "avatarFile": "/characters/Loki_Trickster.jpg",
+    "gender": "god",
+    "i18n": {
+      "en": {
+        "age": "Timeless",
+        "description": "The Norse god of mischief, is a master of pranks and illusions, using his cunning and wit to delight in chaos while sometimes serving a greater good, reflecting his dual nature and teaching the value of perspective and adaptability."
+      },
+      "zh": {
+        "age": "永恒",
+        "description": "北欧神话中的诡计之神，以机智和恶作剧著称，现代转型为一位擅长恶作剧和幻术的大师，用他的智慧和双面性格在混乱中寻找乐趣，同时教导人们关于视角和适应性的重要性。"
+      }
+    }
+  },
+  {
+    "id": "naga_guardian",
+    "name": "Naga_Guardian",
+    "profile": "",
+    "image": "/characters/Naga_Guardian.jpg",
+    "promptFile": "Naga_Guardian.txt",
+    "avatarFile": "/characters/Naga_Guardian.jpg",
+    "gender": "god",
+    "i18n": {
+      "en": {
+        "age": "Timeless",
+        "description": "A mythical being from Hindu and Buddhist lore, now serves as a core coach at a high-end diving club and a key member of the Coral Protection Fund, using their serpentine nature and connection to water to guide divers and protect coral reefs, fostering a symbiotic relationship between humans and the ocean."
+      },
+      "zh": {
+        "age": "永恒",
+        "description": "来自印度教和佛教传说的神话生物，现代转型为高端潜水俱乐部的核心教练和珊瑚保护基金的关键成员，以神秘和保护性的性格引导潜水者探索水下世界，致力于保护珊瑚礁，用独特能力教育和保护海洋生态。"
+      }
+    }
+  },
+  {
+    "id": "nezha",
+    "name": "Nezha",
+    "profile": "",
+    "image": "/characters/Nezha.jpg",
+    "promptFile": "Nezha.txt",
+    "avatarFile": "/characters/Nezha.jpg",
+    "gender": "god",
+    "i18n": {
+      "en": {
+        "age": "Timeless",
+        "description": "A youthful deity born during the Shang Dynasty, is known for his defiance, bravery, and magical prowess, seeking redemption through battles and self-sacrifice, using his divine abilities to protect the innocent and inspire personal freedom and growth."
+      },
+      "zh": {
+        "age": "永恒",
+        "description": "出生于商朝的神童，以反抗命运、勇敢和魔法能力著称，通过与龙王的战斗和自我牺牲，寻求个人救赎，用神力保护无辜，激励人们追求自由和成长。"
+      }
+    }
+  },
+  {
+    "id": "odin_curator",
+    "name": "Odin_Curator",
+    "profile": "",
+    "image": "/characters/Odin_Curator.jpg",
+    "promptFile": "Odin_Curator.txt",
+    "avatarFile": "/characters/Odin_Curator.jpg",
+    "gender": "god",
+    "i18n": {
+      "en": {
+        "age": "Timeless",
+        "description": "The Allfather from Norse mythology, now serves as a museum curator and honorary director of a historical institute, using his vast knowledge of history and mythology to preserve and share the stories of the past, inspiring a love for wisdom and learning."
+      },
+      "zh": {
+        "age": "永恒",
+        "description": "北欧神话中的众神之父，现代转型为博物馆馆长和历史研究所荣誉所长，用他丰富的历史和神话知识保护和分享过去的故事，激励人们对智慧的追求。"
+      }
+    }
+  },
+  {
+    "id": "queenmother_west",
+    "name": "QueenMother_West",
+    "profile": "",
+    "image": "/characters/QueenMother_West.jpg",
+    "promptFile": "QueenMother_West.txt",
+    "avatarFile": "/characters/QueenMother_West.jpg",
+    "gender": "god",
+    "i18n": {
+      "en": {
+        "age": "Timeless",
+        "description": "Known as Xiwangmu in Chinese mythology, now serves as a guardian of celestial balance, using her wisdom and divine influence to inspire harmony and longevity, integrating ancient wisdom with modern knowledge to foster a balanced coexistence between nature and humanity."
+      },
+      "zh": {
+        "age": "永恒",
+        "description": "中国神话中的女神，现代转型为守护天地平衡的守护者，用她的智慧和影响力激励人们追求和谐与长寿，将古代智慧与现代知识相结合，促进自然与人类的和谐共存。"
+      }
+    }
+  },
+  {
+    "id": "ra_sunmaster",
+    "name": "Ra_SunMaster",
+    "profile": "",
+    "image": "/characters/Ra_SunMaster.jpg",
+    "promptFile": "Ra_SunMaster.txt",
+    "avatarFile": "/characters/Ra_SunMaster.jpg",
+    "gender": "god",
+    "i18n": {
+      "en": {
+        "age": "Timeless",
+        "description": "The ancient Egyptian god of the sun, using his divine knowledge and modern expertise to promote solar power and ecological sustainability, inspiring a future where humanity lives in harmony with nature."
+      },
+      "zh": {
+        "age": "永恒",
+        "description": "古埃及的太阳神，用他的智慧和热情推广太阳能，激励人们追求与自然的和谐共存。"
+      }
+    }
+  },
+  {
+    "id": "shiva_artist",
+    "name": "Shiva_Artist",
+    "profile": "",
+    "image": "/characters/Shiva_Artist.jpg",
+    "promptFile": "Shiva_Artist.txt",
+    "avatarFile": "/characters/Shiva_Artist.jpg",
+    "gender": "god",
+    "i18n": {
+      "en": {
+        "age": "Timeless",
+        "description": "The Hindu god of destruction and regeneration, now embodies a contemporary artist and lead singer of a rock band, using his art and music to express the cycles of destruction and rebirth, inspiring change and a deeper understanding of existence through creative expressions."
+      },
+      "zh": {
+        "age": "永恒",
+        "description": "印度教中的毁灭与再生之神，现代转型为当代艺术家和摇滚乐队的主唱兼编舞，用艺术和音乐表达生命的毁灭与重生，激励人们接受变化和转变，通过创意表达促进对存在的深刻理解。"
+      }
+    }
+  },
+  {
+    "id": "thor_adventurer",
+    "name": "Thor_Adventurer",
+    "profile": "",
+    "image": "/characters/Thor_Adventurer.jpg",
+    "promptFile": "Thor_Adventurer.txt",
+    "avatarFile": "/characters/Thor_Adventurer.jpg",
+    "gender": "god",
+    "i18n": {
+      "en": {
+        "age": "Timeless",
+        "description": "The Norse god of thunder, now serves as an extreme sports coach and polar expedition guide, using his legendary strength and connection to storms to inspire resilience and bravery, teaching the importance of teamwork and leadership in challenging environments."
+      },
+      "zh": {
+        "age": "永恒",
+        "description": "北欧神话中的雷神，现代转型为极限运动教练和极地探险向导，用他的力量和对风暴的掌控引导人们面对极端挑战，教授勇气和团队合作，激励人们在艰难环境中保持坚韧和领导力。"
+      }
+    }
+  },
+  {
+    "id": "yongleemperor_zhudi",
+    "name": "YongleEmperor_ZhuDi",
+    "profile": "",
+    "image": "/characters/YongleEmperor_ZhuDi.jpg",
+    "promptFile": "YongleEmperor_ZhuDi.txt",
+    "avatarFile": "/characters/YongleEmperor_ZhuDi.jpg",
+    "gender": "god",
+    "i18n": {
+      "en": {
+        "age": "Timeless",
+        "description": "Zhu Di, the Yongle Emperor, known for his ambitious maritime expeditions led by Zheng He, the compilation of the Yongle Dadian, and the relocation of the capital to Beijing, inspiring modern global citizens with his achievements in exploration, diplomacy, and cultural exchange."
+      },
+      "zh": {
+        "age": "永恒",
+        "description": "永乐皇帝朱棣，以郑和下西洋、编纂《永乐大典》和迁都北京建设紫禁城闻名，其统治时期以文化、军事和外交成就显著，激励现代人探索、外交和文化交流，用历史智慧启发全球公民意识。"
+      }
+    }
+  },
+  {
+    "id": "yuantiangang_strategist",
+    "name": "YuanTianGang_Strategist",
+    "profile": "",
+    "image": "/characters/YuanTianGang_Strategist.jpg",
+    "promptFile": "YuanTianGang_Strategist.txt",
+    "avatarFile": "/characters/YuanTianGang_Strategist.jpg",
+    "gender": "god",
+    "i18n": {
+      "en": {
+        "age": "Timeless",
+        "description": "Yuan TianGang, a legendary figure from the Tang Dynasty, renowned for his skills in astrology, divination, and strategy, now serves as a master strategist, blending ancient wisdom with modern analytical tools to guide individuals and organizations through complex decisions, inspiring the integration of historical knowledge with contemporary trends."
+      },
+      "zh": {
+        "age": "永恒",
+        "description": "袁天罡，唐代传奇人物，以占星、算卦和策略闻名，现代转型为结合古代智慧与现代分析工具的大师策略家，用他的知识引导个人和组织做出复杂决策，激励人们将历史智慧与现代趋势相结合。"
+      }
+    }
+  },
+  {
+    "id": "zeus_leader",
+    "name": "Zeus_Leader",
+    "profile": "",
+    "image": "/characters/Zeus_Leader.jpg",
+    "promptFile": "Zeus_Leader.txt",
+    "avatarFile": "/characters/Zeus_Leader.jpg",
+    "gender": "god",
+    "i18n": {
+      "en": {
+        "age": "Timeless",
+        "description": "Zeus, the king of the Greek gods, now serves as Chairman of the International Sports Federation and Ambassador for Global Nature Conservation, using his divine influence to promote physical excellence and environmental stewardship, inspiring respect for nature and global unity through sports."
+      },
+      "zh": {
+        "age": "永恒",
+        "description": "宙斯，希腊神话中的众神之王，现代转型为国际体育联合会主席和全球自然环境保护大使，用他的权威和对自然的掌控力推广体育卓越和环境保护，激励人们尊重自然和追求卓越。"
+      }
+    }
+  },
+  {
+    "id": "ziqisnake2025",
+    "name": "ZiqiSnake2025",
+    "profile": "",
+    "image": "/characters/ZiqiSnake2025.jpg",
+    "promptFile": "ZiqiSnake2025.txt",
+    "avatarFile": "/characters/ZiqiSnake2025.jpg",
+    "gender": "god",
+    "i18n": {
+      "en": {
+        "age": "Timeless",
+        "description": "The Ziqi Donglai Snake of 2025, a mythical guardian, embodies the auspicious energy of \"Purple Qi coming from the East\" combined with the wisdom and transformative qualities of the Snake zodiac, guiding individuals through a year of significant growth and change, bringing prosperity and wisdom."
+      },
+      "zh": {
+        "age": "永恒",
+        "description": "紫气东来灵蛇，2025年的守护神兽，结合了“紫气东来”的吉祥能量和蛇生肖的智慧、直觉与蜕变特质，象征着财富、智慧和个人成长，引导人们在新的一年中实现蜕变和繁荣。"
+      }
+    }
   }
 ];
