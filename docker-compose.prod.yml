@@ -31,6 +31,26 @@ services:
           cpus: '0.5'
           memory: 512M
 
+  server:
+    build: 
+      context: .
+      dockerfile: Dockerfile.server  # 新建的后端 Dockerfile
+    container_name: ai-chat-application-1113-main-backend-1
+    restart: unless-stopped
+    env_file: 
+      - .env.production
+    ports:
+      - "3000:3000"  # 后端服务端口
+    volumes:
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 30s
+      retries: 3
+    networks:
+      - saga4v_network
+
   payment:
     build: 
       context: ./payment-server

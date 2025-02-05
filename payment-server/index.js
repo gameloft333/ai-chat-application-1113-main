@@ -35,8 +35,13 @@ if (!process.env.STRIPE_SECRET_KEY) {
   console.error('警告: 未设置 STRIPE_SECRET_KEY 环境变量，使用测试模式');
 }
 
+// 从环境变量获取 API 版本
+const STRIPE_API_VERSION = process.env.STRIPE_API_VERSION || '2024-04-10';
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2023-10-16'
+  apiVersion: STRIPE_API_VERSION,
+  host: 'api.stripe.com',
+  protocol: 'https'
 });
 
 // CORS 配置

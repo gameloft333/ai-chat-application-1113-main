@@ -1,9 +1,12 @@
 import express from 'express';
-import { WebhookService } from '../services/webhook-service';
+import { WebhookService } from '../../payment-server/services/WebhookService';
 import Stripe from 'stripe';
 
+// 从环境变量获取 API 版本
+const STRIPE_API_VERSION = process.env.STRIPE_API_VERSION || '2024-04-10';
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-04-10',
+  apiVersion: STRIPE_API_VERSION,
   host: 'api.stripe.com',
   protocol: 'https'
 });
