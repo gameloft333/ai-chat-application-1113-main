@@ -39,7 +39,7 @@ console.log('环境文件路径:', path.resolve(process.cwd(), '.env.production'
 console.log('环境文件是否存在:', existsSync(path.resolve(process.cwd(), '.env.production')));
 
 // 验证必要的配置
-/*if (process.env.SKIP_FIREBASE_CHECK !== 'true') {
+if (process.env.SKIP_FIREBASE_CHECK !== 'true') {
     if (!process.env.FIREBASE_PROJECT_ID || 
         !process.env.FIREBASE_CLIENT_EMAIL || 
         !process.env.FIREBASE_PRIVATE_KEY) {
@@ -52,7 +52,7 @@ console.log('环境文件是否存在:', existsSync(path.resolve(process.cwd(), 
     }
   } else {
     console.log('跳过 Firebase 配置检查');
-  }*/
+  }
 
 // 格式化私钥
 const formatPrivateKey = (key) => {
@@ -96,10 +96,10 @@ const formatPrivateKey = (key) => {
 };
 
 // 初始化 Firebase Admin 之前添加验证
-/*const privateKey = formatPrivateKey(process.env.FIREBASE_PRIVATE_KEY);
+const privateKey = formatPrivateKey(process.env.FIREBASE_PRIVATE_KEY);
 if (!privateKey) {
     throw new Error('私钥格式化失败');
-}*/
+}
 
 // 初始化 Firebase Admin
 const app = initializeApp({
