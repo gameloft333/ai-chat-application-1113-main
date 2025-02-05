@@ -13,7 +13,7 @@ const server = createServer(app);
 const io = new Server(server, {
     cors: {
         origin: process.env.NODE_ENV === 'development' 
-            ? ['http://localhost:5173', 'http://localhost:4173', 'http://localhost:4242', 'http://localhost:4245']
+            ? ['http://localhost:5173', 'http://localhost:4173', 'http://localhost:4242', 'http://localhost:4242']
             : [process.env.CORS_ORIGIN],
         methods: ["GET", "POST"],
         credentials: true
@@ -52,7 +52,7 @@ const allowedOrigins = [
     'https://love.saga4v.com',
     'http://payment:4242',
     'https://payment.saga4v.com',
-    'http://localhost:4245',
+    'http://localhost:4242',
 ];
 
 app.use(cors({

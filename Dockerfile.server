@@ -13,6 +13,6 @@ COPY .env.server .env.server
 
 RUN apk add --no-cache curl
 
-EXPOSE 4245
+EXPOSE 4242
 
 CMD ["node", "server/index.js"] 

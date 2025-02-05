@@ -7,11 +7,11 @@ export default defineConfig(({ mode }) => {
   
   // 根据环境确定代理目标
   const wsTarget = isDevelopment 
-    ? 'ws://localhost:4245'
+    ? 'ws://localhost:4242'
     : 'wss://love.saga4v.com';
     
   const apiTarget = isDevelopment
-    ? 'http://localhost:4245'
+    ? 'http://localhost:4242'
     : 'https://love.saga4v.com';
 
   console.log('当前环境:', mode);

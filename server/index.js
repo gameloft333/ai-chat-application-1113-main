@@ -20,7 +20,7 @@ const envPath = path.resolve(process.cwd(), envFile);
 dotenv.config({ path: envPath });
 
 const app = express();
-const port = process.env.SERVER_PORT || 4245;
+const port = process.env.SERVER_PORT || 4242;
 
 console.log('当前环境:', process.env.NODE_ENV);
 console.log('环境文件路径:', envPath);
@@ -40,7 +40,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 
 app.use(cors({
   origin: process.env.NODE_ENV === 'development' 
-    ? ['http://localhost:5173', 'http://localhost:4173', 'http://localhost:4242', 'http://localhost:4245']
+    ? ['http://localhost:5173', 'http://localhost:4173', 'http://localhost:4242', 'http://localhost:4242']
     : [process.env.CORS_ORIGIN],
   methods: ['GET', 'POST', 'OPTIONS'],
   credentials: true,
