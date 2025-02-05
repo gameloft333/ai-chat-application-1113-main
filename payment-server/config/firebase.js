@@ -3,7 +3,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 import dotenv from 'dotenv';
 import path from 'path';
 import https from 'https';
-import { existsSync, readFileSync, readdirSync } from 'fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
@@ -11,12 +11,33 @@ import { dirname } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// 根据环境加载配置
+// 1. 根据环境加载主配置
 const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.test';
 dotenv.config({ path: path.resolve(process.cwd(), envFile) });
 
-// 加载后端环境配置
+// 2. 加载后端环境配置
 dotenv.config({ path: path.resolve(process.cwd(), '.env.server') });
+
+// 添加更详细的调试日志
+console.log('环境变量加载诊断:', {
+    NODE_ENV: process.env.NODE_ENV,
+    CWD: process.cwd(),
+    envFile,
+    envPath: path.resolve(process.cwd(), envFile),
+    serverEnvPath: path.resolve(process.cwd(), '.env.server'),
+    allEnvFiles: readdirSync(process.cwd()).filter(file => file.startsWith('.env')),
+    envExists: {
+        production: existsSync(path.resolve(process.cwd(), '.env.production')),
+        test: existsSync(path.resolve(process.cwd(), '.env.test')),
+        server: existsSync(path.resolve(process.cwd(), '.env.server'))
+    },
+    firebaseConfig: {
+        projectId: process.env.FIREBASE_PROJECT_ID ? '已设置' : '未设置',
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL ? '已设置' : '未设置',
+        privateKey: process.env.FIREBASE_PRIVATE_KEY ? '已设置(长度:' + process.env.FIREBASE_PRIVATE_KEY.length + ')' : '未设置',
+        databaseUrl: process.env.FIREBASE_DATABASE_URL ? '已设置' : '未设置'
+    }
+});
 
 // 添加调试日志
 console.log('环境文件加载检查：', {
@@ -101,6 +122,49 @@ if (!privateKey) {
     throw new Error('私钥格式化失败');
 }
 
+// 验证环境变量加载
+const validateEnvVariables = () => {
+    const requiredVars = [
+        'FIREBASE_PROJECT_ID',
+        'FIREBASE_CLIENT_EMAIL',
+        'FIREBASE_PRIVATE_KEY',
+        'FIREBASE_DATABASE_URL'
+    ];
+    
+    const missingVars = requiredVars.filter(varName => !process.env[varName]);
+    
+    console.log('环境变量验证结果:', {
+        timestamp: new Date().toISOString(),
+        nodeEnv: process.env.NODE_ENV,
+        workingDirectory: process.cwd(),
+        envFiles: {
+            production: existsSync('.env.production'),
+            test: existsSync('.env.test'),
+            server: existsSync('.env.server')
+        },
+        envVars: requiredVars.reduce((acc, varName) => ({
+            ...acc,
+            [varName]: {
+                exists: !!process.env[varName],
+                length: process.env[varName]?.length || 0,
+                preview: process.env[varName] ? `${process.env[varName].substring(0, 10)}...` : 'undefined'
+            }
+        }), {}),
+        missingVars,
+        dockerEnv: {
+            inContainer: existsSync('/.dockerenv'),
+            hostname: process.env.HOSTNAME
+        }
+    });
+
+    if (missingVars.length > 0) {
+        throw new Error(`缺少必要的环境变量: ${missingVars.join(', ')}`);
+    }
+};
+
+// 在初始化 Firebase 之前调用验证
+validateEnvVariables();
+
 // 初始化 Firebase Admin
 const app = initializeApp({
     credential: cert({
@@ -154,5 +218,30 @@ const withRetry = async (operation, maxAttempts = 5) => {
     }
     throw lastError;
 };
+
+// 文件系统检查
+const checkFileSystem = () => {
+    const paths = [
+        process.cwd(),
+        path.resolve(process.cwd(), '.env.production'),
+        path.resolve(process.cwd(), '.env.test'),
+        path.resolve(process.cwd(), '.env.server')
+    ];
+
+    console.log('文件系统检查:', {
+        paths: paths.map(p => ({
+            path: p,
+            exists: existsSync(p),
+            isFile: existsSync(p) && statSync(p).isFile(),
+            permissions: existsSync(p) ? statSync(p).mode.toString(8) : null
+        })),
+        workingDir: {
+            contents: readdirSync(process.cwd()),
+            path: process.cwd()
+        }
+    });
+};
+
+checkFileSystem();
 
 export { db, withRetry }; 
