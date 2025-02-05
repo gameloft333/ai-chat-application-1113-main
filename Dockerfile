@@ -51,6 +51,7 @@ RUN echo '#!/bin/sh' > /debug.sh && \
 # 修改Dockerfile
 ENV NODE_ENV=production
 ENV VITE_DEBUG_FEATURES=true
+ENV SKIP_FIREBASE_CHECK=true
 
 # 启动命令
 CMD ["/bin/sh", "-c", "/debug.sh && npm run preview:prod"]

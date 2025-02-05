@@ -61,13 +61,16 @@ console.log('环境文件是否存在:', existsSync(path.resolve(process.cwd(), 
 
 // 验证必要的配置
 if (process.env.SKIP_FIREBASE_CHECK !== 'true') {
-    if (!process.env.FIREBASE_PROJECT_ID || 
-        !process.env.FIREBASE_CLIENT_EMAIL || 
-        !process.env.FIREBASE_PRIVATE_KEY) {
+    const projectId = process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID;
+    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL || process.env.VITE_FIREBASE_CLIENT_EMAIL;
+    const privateKey = process.env.FIREBASE_PRIVATE_KEY || process.env.VITE_FIREBASE_PRIVATE_KEY;
+    const databaseUrl = process.env.FIREBASE_DATABASE_URL || process.env.VITE_FIREBASE_DATABASE_URL;
+
+    if (!projectId || !clientEmail || !privateKey) {
       console.error('环境变量加载失败，请检查配置：', {
-          PROJECT_ID: !!process.env.FIREBASE_PROJECT_ID,
-          CLIENT_EMAIL: !!process.env.FIREBASE_CLIENT_EMAIL,
-          PRIVATE_KEY: !!process.env.FIREBASE_PRIVATE_KEY
+          PROJECT_ID: !!projectId,
+          CLIENT_EMAIL: !!clientEmail,
+          PRIVATE_KEY: !!privateKey
       });
       throw new Error('缺少必要的 Firebase 配置');
     }
@@ -117,7 +120,7 @@ const formatPrivateKey = (key) => {
 };
 
 // 初始化 Firebase Admin 之前添加验证
-const privateKey = formatPrivateKey(process.env.FIREBASE_PRIVATE_KEY);
+const privateKey = formatPrivateKey(process.env.FIREBASE_PRIVATE_KEY || process.env.VITE_FIREBASE_PRIVATE_KEY);
 if (!privateKey) {
     throw new Error('私钥格式化失败');
 }
@@ -237,17 +240,17 @@ preprocessEnvVars();
 
 // 初始化 Firebase Admin
 const app = initializeApp({
-    credential: cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: privateKey
-    }),
-    databaseURL: process.env.FIREBASE_DATABASE_URL,
-    httpAgent: new https.Agent({
-        keepAlive: true,
-        timeout: 30000,
-        rejectUnauthorized: false
-    })
+  credential: cert({
+    projectId: process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID,
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL || process.env.VITE_FIREBASE_CLIENT_EMAIL,
+    privateKey: (process.env.FIREBASE_PRIVATE_KEY || process.env.VITE_FIREBASE_PRIVATE_KEY)?.replace(/\\n/g, '\n')
+  }),
+  databaseURL: process.env.FIREBASE_DATABASE_URL || process.env.VITE_FIREBASE_DATABASE_URL,
+  httpAgent: new https.Agent({
+    keepAlive: true,
+    timeout: 30000,
+    rejectUnauthorized: false
+  })
 });
 
 // 获取 Firestore 实例并配置重试

@@ -14,11 +14,11 @@ dotenv.config({ path: path.resolve(process.cwd(), 'server/.env.server') });
 // 初始化 Firebase Admin
 const app = initializeApp({
   credential: cert({
-    projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-    clientEmail: process.env.VITE_FIREBASE_CLIENT_EMAIL,
-    privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+    projectId: process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID,
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL || process.env.VITE_FIREBASE_CLIENT_EMAIL,
+    privateKey: (process.env.FIREBASE_PRIVATE_KEY || process.env.VITE_FIREBASE_PRIVATE_KEY)?.replace(/\\n/g, '\n')
   }),
-  databaseURL: process.env.VITE_FIREBASE_DATABASE_URL,
+  databaseURL: process.env.FIREBASE_DATABASE_URL || process.env.VITE_FIREBASE_DATABASE_URL,
   httpAgent: new https.Agent({
     keepAlive: true,
     timeout: 30000,

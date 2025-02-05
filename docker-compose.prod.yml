@@ -39,6 +39,10 @@ services:
     restart: unless-stopped
     env_file: 
       - .env.production
+    environment:
+      - NODE_ENV=production
+      - PORT=4245
+      - SKIP_FIREBASE_CONFIG=true
     ports:
       - "4245:4245"  # 改用不同端口
     volumes:
@@ -71,6 +75,7 @@ services:
       - FIREBASE_CLIENT_EMAIL=${FIREBASE_CLIENT_EMAIL}
       - FIREBASE_PRIVATE_KEY=${FIREBASE_PRIVATE_KEY}
       - FIREBASE_DATABASE_URL=${FIREBASE_DATABASE_URL}
+      - SKIP_FIREBASE_CONFIG=true
     ports:
       - "4242:4242"  # 支付服务保持原端口
     volumes:
