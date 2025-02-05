@@ -40,11 +40,11 @@ services:
     env_file: 
       - .env.production
     ports:
-      - "4242:4242"  # 后端服务端口
+      - "4245:4245"  # 改用不同端口
     volumes:
       - ./logs:/app/logs
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4242/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:4243/health"]
       interval: 30s
       timeout: 30s
       retries: 3
@@ -70,7 +70,7 @@ services:
       - FIREBASE_PRIVATE_KEY=${FIREBASE_PRIVATE_KEY}
       - FIREBASE_DATABASE_URL=${FIREBASE_DATABASE_URL}
     ports:
-      - "4242:4242"
+      - "4242:4242"  # 支付服务保持原端口
     volumes:
       - ./payment-server/logs:/app/logs
     healthcheck:

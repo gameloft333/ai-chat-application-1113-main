@@ -13,7 +13,7 @@ const server = createServer(app);
 const io = new Server(server, {
     cors: {
         origin: process.env.NODE_ENV === 'development' 
-            ? ['http://localhost:5173', 'http://localhost:4173', 'http://localhost:4242']
+            ? ['http://localhost:5173', 'http://localhost:4173', 'http://localhost:4242', 'http://localhost:4245']
             : [process.env.CORS_ORIGIN],
         methods: ["GET", "POST"],
         credentials: true
@@ -51,7 +51,8 @@ const allowedOrigins = [
     'http://localhost:4242',
     'https://love.saga4v.com',
     'http://payment:4242',
-    'https://payment.saga4v.com'
+    'https://payment.saga4v.com',
+    'http://localhost:4245',
 ];
 
 app.use(cors({
@@ -222,11 +223,13 @@ io.on('connection', (socket) => {
 });
 
 // 统一使用一个端口配置
-const PORT = process.env.SOCKET_PORT || 4242;
+const PORT = process.env.PAYMENT_PORT || 4242;
 
 // 启动服务器（只保留一个启动调用）
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`支付服务器运行在端口 ${PORT}`);
     console.log(`Socket.IO 服务已启动`);
     console.log(`CORS origin: ${process.env.CORS_ORIGIN}`);
+    console.log(`Stripe 密钥配置: ${!!process.env.STRIPE_SECRET_KEY}`);
+    console.log(`非支付服务端口: ${!!process.env.SERVER_PORT}`);
 });
