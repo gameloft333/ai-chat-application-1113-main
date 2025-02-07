@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { THEME_CONFIG } from '../config/theme-config';
+import { useLanguage } from './LanguageContext';
 
 type Theme = 'light' | 'dark';
 
@@ -11,55 +11,36 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setTheme] = useState<Theme>(() => {
-    // 1. Check localStorage first
-    const savedTheme = localStorage.getItem('theme') as Theme;
-    
-    // 2. If no saved theme, use the default from environment config
-    const defaultTheme = savedTheme || THEME_CONFIG.defaultTheme as Theme;
-    
-    console.log('Initial Theme Selection:', {
-      savedTheme, 
-      configDefaultTheme: THEME_CONFIG.defaultTheme,
-      finalTheme: defaultTheme
-    });
-
-    return defaultTheme;
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    // 从 localStorage 获取保存的主题，默认为 light
+    return (localStorage.getItem('theme') as 'light' | 'dark') || 'light';
   });
 
   const toggleTheme = useCallback(() => {
     setTheme(prevTheme => {
       const newTheme = prevTheme === 'light' ? 'dark' : 'light';
-      
-      // Save to localStorage
       localStorage.setItem('theme', newTheme);
       
-      // Update HTML class for Tailwind dark mode
+      // 更新 HTML 类名
       if (newTheme === 'dark') {
         document.documentElement.classList.add('dark');
       } else {
         document.documentElement.classList.remove('dark');
       }
       
-      console.log('Theme toggled:', { 
-        oldTheme: prevTheme, 
-        newTheme: newTheme 
-      });
-      
+      console.log('Theme changed to:', newTheme);
       return newTheme;
     });
   }, []);
 
-  // Initial theme setup
+  // 初始化主题
   useEffect(() => {
-    // Ensure the correct class is added on initial render
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
-      console.log('Added dark class to documentElement on initial render');
     } else {
       document.documentElement.classList.remove('dark');
     }
-  }, [theme]);
+  }, []);
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
