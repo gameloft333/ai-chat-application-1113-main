@@ -176,65 +176,62 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
 
   // 修改选择角色的处理函数
   const handleSelectCharacter = async (character: Character) => {
-    if (!currentUser) {
-      console.log('用户未登录');
-      return;
+    try {
+      // Log the current state before selection
+      console.log('Selecting character:', {
+        characterId: character.id,
+        usedCharacters,
+        maxCharacters,
+        subscriptionType
+      });
+
+      // Check character selection limit
+      if (usedCharacters >= maxCharacters) {
+        const message = t('character.limitReached.message', { 
+          count: maxCharacters, 
+          subscriptionType: subscriptionType || 'normal' 
+        });
+        
+        Modal.error({
+          title: t('character.limitReached.title'),
+          content: message,
+          okText: t('subscription.choosePlan'),
+          onOk: () => window.location.href = '/subscription'
+        });
+        return;
+      }
+
+      // Update usage statistics
+      const success = await CharacterStatsService.incrementCharacterChat(character.id);
+      if (!success) {
+        console.error('Failed to update character statistics');
+        Modal.error({
+          title: t('error.statisticsUpdate'),
+          content: t('error.characterStatsFailed')
+        });
+        return;
+      }
+
+      // Update used characters count
+      const newUsedCharacters = usedCharacters + 1;
+      setUsedCharacters(newUsedCharacters);
+
+      // Log successful character selection
+      console.log('Character selected successfully:', {
+        characterId: character.id,
+        newUsedCharacters,
+        maxCharacters
+      });
+
+      // Trigger character selection callback
+      onSelectCharacter(character);
+    } catch (error) {
+      console.error('Error in handleSelectCharacter:', error);
+      Modal.error({
+        title: t('error.selectionFailed'),
+        content: t('error.unexpectedError')
+      });
     }
-
-    // 获取当前用户可用的最大角色数
-    const maxAllowedCharacters = SUBSCRIPTION_PLANS.CHARACTER_LIMITS[subscriptionType || 'trial'];
-    
-    // 添加详细的调试日志
-    console.log('角色限制检查:', {
-      currentUser: currentUser.uid,
-      subscriptionType,
-      maxAllowedCharacters,
-      usedCharacters,
-      i18nParams: { maxCount: maxAllowedCharacters }
-    });
-
-    if (usedCharacters >= maxAllowedCharacters) {
-      // 添加更多调试信息
-      console.log('i18next 详细信息:', {
-        interpolation: t.i18n?.options?.interpolation,
-        currentLanguage: t.i18n?.language,
-        loadedResources: t.i18n?.store?.data
-      });
-
-      // 添加调试日志
-      console.log('翻译模板:', {
-        template: t('character.limitReached.description'),
-        params: { maxCount: maxAllowedCharacters },
-        result: t('character.limitReached.description', { maxCount: maxAllowedCharacters })
-      });
-
-      // 尝试不同的插值方式
-      const message = t('character.limitReached.description').replace('{{maxCount}}', String(maxAllowedCharacters));
-
-      console.log('插值参数:', {
-        maxCount: maxAllowedCharacters,
-        messageTemplate: t('character.limitReached.description'),
-        result: message
-      });
-
-      Modal.warning({
-        title: t('character.limitReached.title'),
-        content: message,
-        okText: t('subscription.choosePlan'),
-        onOk: () => window.location.href = '/subscription'
-      });
-      return;
-    }
-
-    // 更新使用统计
-    const success = await CharacterStatsService.incrementCharacterChat(character.id);
-    if (!success) {
-      console.log('更新角色统计失败');
-      return;
-    }
-
-    setUsedCharacters(usedCount + 1);
-    onSelectCharacter(character);
   };
 
   // 获取已使用的角色数量
