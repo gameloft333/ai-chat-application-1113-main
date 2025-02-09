@@ -202,15 +202,15 @@ pre_deployment_check() {
     
     # 添加磁盘空间检查
     if ! check_and_clean_disk_space; then
-        error "磁盘空间检查失败"
+        echo -e "${RED}磁盘空间检查失败${NC}"
         return 1
-    }
+    fi
     
     # 检查并安装 Docker
     if ! check_and_install_docker; then
-        error "Docker 环境配置失败"
+        echo -e "${RED}Docker 环境配置失败${NC}"
         return 1
-    }
+    fi
     
     # 检查 Docker Compose
     if ! command -v docker-compose &> /dev/null; then
@@ -222,7 +222,7 @@ pre_deployment_check() {
             sudo chmod +x /usr/local/bin/docker-compose
         else
             echo -e "${RED}Docker Compose 是必需的，无法继续部署${NC}"
-            exit 1
+            return 1
         fi
     fi
     
