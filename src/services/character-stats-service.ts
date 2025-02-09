@@ -5,14 +5,13 @@ import { SUBSCRIPTION_PLANS } from '../config/subscription-config';
 export class CharacterStatsService {
   private static STORAGE_KEY = 'character_chat_stats';
 
-  static async incrementCharacterChat(characterId: string): Promise<boolean> {
+  static async incrementCharacterChat(characterId: string): Promise<{success: boolean; reason?: string}> {
     try {
       const userId = auth.currentUser?.uid;
       if (!userId) {
-        console.log('用户未登录，无法更新角色统计');
-        return false;
+        return { success: false, reason: 'notLoggedIn' };
       }
-
+  
       // 获取用户订阅类型
       const userSubscription = await this.getUserSubscriptionType(userId);
       console.log('当前用户订阅类型:', userSubscription);
@@ -20,18 +19,17 @@ export class CharacterStatsService {
       // 获取角色限制
       const characterLimit = SUBSCRIPTION_PLANS.CHARACTER_LIMITS[userSubscription];
       console.log('角色数量限制:', characterLimit);
-
+  
       // 获取已使用的角色统计
       const stats = await this.getUserCharacterStats(userId);
       const usedCount = Object.keys(stats).length;
       console.log('已使用角色数:', usedCount);
-
+  
       // 严格检查限制
       if (characterLimit !== -1 && usedCount >= characterLimit) {
-        console.log('超出角色使用限制');
-        return false;
+        return { success: false, reason: 'limitReached' };
       }
-
+  
       // 更新统计
       const newStats = { ...stats };
       newStats[characterId] = (newStats[characterId] || 0) + 1;
@@ -41,10 +39,10 @@ export class CharacterStatsService {
       localStorage.setItem(userStatsKey, JSON.stringify(newStats));
       
       console.log('角色统计更新成功:', newStats);
-      return true;
+      return { success: true };
     } catch (error) {
       console.error('更新角色统计失败:', error);
-      return false;
+      return { success: false, reason: 'error' };
     }
   }
 

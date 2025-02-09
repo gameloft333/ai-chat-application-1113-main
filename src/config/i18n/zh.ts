@@ -196,7 +196,11 @@ export default {
             networkError: '网络错误，请重试',
             selectDuration: '请选择订阅周期',
             unknownError: '发生未知错误，请重试',
-            selectPaymentMethod: '请选择支付方式'
+            selectPaymentMethod: '请选择支付方式',
+            statisticsUpdate: '更新统计失败',
+            characterStatsFailed: '无法更新角色使用统计',
+            selectionFailed: '选择失败',
+            unexpectedError: '发生意外错误'
         },
         auth: {
             registerPrompt: '没有账号？立即注册',

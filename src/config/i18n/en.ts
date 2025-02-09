@@ -300,5 +300,11 @@ export default {
             title: "Character Limit Reached",
             description: "Your current membership level allows up to {{maxCount}} characters. Upgrade your membership to unlock more amazing characters!"
         }
+    },
+    error: {
+        statisticsUpdate: 'Failed to Update Statistics',
+        characterStatsFailed: 'Failed to update character statistics',
+        selectionFailed: 'Selection Failed',
+        unexpectedError: 'An unexpected error occurred'
     }
 };

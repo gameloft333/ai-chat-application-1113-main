@@ -10,17 +10,20 @@ import { PaymentRecordService } from '../services/payment-record-service';
 import { Modal } from 'antd';
 import { SUBSCRIPTION_PLANS } from '../config/subscription-config';
 import { useSubscription } from '../contexts/SubscriptionContext';
+import LoginModal from './LoginModal';
 
 interface CharacterSelectorProps {
   onSelectCharacter: (character: Character) => void;
   maxCharacters?: number;
   selectedGender: string | null;
+  themeColor?: string;
 }
 
 const CharacterSelector: React.FC<CharacterSelectorProps> = ({
   onSelectCharacter,
   maxCharacters = SUBSCRIPTION_PLANS.CHARACTER_LIMITS.trial,
-  selectedGender
+  selectedGender,
+  themeColor = '#1890ff'
 }) => {
   const { t, currentLanguage } = useLanguage();
   const [sortedCharacters, setSortedCharacters] = useState<Character[]>([]);
@@ -30,6 +33,7 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
   const { subscriptionType } = useSubscription();
   const [usedCharacters, setUsedCharacters] = useState<number>(0);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState<boolean>(false);
+  const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
 
   useEffect(() => {
     console.log('Language Check:', {
@@ -161,11 +165,10 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
     const maxCharacters = getMaxCharacters();
     if (usedCharacters >= maxCharacters && maxCharacters !== -1) {
       Modal.warning({
-        title: '角色数量已达上限',
-        content: '请升级会员以解锁更多角色',
-        okText: '了解详情',
+        title: t('character.limitReached.title'),
+        content: t('character.limitReached.description', { maxCount: maxCharacters }),
+        okText: t('subscription.choosePlan'),
         onOk: () => {
-          // 导航到订阅页面
           window.location.href = '/subscription';
         }
       });
@@ -174,56 +177,50 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
     return true;
   };
 
+  // 修改处理未登录的逻辑
+  const handleNotLoggedIn = () => {
+    setShowLoginModal(true);
+  };
+
   // 修改选择角色的处理函数
   const handleSelectCharacter = async (character: Character) => {
     try {
-      // Log the current state before selection
-      console.log('Selecting character:', {
-        characterId: character.id,
-        usedCharacters,
-        maxCharacters,
-        subscriptionType
-      });
-
-      // Check character selection limit
-      if (usedCharacters >= maxCharacters) {
-        const message = t('character.limitReached.message', { 
-          count: maxCharacters, 
-          subscriptionType: subscriptionType || 'normal' 
-        });
-        
-        Modal.error({
-          title: t('character.limitReached.title'),
-          content: message,
-          okText: t('subscription.choosePlan'),
-          onOk: () => window.location.href = '/subscription'
-        });
+      if (!currentUser) {
+        handleNotLoggedIn();
         return;
       }
 
-      // Update usage statistics
-      const success = await CharacterStatsService.incrementCharacterChat(character.id);
-      if (!success) {
-        console.error('Failed to update character statistics');
-        Modal.error({
-          title: t('error.statisticsUpdate'),
-          content: t('error.characterStatsFailed')
-        });
+      const result = await CharacterStatsService.incrementCharacterChat(character.id);
+      
+      if (!result.success) {
+        if (result.reason === 'notLoggedIn') {
+          Modal.error({
+            title: t('error.notLoggedIn'),
+            content: t('auth.pleaseLoginFirst'),
+            okText: t('auth.login'),
+            onOk: () => window.location.href = '/login'
+          });
+        } else if (result.reason === 'limitReached') {
+          Modal.error({
+            title: t('character.limitReached.title'),
+            content: t('character.limitReached.description', { 
+              maxCount: SUBSCRIPTION_PLANS.CHARACTER_LIMITS[subscriptionType || 'normal']
+            }),
+            okText: t('subscription.choosePlan'),
+            onOk: () => window.location.href = '/subscription'
+          });
+        } else {
+          Modal.error({
+            title: t('error.selectionFailed'),
+            content: t('error.unexpectedError')
+          });
+        }
         return;
       }
 
-      // Update used characters count
+      // 更新使用角色数量
       const newUsedCharacters = usedCharacters + 1;
       setUsedCharacters(newUsedCharacters);
-
-      // Log successful character selection
-      console.log('Character selected successfully:', {
-        characterId: character.id,
-        newUsedCharacters,
-        maxCharacters
-      });
-
-      // Trigger character selection callback
       onSelectCharacter(character);
     } catch (error) {
       console.error('Error in handleSelectCharacter:', error);
@@ -282,43 +279,53 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
   console.log('已使用角色:', usedCharacters);
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <OnlineStats className="mb-6" />
-      <h2 className="text-2xl font-bold text-center mb-8">
-        {t('common.selectCharacter')}
-      </h2>
-      <MarqueeNotice messages={marqueeMessages} />
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {sortedCharacters.map((character) => {
-          const borderStyle = getBorderStyle(character);
-          
-          return (
-            <div
-              key={character.id}
-              onClick={() => handleSelectCharacter(character)}
-              className={`relative cursor-pointer rounded-lg overflow-hidden transition-transform hover:scale-105 ${getBorderClass(character.borderColor)}`}
-              style={typeof borderStyle === 'object' ? borderStyle : {}}
-            >
-              <img
-                src={character.avatarFile}
-                alt={character.name}
-                className="w-full h-auto rounded-lg shadow-lg"
-                style={{ aspectRatio: '9 / 16', objectFit: 'cover' }}
-              />
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 rounded-b-lg">
-                <h3 className="text-white text-lg font-bold mb-1">{character.name}</h3>
-                {/* 添加调试日志 */}
-                {console.log('Character data:', character)}
-                {console.log('i18n data:', character.i18n)}
-                {console.log('Current language:', currentLanguage)}
-                
-                {renderCharacterInfo(character)}
+    <>
+      <div className="container mx-auto px-4 py-8">
+        <OnlineStats className="mb-6" />
+        <h2 className="text-2xl font-bold text-center mb-8">
+          {t('common.selectCharacter')}
+        </h2>
+        <MarqueeNotice messages={marqueeMessages} />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {sortedCharacters.map((character) => {
+            const borderStyle = getBorderStyle(character);
+            
+            return (
+              <div
+                key={character.id}
+                onClick={() => handleSelectCharacter(character)}
+                className={`relative cursor-pointer rounded-lg overflow-hidden transition-transform hover:scale-105 ${getBorderClass(character.borderColor)}`}
+                style={typeof borderStyle === 'object' ? borderStyle : {}}
+              >
+                <img
+                  src={character.avatarFile}
+                  alt={character.name}
+                  className="w-full h-auto rounded-lg shadow-lg"
+                  style={{ aspectRatio: '9 / 16', objectFit: 'cover' }}
+                />
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 rounded-b-lg">
+                  <h3 className="text-white text-lg font-bold mb-1">{character.name}</h3>
+                  {/* 添加调试日志 */}
+                  {console.log('Character data:', character)}
+                  {console.log('i18n data:', character.i18n)}
+                  {console.log('Current language:', currentLanguage)}
+                  
+                  {renderCharacterInfo(character)}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
-    </div>
+      
+      {showLoginModal && (
+        <LoginModal
+          isOpen={showLoginModal}
+          onClose={() => setShowLoginModal(false)}
+          themeColor={themeColor}
+        />
+      )}
+    </>
   );
 };
 
