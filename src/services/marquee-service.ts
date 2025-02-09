@@ -55,7 +55,17 @@ class MarqueeService {
       console.error('详细错误信息:', {
         error,
         stack: error.stack,
-        config: this.socket?.io?.config
+        // 添加WebSocket配置  new added on 20250209
+        config: {
+          wsUrl: wsUrl,
+          protocol: wsProtocol,
+          socketConfig: this.socket?.io?.config,
+          env: {
+            VITE_SOCKET_URL: import.meta.env.VITE_SOCKET_URL,
+            VITE_WEBSOCKET_PATH: import.meta.env.VITE_WEBSOCKET_PATH,
+            NODE_ENV: import.meta.env.NODE_ENV
+          }
+        }
       });
     }
   }

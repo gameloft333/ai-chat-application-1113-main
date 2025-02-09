@@ -30,6 +30,9 @@ services:
         reservations:
           cpus: '0.5'
           memory: 512M
+    environment:
+      - VITE_SOCKET_URL=wss://love.saga4v.com # 设置WebSocket URL  new added on 20250209
+      - VITE_WEBSOCKET_PATH=/socket.io # 设置WebSocket路径  new added on 20250209
 
   # server:
   #   build: 
