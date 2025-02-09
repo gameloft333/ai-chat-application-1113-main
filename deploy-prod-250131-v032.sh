@@ -322,7 +322,55 @@ create_external_network() {
 # Build Docker images
 build_images() {
     echo -e "${GREEN}[STEP 4/7] Building Docker Images${NC}"
-    docker-compose -f docker-compose.prod.yml build --no-cache
+    
+    # 检查 .dockerignore 文件
+    if [ ! -f ".dockerignore" ]; then
+        echo -e "${YELLOW}创建 .dockerignore 文件...${NC}"
+        cat > .dockerignore << EOF
+node_modules
+.git
+.env*
+*.log
+development_log
+deployment_reports
+dist
+build
+coverage
+.next
+.cache
+*.md
+.DS_Store
+.idea
+.vscode
+tmp
+temp
+logs
+*.tar
+*.gz
+*.zip
+EOF
+    fi
+    
+    # 显示构建上下文大小
+    echo -e "${YELLOW}计算构建上下文大小...${NC}"
+    context_size=$(tar -czh . | wc -c)
+    context_size_mb=$((context_size/1024/1024))
+    
+    if [ $context_size_mb -gt 1000 ]; then
+        echo -e "${RED}警告: 构建上下文过大 (${context_size_mb}MB)${NC}"
+        echo -e "${YELLOW}是否继续构建？[y/N] ${NC}"
+        read -r continue_build
+        if [[ ! "$continue_build" =~ ^[Yy]$ ]]; then
+            echo -e "${RED}构建已取消${NC}"
+            return 1
+        fi
+    fi
+    
+    # 使用 --no-cache 和构建参数优化
+    DOCKER_BUILDKIT=1 docker-compose -f docker-compose.prod.yml build \
+        --no-cache \
+        --compress \
+        --parallel
 }
 
 # Deploy containers
