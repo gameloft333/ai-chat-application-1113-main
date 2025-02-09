@@ -23,10 +23,10 @@ export const SUBSCRIPTION_CONFIG = {
 export const SUBSCRIPTION_PLANS = {
   // 不同等级可用的角色数量
   CHARACTER_LIMITS: {
-    'normal': 10,     // 普通用户（非会员）
-    'trial': 30,      // 试用会员
-    'basic': 60,      // 基础会员
-    'pro': 90,       // 专业会员
+    'normal': -1,     // 普通用户（非会员）
+    'trial': -1,      // 试用会员
+    'basic': -1,      // 基础会员
+    'pro': -1,       // 专业会员
     'premium': -1    // 高级会员（-1 表示无限制）
   },
   
