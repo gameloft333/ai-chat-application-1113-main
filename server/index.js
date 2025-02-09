@@ -138,7 +138,13 @@ const io = new Server(server, {
   transports: ['websocket'],
   pingTimeout: Number(process.env.VITE_SOCKET_TIMEOUT) || 60000,
   pingInterval: 25000,
-  connectTimeout: 45000
+  connectTimeout: 45000,
+  debug: true,
+  logger: {
+    debug: (...args) => console.log('DEBUG:', ...args),
+    info: (...args) => console.log('INFO:', ...args),
+    error: (...args) => console.log('ERROR:', ...args)
+  }
 });
 
 // 跑马灯消息存储

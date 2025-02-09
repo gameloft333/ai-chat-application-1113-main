@@ -16,6 +16,11 @@ class MarqueeService {
 
   private initializeSocket() {
     try {
+      console.log('初始化配置:', {
+        WEBSOCKET_PATH: import.meta.env.VITE_WEBSOCKET_PATH,
+        SOCKET_URL: import.meta.env.VITE_SOCKET_URL,
+        NODE_ENV: import.meta.env.NODE_ENV
+      });
       if (!MARQUEE_CONFIG.websocketUrl) {
         console.error('WebSocket URL未配置');
         return;
@@ -47,7 +52,11 @@ class MarqueeService {
 
       this.setupSocketListeners();
     } catch (error) {
-      console.error('Marquee服务初始化失败，详细错误:', error);
+      console.error('详细错误信息:', {
+        error,
+        stack: error.stack,
+        config: this.socket?.io?.config
+      });
     }
   }
 
