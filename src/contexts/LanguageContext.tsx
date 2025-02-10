@@ -6,6 +6,9 @@ import i18n from 'i18next';
 const languages = { zh, en };
 type LanguageType = keyof typeof languages;
 
+// 从环境变量获取默认语言，如果未设置则使用 'en'
+const DEFAULT_LANGUAGE = import.meta.env.VITE_DEFAULT_LANGUAGE as LanguageType || 'en';
+
 interface LanguageContextType {
     language: LanguageType;
     currentLanguage: LanguageType;
@@ -22,8 +25,21 @@ export const useLanguage = () => {
     }
     return context;
 };
+
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [language, setLanguage] = useState<LanguageType>('zh');
+    // 使用环境变量中的默认语言
+    const [language, setLanguage] = useState<LanguageType>(() => {
+        // 尝试从 localStorage 获取上次使用的语言
+        const savedLanguage = localStorage.getItem('preferredLanguage') as LanguageType;
+        // 如果有保存的语言设置则使用，否则使用默认语言
+        return savedLanguage || DEFAULT_LANGUAGE;
+    });
+
+    // 更新语言时同时保存到 localStorage
+    const handleSetLanguage = (newLang: LanguageType) => {
+        setLanguage(newLang);
+        localStorage.setItem('preferredLanguage', newLang);
+    };
 
     const t = (key: string) => {
         const keys = key.split('.');
@@ -48,7 +64,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         language,
         currentLanguage: language,
         t,
-        setLanguage
+        setLanguage: handleSetLanguage
     };
 
     // 添加调试日志
