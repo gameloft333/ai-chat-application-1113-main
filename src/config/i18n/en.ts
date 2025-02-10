@@ -279,9 +279,10 @@ export default {
     },
     nav: {
         home: 'Home',
-        characters: 'Characters',
-        tasks: 'Tasks',
-        profile: 'Profile',
+        chat: 'Chat',
+        subscription: 'Subscription',
+        settings: 'Settings',
+        profile: 'My Profile',
         wallet: 'Wallet',
         community: 'Community'
     },

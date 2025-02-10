@@ -38,7 +38,7 @@ export const SocialButtons: React.FC<SocialButtonsProps> = ({ className }) => {
   ];
 
   return (
-    <div className={`fixed bottom-24 right-6 flex flex-col gap-3 ${className}`}>
+    <div className={`fixed top-1/2 -translate-y-1/2 right-6 flex flex-col gap-3 ${className}`}>
       {socialLinks.map((social) => (
         <a
           key={social.name}

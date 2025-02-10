@@ -294,8 +294,9 @@ export default {
     },
     nav: {
         home: '首页',
-        characters: '角色',
-        tasks: '任务',
+        chat: '聊天',
+        subscription: '订阅',
+        settings: '设置',
         profile: '我的',
         wallet: '钱包',
         community: '社区'

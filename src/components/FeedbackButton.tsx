@@ -46,7 +46,7 @@ const FeedbackButton: React.FC<FeedbackButtonProps> = ({ themeColor }) => {
       {/* 悬浮反馈按钮 */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center"
+        className="fixed top-[calc(50%+9.4rem)] -translate-y-1/2 right-6 h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center"
         style={{ backgroundColor: themeColor }}
       >
         <MessageCircle className="h-6 w-6 text-white" />
