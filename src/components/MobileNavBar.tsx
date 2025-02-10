@@ -12,9 +12,17 @@ interface NavItem {
 }
 
 export const MobileNavBar: React.FC = () => {
+  // 添加临时控制变量
+  const TEMP_HIDE_NAV = true; // 可以通过环境变量或配置文件控制
+  
   const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // 如果临时隐藏，直接返回 null
+  if (TEMP_HIDE_NAV) {
+    return null;
+  }
 
   const navItems: NavItem[] = [
     {

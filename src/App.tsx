@@ -686,13 +686,15 @@ const AppContent: React.FC<AppContentProps> = ({
         <MobileNavBar />
 
         <footer className="bg-black bg-opacity-50 text-white p-4 text-center">
-          <p style={{ color: randomColor }}>{t('common.copyright')}</p>
+          <p style={{ color: randomColor }}>
+            {t('common.copyright')}
+            {CLEAR_MEMORY_ON_RESTART && (
+              <span className="text-yellow-400 text-sm ml-8">
+                {t('common.testMode')}
+              </span>
+            )}
+          </p>
         </footer>
-        {CLEAR_MEMORY_ON_RESTART && (
-          <div className="text-yellow-400 text-sm mt-2">
-            {t('common.testMode')}
-          </div>
-        )}
         
         {showLoginModal && (
           <LoginModal 
