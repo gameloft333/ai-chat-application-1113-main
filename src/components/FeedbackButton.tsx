@@ -46,6 +46,24 @@ const FeedbackButton: React.FC<FeedbackButtonProps> = ({ themeColor }) => {
       {/* 悬浮反馈按钮 */}
       <button
         onClick={() => setIsOpen(true)}
+        // 定义反馈按钮的样式，包括位置、大小、圆角、阴影、过渡效果等
+        // top-[calc(50%+9.4rem)]: 
+        //   - 50% = 窗口高度的一半（垂直居中）
+        //   - 9.4rem = 按钮距离窗口顶部的距离（可调整）
+        // -translate-y-1/2: 
+        //   - 向上移动按钮自身高度的一半（垂直居中）
+        // right-6: 
+        //   - 按钮距离窗口右边的距离（可调整）
+        // h-12 w-12: 
+        //   - 按钮的高度和宽度（可调整）
+        // rounded-full: 
+        //   - 按钮的圆角样式（可调整）
+        // shadow-lg hover:shadow-xl: 
+        //   - 按钮的阴影样式（可调整）
+        // transition-all duration-200: 
+        //   - 按钮的过渡效果（可调整）
+        // flex items-center justify-center: 
+        //   - 按钮的布局样式（可调整）
         className="fixed top-[calc(50%+9.4rem)] -translate-y-1/2 right-6 h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center"
         style={{ backgroundColor: themeColor }}
       >
