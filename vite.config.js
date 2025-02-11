@@ -76,12 +76,13 @@ export default defineConfig(({ mode }) => {
       host: '0.0.0.0',
       port: 4173,
       strictPort: true,
-      open: false,
-      allowedHosts: 'all',
-      cors: {
-        origin: '*',
-        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+      cors: true,
+      proxy: {
+        '/socket.io': {
+          target: isDevelopment ? 'ws://localhost:4242' : 'wss://love.saga4v.com',
+          ws: true,
+          changeOrigin: true
+        }
       }
     },
     resolve: {
@@ -93,35 +94,12 @@ export default defineConfig(({ mode }) => {
       host: '0.0.0.0',
       port: 4173,
       strictPort: true,
-      open: false,
-      // 添加日志输出
-      logger: {
-        info: console.log,
-        warn: console.warn,
-        error: console.error
-      },
-      cors: {
-        origin: '*',
-        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-      },
+      cors: true,
       proxy: {
         '/socket.io': {
-          target: wsTarget,
+          target: isDevelopment ? 'ws://localhost:4242' : 'wss://love.saga4v.com',
           ws: true,
-          changeOrigin: true,
-          // 添加代理日志
-          configure: (proxy, options) => {
-            proxy.on('error', (err, req, res) => {
-              console.error('代理错误:', err);
-            });
-            proxy.on('proxyReq', (proxyReq, req, res) => {
-              console.log('代理请求:', {
-                url: req.url,
-                target: options.target
-              });
-            });
-          }
+          changeOrigin: true
         },
         '/api': {
           target: apiTarget,
