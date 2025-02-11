@@ -794,7 +794,7 @@ prepare_env_files() {
     if [ ! -f ".env.production" ]; then
         echo -e "${RED}错误：.env.production 文件不存在${NC}"
         return 1
-    }
+    fi
     
     # 确保目标目录存在
     mkdir -p payment-server
