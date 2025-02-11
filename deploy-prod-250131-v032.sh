@@ -644,37 +644,47 @@ check_env_variables() {
     
     # 检查 .env.production 文件是否存在
     if [ ! -f ".env.production" ]; then
-        echo -e "${YELLOW}警告: .env.production 文件不存在${NC}"
-        return 1
-    fi
-    
-    # 从文件中读取 Stripe 相关的变量
-    stripe_vars=($(grep -E "^(VITE_)?STRIPE_" .env.production | cut -d'=' -f1))
-    
-    if [ ${#stripe_vars[@]} -eq 0 ]; then
-        echo -e "${YELLOW}警告: 未找到任何 Stripe 相关配置${NC}"
-        return 1
-    fi
-    
-    missing_vars=0
-    for var in "${stripe_vars[@]}"; do
-        value=$(grep "^${var}=" .env.production | cut -d'=' -f2)
-        if [ -z "$value" ]; then
-            echo -e "${YELLOW}警告: 环境变量 ${var} 值为空${NC}"
-            missing_vars=1
-        else
-            echo -e "${GREEN}✓ 环境变量 ${var} 已配置${NC}"
+        echo -e "${RED}错误: .env.production 文件不存在${NC}"
+        echo -e "${YELLOW}请确保已正确配置 .env.production 文件${NC}"
+        echo -e "${YELLOW}是否要中止部署？[Y/n] ${NC}"
+        read -r abort_deploy
+        if [[ ! "$abort_deploy" =~ ^[Nn]$ ]]; then
+            echo -e "${RED}部署已中止${NC}"
+            exit 1
         fi
-    done
-    
-    if [ $missing_vars -eq 1 ]; then
-        echo -e "${YELLOW}是否继续部署？[y/N] ${NC}"
-        read -r continue_deploy
-        if [[ ! "$continue_deploy" =~ ^[Yy]$ ]]; then
-            echo -e "${YELLOW}部署已取消，请检查环境变量配置${NC}"
-            return 1
+    else
+        echo -e "${GREEN}✓ 已找到 .env.production 文件${NC}"
+        
+        # 创建备份
+        backup_file=".env.production.backup_$(date +%Y%m%d_%H%M%S)"
+        cp .env.production "$backup_file"
+        echo -e "${GREEN}✓ 已创建环境文件备份: ${backup_file}${NC}"
+        
+        # 检查必要的环境变量
+        required_vars=(
+            "NODE_ENV"
+            "VITE_APP_URL"
+            "VITE_ALLOWED_HOSTS"
+            "VITE_HMR_HOST"
+        )
+        
+        missing_vars=()
+        for var in "${required_vars[@]}"; do
+            if ! grep -q "^${var}=" .env.production; then
+                missing_vars+=("$var")
+            fi
+        done
+        
+        if [ ${#missing_vars[@]} -ne 0 ]; then
+            echo -e "${YELLOW}警告: 以下必要的环境变量未配置:${NC}"
+            printf '%s\n' "${missing_vars[@]}"
+            echo -e "${YELLOW}是否继续部署？[y/N] ${NC}"
+            read -r continue_deploy
+            if [[ ! "$continue_deploy" =~ ^[Yy]$ ]]; then
+                echo -e "${RED}部署已中止${NC}"
+                exit 1
+            fi
         fi
-        echo -e "${YELLOW}继续部署，但某些功能可能无法正常工作${NC}"
     fi
     
     return 0
