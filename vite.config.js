@@ -73,13 +73,13 @@ export default defineConfig(({ mode }) => {
     },
     // 预览服务器配置
     preview: {
-      host: true,
+      host: '0.0.0.0',
       port: 4173,
       strictPort: true,
       open: false,
-      allowedHosts: ['love.saga4v.com', 'localhost', '127.0.0.1'],
+      allowedHosts: 'all',
       cors: {
-        origin: ['https://love.saga4v.com', 'http://localhost:4173', 'https://localhost:4173'],
+        origin: '*',
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
       }
@@ -90,7 +90,7 @@ export default defineConfig(({ mode }) => {
       }
     },
     server: {
-      host: true,
+      host: '0.0.0.0',
       port: 4173,
       strictPort: true,
       open: false,
@@ -101,7 +101,7 @@ export default defineConfig(({ mode }) => {
         error: console.error
       },
       cors: {
-        origin: ['https://love.saga4v.com', 'http://localhost:4173', 'https://localhost:4173'],
+        origin: '*',
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
       },
