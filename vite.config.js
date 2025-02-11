@@ -76,6 +76,7 @@ export default defineConfig(({ mode }) => {
       port: 4173,
       strictPort: true,
       open: false,
+      allowedHosts: ['love.saga4v.com'],
       proxy: {
         '/socket.io': {
           target: 'wss://love.saga4v.com',
