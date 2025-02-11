@@ -5,6 +5,8 @@ services:
     build: 
       context: .
       dockerfile: Dockerfile
+      args:
+        - NODE_ENV=production
     container_name: ai-chat-application-1113-main-frontend-1
     restart: unless-stopped
     env_file: 
@@ -31,6 +33,7 @@ services:
           cpus: '0.5'
           memory: 512M
     environment:
+      - NODE_ENV=production
       - HOST=0.0.0.0  # 添加这个环境变量 # new added on 20250211
       - PORT=4173  # new added on 20250211
       - VITE_SOCKET_URL=wss://love.saga4v.com # 设置WebSocket URL  new added on 20250209
