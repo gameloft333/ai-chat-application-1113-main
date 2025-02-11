@@ -24,6 +24,8 @@ export default defineConfig(({ mode }) => {
   // 删除 .env 文件中的 NODE_ENV
   delete env.NODE_ENV
 
+  const allowedHosts = env.VITE_ALLOWED_HOSTS?.split(',') || []
+
   console.log('🚀 Vite Configuration Mode:', mode)
   console.log('🔧 Environment Variables:', JSON.stringify(env, null, 2))
 
@@ -76,12 +78,14 @@ export default defineConfig(({ mode }) => {
       host: '0.0.0.0',
       port: 4173,
       strictPort: true,
+      allowedHosts: 'all', // 临时允许所有主机访问
       cors: true,
       proxy: {
         '/socket.io': {
-          target: isDevelopment ? 'ws://localhost:4242' : 'wss://love.saga4v.com',
+          target: 'wss://love.saga4v.com',
           ws: true,
-          changeOrigin: true
+          changeOrigin: true,
+          secure: false
         }
       }
     },
@@ -95,6 +99,11 @@ export default defineConfig(({ mode }) => {
       port: 4173,
       strictPort: true,
       cors: true,
+      hmr: {
+        host: env.VITE_HMR_HOST || 'localhost',
+        protocol: 'wss',
+        clientPort: 443
+      },
       proxy: {
         '/socket.io': {
           target: isDevelopment ? 'ws://localhost:4242' : 'wss://love.saga4v.com',

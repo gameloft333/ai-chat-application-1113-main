@@ -37,6 +37,8 @@ services:
       - VITE_WEBSOCKET_PATH=/socket.io # 设置WebSocket路径  new added on 20250209
       - VITE_DEV_SERVER_HOST=0.0.0.0  # 添加这个环境变量
       - VITE_ALLOW_HOSTS=love.saga4v.com # new added on 20250211
+      - VITE_ALLOWED_HOSTS=love.saga4v.com,localhost,127.0.0.1
+      - VITE_HMR_HOST=love.saga4v.com
 
   # server:
   #   build: 
