@@ -73,15 +73,23 @@ export default defineConfig(({ mode }) => {
     },
     // 预览服务器配置
     preview: {
-      host: true,
+      host: '0.0.0.0',
       port: 4173,
       strictPort: true,
       open: false,
       allowedHosts: ['love.saga4v.com', 'localhost', '127.0.0.1'],
       cors: {
-        origin: ['https://love.saga4v.com', 'http://localhost:4173', 'https://localhost:4173'],
-        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+        origin: ['https://love.saga4v.com', 'http://localhost:4173'],
+      },
+      proxy: {
+        '/socket.io': {
+          target: 'wss://love.saga4v.com',
+          ws: true,
+          changeOrigin: true
+        },
+        '/api': {
+          target: 'https://love.saga4v.com',
+          changeOrigin: true
         }
       }
     },
@@ -91,7 +99,7 @@ export default defineConfig(({ mode }) => {
       }
     },
     server: {
-      host: true,
+      host: '0.0.0.0',
       port: 4173,
       strictPort: true,
       open: false,
@@ -100,11 +108,6 @@ export default defineConfig(({ mode }) => {
         info: console.log,
         warn: console.warn,
         error: console.error
-      },
-      cors: {
-        origin: ['https://love.saga4v.com', 'http://localhost:4173', 'https://localhost:4173'],
-        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
       },
       proxy: {
         '/socket.io': {
@@ -127,7 +130,6 @@ export default defineConfig(({ mode }) => {
         '/api': {
           target: apiTarget,
           changeOrigin: true,
-          secure: true,
           // 添加代理日志
           configure: (proxy, options) => {
             proxy.on('error', (err, req, res) => {
