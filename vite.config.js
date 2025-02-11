@@ -82,7 +82,6 @@ export default defineConfig(({ mode }) => {
         origin: ['https://love.saga4v.com', 'http://localhost:4173', 'https://localhost:4173'],
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-        }
       }
     },
     resolve: {
