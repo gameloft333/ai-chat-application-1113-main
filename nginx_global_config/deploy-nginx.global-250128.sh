@@ -88,7 +88,7 @@ check_dependencies() {
     log "检查依赖服务..."
     
     # 从 nginx.conf 解析 SSL 证书配置和对应的服务
-    local NGINX_CONF="nginx.global.250122.conf"
+    local NGINX_CONF="nginx.global.250128.conf"
     declare -A SSL_SERVICES
     
     # 首先获取所有配置了 SSL 证书的域名
