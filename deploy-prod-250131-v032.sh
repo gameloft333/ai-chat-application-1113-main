@@ -786,6 +786,38 @@ check_characters_import() {
     fi
 }
 
+# 在 build_images 函数之前添加
+prepare_env_files() {
+    echo -e "${GREEN}[PREPARE] 准备环境配置文件...${NC}"
+    
+    # 检查源文件是否存在
+    if [ ! -f ".env.production" ]; then
+        echo -e "${RED}错误：.env.production 文件不存在${NC}"
+        return 1
+    }
+    
+    # 确保目标目录存在
+    mkdir -p payment-server
+    
+    # 复制环境文件到必要的位置
+    echo -e "${YELLOW}复制环境文件到必要位置...${NC}"
+    
+    # 复制到支付服务器目录
+    cp .env.production payment-server/.env.production || {
+        echo -e "${RED}复制到支付服务器目录失败${NC}"
+        return 1
+    }
+    
+    # 复制到前端目录
+    cp .env.production .env || {
+        echo -e "${RED}复制到前端目录失败${NC}"
+        return 1
+    }
+    
+    echo -e "${GREEN}✓ 环境文件准备完成${NC}"
+    return 0
+}
+
 # Main deployment function
 main() {
     trap rollback ERR
@@ -800,33 +832,14 @@ main() {
         fi
     }
 
-    pre_deployment_check || {
-        echo -e "${YELLOW}预部署检查失败，是否继续？[y/N] ${NC}"
-        read -r continue_deploy
-        if [[ ! "$continue_deploy" =~ ^[Yy]$ ]]; then
-            echo -e "${YELLOW}部署已取消${NC}"
-            exit 1
-        fi
-    }
+    pre_deployment_check || exit 1
+    check_env_variables || exit 1
+    check_characters_import || exit 1
     
-    # 添加环境变量检查
-    check_env_variables || {
-        echo -e "${YELLOW}环境变量检查失败，是否继续？[y/N] ${NC}"
-        read -r continue_deploy
-        if [[ ! "$continue_deploy" =~ ^[Yy]$ ]]; then
-            echo -e "${YELLOW}部署已取消${NC}"
-            exit 1
-        fi
-    }
-    
-    # 添加characters导入检查
-    check_characters_import || {
-        echo -e "${YELLOW}characters数据导入失败，是否继续部署？[y/N] ${NC}"
-        read -r continue_deploy
-        if [[ ! "$continue_deploy" =~ ^[Yy]$ ]]; then
-            echo -e "${YELLOW}部署已取消${NC}"
-            exit 1
-        fi
+    # 添加环境文件准备步骤
+    prepare_env_files || {
+        echo -e "${RED}环境文件准备失败${NC}"
+        exit 1
     }
     
     pull_latest_code
