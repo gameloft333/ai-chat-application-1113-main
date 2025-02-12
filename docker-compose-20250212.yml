@@ -1,11 +1,11 @@
-version: '3.8'
+# version: '3.8'
 
 services:
   frontend:
     build: 
       context: .
       dockerfile: Dockerfile
-    container_name: ai-chat-frontend
+    container_name: ai-chat-application-1113-main-frontend-1
     restart: unless-stopped
     env_file: 
       - .env.production
@@ -42,7 +42,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.payment
-    container_name: ai-chat-payment
+    container_name: ai-chat-application-1113-main-payment-server-1
     restart: unless-stopped
     env_file:
       - .env.production
