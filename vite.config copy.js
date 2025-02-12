@@ -24,12 +24,6 @@ export default defineConfig(({ mode }) => {
   // 删除 .env 文件中的 NODE_ENV
   delete env.NODE_ENV
 
-  const allowedHosts = [
-    'love.saga4v.com',
-    'localhost',
-    '127.0.0.1'
-  ]
-
   console.log('🚀 Vite Configuration Mode:', mode)
   console.log('🔧 Environment Variables:', JSON.stringify(env, null, 2))
 
@@ -82,14 +76,20 @@ export default defineConfig(({ mode }) => {
       host: '0.0.0.0',
       port: 4173,
       strictPort: true,
-      allowedHosts,
-      cors: true,
+      open: false,
+      allowedHosts: ['love.saga4v.com', 'localhost', '127.0.0.1'],
+      cors: {
+        origin: ['https://love.saga4v.com', 'http://localhost:4173'],
+      },
       proxy: {
         '/socket.io': {
           target: 'wss://love.saga4v.com',
           ws: true,
-          changeOrigin: true,
-          secure: false
+          changeOrigin: true
+        },
+        '/api': {
+          target: 'https://love.saga4v.com',
+          changeOrigin: true
         }
       }
     },
@@ -102,23 +102,34 @@ export default defineConfig(({ mode }) => {
       host: '0.0.0.0',
       port: 4173,
       strictPort: true,
-      cors: true,
-      allowedHosts,
-      hmr: {
-        host: env.VITE_HMR_HOST || 'localhost',
-        protocol: 'wss',
-        clientPort: 443
+      open: false,
+      // 添加日志输出
+      logger: {
+        info: console.log,
+        warn: console.warn,
+        error: console.error
       },
       proxy: {
         '/socket.io': {
-          target: isDevelopment ? 'ws://localhost:4242' : 'wss://love.saga4v.com',
+          target: wsTarget,
           ws: true,
-          changeOrigin: true
+          changeOrigin: true,
+          // 添加代理日志
+          configure: (proxy, options) => {
+            proxy.on('error', (err, req, res) => {
+              console.error('代理错误:', err);
+            });
+            proxy.on('proxyReq', (proxyReq, req, res) => {
+              console.log('代理请求:', {
+                url: req.url,
+                target: options.target
+              });
+            });
+          }
         },
         '/api': {
           target: apiTarget,
           changeOrigin: true,
-          secure: true,
           // 添加代理日志
           configure: (proxy, options) => {
             proxy.on('error', (err, req, res) => {
