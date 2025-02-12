@@ -96,7 +96,7 @@ pull_latest_code() {
     current_branch=$(git rev-parse --abbrev-ref HEAD)
     log "当前分支: $current_branch"
 
-    # 先获取远程更新
+    # 先获取远程更新信息
     log "获取远程仓库更新..."
     if ! git fetch origin $BRANCH_NAME; then
         error "获取远程更新失败"
@@ -108,46 +108,73 @@ pull_latest_code() {
     # 检查是否有可更新的远程更改
     local has_remote_changes=$(git rev-list HEAD...origin/$BRANCH_NAME --count)
 
-    if [ -n "$has_local_changes" ]; then
-        warning "存在未提交的本地更改"
-        git status --short
-        read -p "是否保存本地更改并继续？[y/N] " should_continue
-        if [[ "$should_continue" =~ ^[Yy]$ ]]; then
-            # 保存本地更改
-            local timestamp=$(date +%Y%m%d_%H%M%S)
-            local stash_message="自动保存于 $timestamp"
-            log "保存本地更改: $stash_message"
-            git stash push -m "$stash_message"
-        else
-            error "操作已取消"
-            exit 1
-        fi
-    fi
-
     if [ "$has_remote_changes" -gt 0 ]; then
-        log "发现新的远程更新，准备拉取..."
-        if ! git pull origin $BRANCH_NAME; then
-            error "代码拉取失败"
-            # 如果之前有保存的更改，恢复它
-            if [[ "$should_continue" =~ ^[Yy]$ ]]; then
-                warning "恢复本地更改..."
-                git stash pop
+        warning "检测到远程仓库有新的更新"
+        git --no-pager diff --stat HEAD...origin/$BRANCH_NAME
+        
+        if [ -n "$has_local_changes" ]; then
+            warning "同时检测到本地有未提交的更改:"
+            git status --short
+            
+            echo -e "\n请选择操作："
+            echo "1) 使用远程版本覆盖本地更改"
+            echo "2) 保留本地更改继续部署"
+            echo "3) 取消部署"
+            
+            read -p "请输入选项 [1-3]: " choice
+            
+            case $choice in
+                1)
+                    log "准备使用远程版本覆盖本地更改..."
+                    # 保存本地更改到临时区域
+                    local timestamp=$(date +%Y%m%d_%H%M%S)
+                    local backup_branch="backup_${timestamp}"
+                    git branch $backup_branch
+                    log "已创建备份分支: $backup_branch"
+                    
+                    # 强制更新到远程版本
+                    if ! git reset --hard origin/$BRANCH_NAME; then
+                        error "重置到远程版本失败"
+                        exit 1
+                    fi
+                    log "成功更新到远程版本"
+                    ;;
+                2)
+                    warning "将使用本地版本继续部署"
+                    warning "请注意：本地版本可能与远程版本不一致，建议部署后及时同步代码"
+                    return 0
+                    ;;
+                3)
+                    error "操作已取消"
+                    exit 1
+                    ;;
+                *)
+                    error "无效的选项"
+                    exit 1
+                    ;;
+            esac
+        else
+            # 没有本地更改，询问是否更新
+            read -p "是否更新到远程版本？[Y/n] " update_choice
+            if [[ "$update_choice" =~ ^[Nn]$ ]]; then
+                warning "跳过更新，使用当前版本继续部署"
+                return 0
+            else
+                if ! git pull origin $BRANCH_NAME; then
+                    error "更新失败"
+                    exit 1
+                fi
+                log "成功更新到远程版本"
             fi
-            exit 1
         fi
-        log "代码更新成功"
     else
-        log "代码已经是最新版本，无需更新"
-    fi
-
-    # 如果之前有保存的更改，恢复它
-    if [[ "$should_continue" =~ ^[Yy]$ ]]; then
-        warning "正在恢复本地更改..."
-        if ! git stash pop; then
-            error "恢复本地更改时发生冲突，请手动解决"
-            exit 1
+        log "本地代码已经是最新版本"
+        if [ -n "$has_local_changes" ]; then
+            warning "检测到本地有未提交的更改:"
+            git status --short
+            warning "将使用当前本地版本继续部署"
+            warning "请注意：建议部署后及时提交本地更改"
         fi
-        log "本地更改已恢复"
     fi
 }
 
