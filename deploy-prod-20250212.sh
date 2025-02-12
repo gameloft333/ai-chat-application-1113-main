@@ -218,8 +218,27 @@ cleanup_docker() {
 
 # 创建必要的网络
 setup_network() {
-    log "创建 Docker 网络..."
-    docker network create saga4v_network || true
+    log "检查 Docker 网络配置..."
+    
+    # 先检查网络是否存在
+    if docker network inspect saga4v_network >/dev/null 2>&1; then
+        log "saga4v_network 网络已存在，跳过创建"
+    else
+        log "创建 saga4v_network 网络..."
+        if docker network create saga4v_network; then
+            log "saga4v_network 网络创建成功"
+        else
+            error "saga4v_network 网络创建失败"
+            return 1
+        fi
+    fi
+    
+    # 验证网络状态
+    log "验证网络配置..."
+    docker network inspect saga4v_network --format "{{.Name}} 网络状态: {{.Driver}}" || {
+        error "网络验证失败"
+        return 1
+    }
 }
 
 # 生成部署报告
