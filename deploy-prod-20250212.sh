@@ -96,24 +96,59 @@ pull_latest_code() {
     current_branch=$(git rev-parse --abbrev-ref HEAD)
     log "当前分支: $current_branch"
 
-    # 检查是否有未提交的更改
-    if [ -n "$(git status --porcelain)" ]; then
-        warning "存在未提交的更改"
-        read -p "是否继续拉取最新代码？[y/N] " should_continue
-        if [[ ! "$should_continue" =~ ^[Yy]$ ]]; then
+    # 先获取远程更新
+    log "获取远程仓库更新..."
+    if ! git fetch origin $BRANCH_NAME; then
+        error "获取远程更新失败"
+        exit 1
+    fi
+
+    # 检查本地是否有未提交的更改
+    local has_local_changes=$(git status --porcelain)
+    # 检查是否有可更新的远程更改
+    local has_remote_changes=$(git rev-list HEAD...origin/$BRANCH_NAME --count)
+
+    if [ -n "$has_local_changes" ]; then
+        warning "存在未提交的本地更改"
+        git status --short
+        read -p "是否保存本地更改并继续？[y/N] " should_continue
+        if [[ "$should_continue" =~ ^[Yy]$ ]]; then
+            # 保存本地更改
+            local timestamp=$(date +%Y%m%d_%H%M%S)
+            local stash_message="自动保存于 $timestamp"
+            log "保存本地更改: $stash_message"
+            git stash push -m "$stash_message"
+        else
             error "操作已取消"
             exit 1
         fi
     fi
 
-    # 拉取最新代码
-    log "从 $REPO_URL 拉取最新代码..."
-    if ! git pull origin $BRANCH_NAME; then
-        error "代码拉取失败"
-        exit 1
+    if [ "$has_remote_changes" -gt 0 ]; then
+        log "发现新的远程更新，准备拉取..."
+        if ! git pull origin $BRANCH_NAME; then
+            error "代码拉取失败"
+            # 如果之前有保存的更改，恢复它
+            if [[ "$should_continue" =~ ^[Yy]$ ]]; then
+                warning "恢复本地更改..."
+                git stash pop
+            fi
+            exit 1
+        fi
+        log "代码更新成功"
+    else
+        log "代码已经是最新版本，无需更新"
     fi
-    
-    log "代码更新成功"
+
+    # 如果之前有保存的更改，恢复它
+    if [[ "$should_continue" =~ ^[Yy]$ ]]; then
+        warning "正在恢复本地更改..."
+        if ! git stash pop; then
+            error "恢复本地更改时发生冲突，请手动解决"
+            exit 1
+        fi
+        log "本地更改已恢复"
+    fi
 }
 
 # 清理当前项目的 Docker 资源
