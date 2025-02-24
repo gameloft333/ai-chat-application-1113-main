@@ -54,7 +54,7 @@ services:
       - SSL_CERT_PATH=/etc/ssl/certs/fullchain.pem # new change 20250224
       - SSL_KEY_PATH=/etc/ssl/certs/privkey.pem # new change 20250224
     ports:
-      - "443:4242" # new change 20250224
+      - "4242:4242" # new change 20250224
     volumes:
       - /etc/letsencrypt/live/payment.saga4v.com/:/etc/ssl/certs:ro # new change 20250224
     healthcheck:
