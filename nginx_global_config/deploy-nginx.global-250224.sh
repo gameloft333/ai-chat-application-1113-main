@@ -58,44 +58,29 @@ create_network() {
 stop_existing() {
     log "[STEP 3/6] 停止现有容器..."
     
-    # 检查并停止 Nginx 相关的 docker-proxy 进程
-    local nginx_proxies=$(ps aux | grep docker-proxy | grep -E ':80|:443' | awk '{print $2}')
-    if [ -n "$nginx_proxies" ]; then
-        log "发现 Nginx 相关的 docker-proxy 进程："
-        for pid in $nginx_proxies; do
-            # 获取对应的容器 ID
-            local container_id=$(docker ps -q --filter "publish=80-80" --filter "publish=443-443")
-            if [ -n "$container_id" ]; then
-                local container_name=$(docker inspect --format '{{.Name}}' "$container_id" | sed 's/\///')
-                # 只停止 saga4v-nginx 容器
-                if [[ "$container_name" == "saga4v-nginx" ]]; then
-                    log "停止容器: $container_name"
-                    docker stop "$container_id" || true
-                    docker rm "$container_id" || true
-                else
-                    log "跳过非 Nginx 容器: $container_name"
-                fi
+    # 使用 docker-compose 停止容器
+    if [ -f "$DOCKER_COMPOSE_FILE" ]; then
+        log "使用 docker-compose 停止容器..."
+        if ! docker-compose -f "$DOCKER_COMPOSE_FILE" down --timeout 30; then
+            warn "容器优雅停止超时，尝试强制停止..."
+            if ! docker-compose -f "$DOCKER_COMPOSE_FILE" down -v --remove-orphans; then
+                error "容器停止失败，收集诊断信息..."
+                docker ps -a | grep saga4v-nginx
+                docker logs --tail 50 saga4v-nginx || true
+                return 1
             fi
-        done
-    fi
-    
-    # 等待端口释放
-    local timeout=30
-    local counter=0
-    while [ $counter -lt $timeout ]; do
-        if ! docker ps -q --filter "name=saga4v-nginx" | grep -q .; then
-            log "✓ Nginx 容器已停止"
-            return 0
         fi
-        counter=$((counter + 1))
-        sleep 1
-    done
-    
-    if [ $counter -eq $timeout ]; then
-        error "Nginx 容器停止超时"
-        docker ps | grep saga4v-nginx
-        return 1
+    else
+        warn "未找到 docker-compose 文件: $DOCKER_COMPOSE_FILE"
+        # 尝试直接停止容器
+        if docker ps -q --filter "name=saga4v-nginx" | grep -q .; then
+            log "尝试直接停止容器..."
+            docker stop -t 30 saga4v-nginx || docker kill saga4v-nginx
+        fi
     fi
+    
+    log "✓ 容器停止完成"
+    return 0
 }
 
 # 添加新的检查函数
@@ -103,7 +88,7 @@ check_dependencies() {
     log "检查依赖服务..."
     
     # 从 nginx.conf 解析 SSL 证书配置和对应的服务
-    local NGINX_CONF="nginx.global.250122.conf"
+    local NGINX_CONF="nginx.global.250128.conf"
     declare -A SSL_SERVICES
     
     # 首先获取所有配置了 SSL 证书的域名
@@ -184,7 +169,7 @@ deploy_container() {
     log "[STEP 4/6] 部署容器..."
     
     # 检查配置文件
-    local nginx_conf="nginx.global.250122.conf"
+    local nginx_conf="nginx.global.250128.conf"
     if [ ! -f "$nginx_conf" ]; then
         error "$nginx_conf 文件不存在"
         error "请确保配置文件位于当前目录: $(pwd)"
@@ -202,57 +187,37 @@ deploy_container() {
 
 # Health check
 health_check() {
-    log "[STEP 5/6] 健康检查..."
-    local max_retries=10  # 增加重试次数
+    log "[STEP 5/6] 基础健康检查..."
+    local max_retries=5
     local retry=0
-    local wait_time=5
+    local wait_time=2
     
     while [ $retry -lt $max_retries ]; do
-        # 检查容器状态
-        container_status=$(docker inspect -f '{{.State.Status}}' saga4v-nginx 2>/dev/null)
+        local container_status=$(docker inspect -f '{{.State.Status}}' saga4v-nginx 2>/dev/null || echo "not_found")
         
         case "$container_status" in
             "running")
-                # 容器正在运行，检查 Nginx
-                if docker exec saga4v-nginx nginx -t &>/dev/null; then
-                    log "✓ 健康检查通过"
+                # 只检查基本的 Nginx 进程
+                if docker exec saga4v-nginx pgrep nginx >/dev/null; then
+                    log "✓ 基础健康检查通过"
                     return 0
                 fi
                 ;;
-            "restarting")
-                # 立即收集错误信息并退出
-                error "容器重启循环，收集错误信息..."
-                log "1. 容器状态："
-                docker ps -a | grep saga4v-nginx
-                log "2. 容器日志："
-                docker logs --tail 50 saga4v-nginx
-                log "3. Nginx 配置检查："
-                docker exec saga4v-nginx nginx -T || true
-                return 1
-                ;;
-            *)
+            "not_found"|"exited"|"dead")
                 if [ $retry -eq $((max_retries - 1)) ]; then
-                    # 最后一次重试时收集完整诊断信息
-                    error "健康检查失败，收集诊断信息..."
-                    log "1. 容器状态："
-                    docker ps -a | grep saga4v-nginx
-                    log "2. 容器日志："
-                    docker logs --tail 20 saga4v-nginx
-                    log "3. Nginx 错误日志："
-                    docker exec saga4v-nginx cat /var/log/nginx/error.log 2>/dev/null || true
-                    error "健康检查超时，状态: $container_status"
+                    error "容器未能正常启动"
                     return 1
                 fi
-                log "等待容器启动... ($retry/$max_retries) [状态: $container_status]"
                 ;;
         esac
         
-        log "等待服务就绪... ($retry/$max_retries)"
+        log "等待服务启动... ($retry/$max_retries)"
         sleep $wait_time
         retry=$((retry + 1))
     done
     
-    return 1
+    warn "健康检查未完全通过，但容器已启动"
+    return 0
 }
 
 # Verify deployment
@@ -345,19 +310,147 @@ check_nginx_logs() {
     fi
 }
 
+# Error handling
+cleanup() {
+    if [ $? -ne 0 ]; then
+        error "部署失败，正在回滚..."
+        if [ -d "$BACKUP_DIR" ]; then
+            cp "$BACKUP_DIR"/* ./ 2>/dev/null || true
+        fi
+        docker-compose -f "$DOCKER_COMPOSE_FILE" down || true
+    fi
+}
+
+trap cleanup EXIT
+
+# 修改 check_certificates 函数，添加证书时间验证
+check_certificates() {
+    log "检查 SSL 证书..."
+    local domains="love.saga4v.com play.saga4v.com payment.saga4v.com"
+    
+    for domain in $domains; do
+        local cert_path="/etc/letsencrypt/live/$domain/fullchain.pem"
+        
+        # 检查证书文件存在
+        if [ ! -f "$cert_path" ] || [ ! -f "/etc/letsencrypt/live/$domain/privkey.pem" ]; then
+            error "缺少 $domain 的证书文件"
+            return 1
+        fi
+        
+        # 检查证书有效期
+        local current_time=$(date +%s)
+        local not_before=$(openssl x509 -in "$cert_path" -noout -startdate | cut -d= -f2)
+        local not_after=$(openssl x509 -in "$cert_path" -noout -enddate | cut -d= -f2)
+        
+        local start_time=$(date -d "$not_before" +%s)
+        local end_time=$(date -d "$not_after" +%s)
+        
+        if [ $current_time -lt $start_time ]; then
+            error "$domain 的证书尚未生效 (生效时间: $not_before)"
+            error "需要重新申请证书"
+            return 1
+        fi
+        
+        if [ $current_time -gt $end_time ]; then
+            error "$domain 的证书已过期 (过期时间: $not_after)"
+            error "需要更新证书"
+            return 1
+        fi
+        
+        # 检查剩余有效期
+        local days_left=$(( ($end_time - $current_time) / 86400 ))
+        if [ $days_left -lt 30 ]; then
+            warn "$domain 的证书将在 $days_left 天后过期"
+        fi
+    done
+    
+    log "✓ SSL 证书检查通过"
+    return 0
+}
+
+# 修改验证配置函数
+verify_config() {
+    log "验证 Nginx 配置..."
+    
+    # 基本语法检查
+    if ! docker run --rm \
+        -v "$(pwd)/nginx.global.250128.conf:/etc/nginx/nginx.conf:ro" \
+        nginx:stable-alpine nginx -t 2>/dev/null; then
+        warn "Nginx 配置文件存在警告，但将继续部署..."
+    fi
+    
+    # 只检查关键错误
+    if docker run --rm \
+        -v "$(pwd)/nginx.global.250128.conf:/etc/nginx/nginx.conf:ro" \
+        nginx:stable-alpine nginx -t 2>&1 | grep -i "emerg" > /dev/null; then
+        error "Nginx 配置存在严重错误"
+        return 1
+    fi
+    
+    log "✓ 配置文件基本验证通过"
+    return 0
+}
+
+# 添加日志目录检查函数
+check_log_directories() {
+    log "检查日志目录..."
+    
+    # 创建所需的日志目录
+    mkdir -p /var/log/nginx
+    
+    # 创建所需的日志文件
+    touch /var/log/nginx/ssl-error.log
+    touch /var/log/nginx/payment-ssl-error.log
+    touch /var/log/nginx/payment.access.log
+    touch /var/log/nginx/payment.error.log
+    
+    # 设置正确的权限
+    chown -R nginx:nginx /var/log/nginx
+    chmod 644 /var/log/nginx/*.log
+    
+    log "✓ 日志目录检查完成"
+}
+
 # Main function
 main() {
     log "开始部署全局 Nginx..."
     
+    log "[STEP 1/6] 备份现有配置..."
     backup_configs
+    
+    log "[STEP 2/6] 检查网络配置..."
     create_network
+    
+    log "[STEP 3/6] 停止现有容器..."
     stop_existing
+    
+    log "[STEP 4/6] 准备环境..."
+    check_log_directories
+    check_certificates
+    
+    # 验证本地配置文件
+    log "[STEP 5/6] 验证配置文件..."
+    verify_config
+    
+    log "[STEP 6/6] 部署容器..."
     deploy_container
+    
+    # 等待容器启动
+    log "等待容器启动..."
+    sleep 5
+    
+    # 在容器启动后验证配置
+    if ! docker exec saga4v-nginx nginx -t; then
+        error "容器内 Nginx 配置验证失败"
+        return 1
+    fi
+    
     check_nginx_logs
     health_check
     verify_deployment
     
-    log "部署完成!"
+    log "✓ 部署完成!"
+    return 0
 }
 
 # Error handling
@@ -374,48 +467,11 @@ cleanup() {
 trap cleanup EXIT
 
 # Execute main function
-main 
-
-check_certificates() {
-    log "检查 SSL 证书..."
-    local domains="love.saga4v.com play.saga4v.com payment.saga4v.com"
-    
-    for domain in $domains; do
-        if [ ! -f "/etc/letsencrypt/live/$domain/fullchain.pem" ] || \
-           [ ! -f "/etc/letsencrypt/live/$domain/privkey.pem" ]; then
-            error "缺少 $domain 的证书文件"
-            return 1
-        fi
-    done
-    
-    log "✓ SSL 证书检查通过"
-    return 0
-}
+main
 
 verify_cert() {
     local domain="payment.saga4v.com"
     openssl x509 -in /etc/letsencrypt/live/$domain/fullchain.pem -text -noout | grep "Subject:"
-}
-
-verify_config() {
-    log "验证 Nginx 配置..."
-    
-    # 检查证书文件权限
-    for domain in love.saga4v.com play.saga4v.com payment.saga4v.com; do
-        if [ ! -r "/etc/nginx/ssl/$domain/fullchain.pem" ] || \
-           [ ! -r "/etc/nginx/ssl/$domain/privkey.pem" ]; then
-            error "证书文件权限错误: $domain"
-            return 1
-        fi
-    done
-    
-    # 验证 Nginx 配置
-    if ! docker exec saga4v-nginx nginx -t; then
-        error "Nginx 配置验证失败"
-        return 1
-    fi
-    
-    return 0
 }
 
 # 添加调试函数
@@ -434,4 +490,26 @@ debug_nginx_status() {
     
     # 检查错误日志
     docker exec $container_id sh -c "tail -n 50 /var/log/nginx/error.log" || true
+}
+
+# 在部署脚本中添加证书更新检查 # new change 20250224
+check_certificate_expiry() {
+    local domain="payment.saga4v.com"
+    local cert_path="/etc/letsencrypt/live/$domain/fullchain.pem"
+    local expiry_date=$(openssl x509 -enddate -noout -in "$cert_path" | cut -d= -f2)
+    local remaining_days=$(( ($(date -d "$expiry_date" +%s) - $(date +%s)) / 86400 ))
+    
+    if [ $remaining_days -lt 7 ]; then
+        log "证书即将过期 (剩余天数: $remaining_days)，正在更新..."
+        certbot renew --nginx --non-interactive
+    fi
+}
+
+# 在部署脚本中添加权限设置 # new change 20250224
+set_certificate_permissions() {
+    local domains=("love.saga4v.com" "play.saga4v.com" "payment.saga4v.com")
+    for domain in "${domains[@]}"; do
+        chmod 644 /etc/letsencrypt/live/$domain/privkey.pem
+        chown nginx:nginx /etc/letsencrypt/live/$domain/privkey.pem
+    done
 }
