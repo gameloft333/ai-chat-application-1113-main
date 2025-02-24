@@ -291,12 +291,8 @@ deploy_application() {
     
     # 验证证书文件 使用新配置 update 20250224
     log "验证证书文件..."
-    if [ ! -f "/etc/letsencrypt/live/payment.saga4v.com/fullchain.pem" ]; then
-        error "缺少 fullchain.pem 文件"
-        exit 1
-    fi
-    if [ ! -f "/etc/letsencrypt/live/payment.saga4v.com/privkey.pem" ]; then
-        error "缺少 privkey.pem 文件"
+    if ! check_certificates; then # new change 20250224
+        error "证书检查失败"
         exit 1
     fi
     
@@ -348,6 +344,61 @@ cleanup_system_resources() {
         log "系统资源使用正常，无需清理"
     fi
 }
+
+# 修改后的证书检查逻辑 # new change 20250224
+check_certificates() {
+    log "检查 SSL 证书..."
+    local domain="payment.saga4v.com"
+    local cert_dir="/etc/letsencrypt/live/$domain"
+    
+    # 添加调试信息
+    log "检查证书目录: $cert_dir"
+    ls -l $cert_dir || {
+        error "证书目录不存在";
+        return 1;
+    }
+
+    # 验证证书文件
+    local cert_files=("fullchain.pem" "privkey.pem")
+    for file in "${cert_files[@]}"; do
+        local file_path="$cert_dir/$file"
+        # 检查文件存在性
+        if [ ! -f "$file_path" ]; then
+            error "缺少证书文件: $file_path"
+            # 检查是否为有效符号链接
+            if [ -L "$file_path" ]; then
+                local link_target=$(readlink -f "$file_path")
+                error "该文件是损坏的符号链接，指向: $link_target"
+            fi
+            return 1
+        fi
+        
+        # 检查文件可读性
+        if [ ! -r "$file_path" ]; then
+            warn "证书文件不可读: $file_path"
+            log "尝试修复权限..."
+            sudo chmod 644 "$file_path" || {
+                error "权限修复失败";
+                return 1;
+            }
+        fi
+        
+        # 验证证书有效期
+        local not_after=$(openssl x509 -enddate -noout -in "$file_path" | cut -d= -f2)
+        log "证书 $file 有效期至: $not_after"
+    done
+    
+    log "✓ SSL 证书检查通过"
+    return 0
+}
+
+# 在部署脚本中添加权限检查 # new change 20250224
+CERT_DIR="/etc/letsencrypt/live/payment.saga4v.com"
+if [ ! -r "$CERT_DIR/fullchain.pem" ]; then
+    error "证书文件不可读，尝试修复权限..."
+    sudo chmod 644 "$CERT_DIR"/{fullchain,privkey}.pem
+    sudo chown root:root "$CERT_DIR"/{fullchain,privkey}.pem
+fi
 
 # 主函数
 main() {
