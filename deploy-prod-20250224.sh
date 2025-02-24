@@ -291,10 +291,8 @@ deploy_application() {
     
     # 验证证书文件 使用新配置 update 20250224
     log "验证证书文件..."
-    if ! check_certificates; then # new change 20250224
-        error "证书检查失败"
-        exit 1
-    fi
+    verify_network_connectivity || exit 1
+    check_certificates || exit 1
     
     # 构建并启动服务
     log "构建并启动服务..."
@@ -349,47 +347,40 @@ cleanup_system_resources() {
 check_certificates() {
     log "检查 SSL 证书..."
     local domain="payment.saga4v.com"
-    local cert_dir="/etc/letsencrypt/live/$domain"
     
-    # 添加调试信息
-    log "检查证书目录: $cert_dir"
-    ls -l $cert_dir || {
-        error "证书目录不存在";
-        return 1;
-    }
+    # 使用容器内挂载路径验证（开发规则第 36 条）
+    local container_cert_dir="/etc/nginx/ssl/${domain}"
+    
+    # 通过临时容器验证证书存在性
+    if docker run --rm \
+        -v "/etc/letsencrypt/live/${domain}:/etc/nginx/ssl/${domain}:ro" \
+        nginx:stable-alpine \
+        sh -c "test -f ${container_cert_dir}/fullchain.pem && test -f ${container_cert_dir}/privkey.pem"; then
+        
+        log "✓ 证书挂载验证通过"
+        return 0
+    else
+        error "证书挂载验证失败"
+        error "请检查 docker-compose 的 volumes 配置："
+        error "应确保宿主机路径：/etc/letsencrypt/live/${domain} 存在"
+        error "并正确挂载到容器路径：${container_cert_dir}"
+        return 1
+    fi
+}
 
-    # 验证证书文件
-    local cert_files=("fullchain.pem" "privkey.pem")
-    for file in "${cert_files[@]}"; do
-        local file_path="$cert_dir/$file"
-        # 检查文件存在性
-        if [ ! -f "$file_path" ]; then
-            error "缺少证书文件: $file_path"
-            # 检查是否为有效符号链接
-            if [ -L "$file_path" ]; then
-                local link_target=$(readlink -f "$file_path")
-                error "该文件是损坏的符号链接，指向: $link_target"
-            fi
-            return 1
-        fi
-        
-        # 检查文件可读性
-        if [ ! -r "$file_path" ]; then
-            warn "证书文件不可读: $file_path"
-            log "尝试修复权限..."
-            sudo chmod 644 "$file_path" || {
-                error "权限修复失败";
-                return 1;
-            }
-        fi
-        
-        # 验证证书有效期
-        local not_after=$(openssl x509 -enddate -noout -in "$file_path" | cut -d= -f2)
-        log "证书 $file 有效期至: $not_after"
-    done
+# 在部署流程中添加网络验证（开发规则第 0.3 条） # new change 20250224
+verify_network_connectivity() {
+    log "验证网络连通性..."
     
-    log "✓ SSL 证书检查通过"
-    return 0
+    # 检查 payment 服务是否在 saga4v_network 中
+    if ! docker network inspect saga4v_network | grep -q "ai-chat-application-1113-main-payment-server-1"; then
+        error "payment 服务未连接到 saga4v_network"
+        error "请在 docker-compose 中添加："
+        error "networks:\n  - saga4v_network"
+        return 1
+    fi
+    
+    log "✓ 网络连通性验证通过"
 }
 
 # 在部署脚本中添加权限检查 # new change 20250224
