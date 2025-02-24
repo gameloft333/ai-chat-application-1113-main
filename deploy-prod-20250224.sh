@@ -371,16 +371,33 @@ check_certificates() {
 # 在部署流程中添加网络验证（开发规则第 0.3 条） # new change 20250224
 verify_network_connectivity() {
     log "验证网络连通性..."
-    
-    # 检查 payment 服务是否在 saga4v_network 中
-    if ! docker network inspect saga4v_network | grep -q "ai-chat-application-1113-main-payment-server-1"; then
-        error "payment 服务未连接到 saga4v_network"
-        error "请在 docker-compose 中添加："
-        error "networks:\n  - saga4v_network"
-        return 1
-    fi
-    
-    log "✓ 网络连通性验证通过"
+    local max_retries=3
+    local retry_interval=5
+
+    for ((i=1; i<=max_retries; i++)); do
+        # 使用更可靠的容器ID检查方式
+        local payment_container_id=$(docker ps -q --filter "name=payment-server")
+        
+        if [ -z "$payment_container_id" ]; then
+            warn "payment 服务容器未找到 (尝试 $i/$max_retries)"
+            sleep $retry_interval
+            continue
+        fi
+
+        # 使用容器ID检查网络连接
+        if docker inspect $payment_container_id --format '{{range .NetworkSettings.Networks}}{{.NetworkID}}{{end}}' | grep -q $(docker network inspect saga4v_network --format '{{.Id}}'); then
+            log "✓ 网络连通性验证通过"
+            return 0
+        else
+            warn "网络验证失败 (尝试 $i/$max_retries)"
+            sleep $retry_interval
+        fi
+    done
+
+    error "payment 服务未连接到 saga4v_network"
+    error "请检查 docker-compose.yml 中的网络配置："
+    error "应包含以下配置：\nnetworks:\n  - saga4v_network"
+    return 1
 }
 
 # 在部署脚本中添加权限检查 # new change 20250224
@@ -416,19 +433,28 @@ main() {
         exit 1
     }
     
-    # 设置网络
+    # 设置网络（先创建网络）
     setup_network || {
         error "网络设置失败"
         exit 1
     }
     
-    # 部署应用
+    # 部署应用（此时服务还未启动）
     deploy_application || {
         error "应用部署失败"
-        generate_deployment_report  # 即使失败也生成报告
+        generate_deployment_report
         exit 1
     }
-    
+
+    # 新增网络连通性验证（在服务启动后检查）
+    log "等待服务连接网络..."
+    sleep 15  # 给Docker时间完成网络连接
+    verify_network_connectivity || {
+        error "网络连通性验证失败"
+        generate_deployment_report
+        exit 1
+    }
+
     log "部署完成！"
     
     # 最后再次生成完整报告
