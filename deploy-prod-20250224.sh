@@ -9,6 +9,7 @@ NC='\033[0m' # No Color
 # 定义常量
 REPO_URL="https://github.com/gameloft333/ai-chat-application-1113-main.git"
 BRANCH_NAME="main"
+DOCKER_COMPOSE_FILE="docker-compose-20250224.yml"  # 集中管理文件名 # new change 20250224 这个方法好
 
 # 日志函数
 log() {
@@ -183,21 +184,21 @@ cleanup_docker() {
     log "清理当前项目的 Docker 资源..."
     
     # 获取当前项目的容器ID
-    local project_containers=$(docker-compose -f docker-compose-20250224.yml ps -q)
+    local project_containers=$(docker-compose -f $DOCKER_COMPOSE_FILE ps -q)
     
     if [ -n "$project_containers" ]; then
         log "发现当前项目的运行容器，准备清理..."
         
         # 停止当前项目的容器
         log "停止当前项目的容器..."
-        docker-compose -f docker-compose-20250224.yml down || {
+        docker-compose -f $DOCKER_COMPOSE_FILE down || {
             error "停止容器失败"
             return 1
         }
         
         # 删除当前项目的容器和镜像
         log "删除当前项目的容器和镜像..."
-        docker-compose -f docker-compose-20250224.yml rm -f || {
+        docker-compose -f $DOCKER_COMPOSE_FILE rm -f || {
             warning "删除容器失败，继续执行..."
         }
         
@@ -250,7 +251,7 @@ generate_deployment_report() {
     
     # 检查容器状态
     echo -e "\n${YELLOW}容器状态:${NC}"
-    docker-compose -f docker-compose-20250224.yml ps
+    docker-compose -f $DOCKER_COMPOSE_FILE ps
     
     # 显示资源使用情况
     echo -e "\n${YELLOW}资源使用情况:${NC}"
@@ -262,7 +263,7 @@ generate_deployment_report() {
     
     # 显示容器日志（最后10行）
     echo -e "\n${YELLOW}容器最新日志:${NC}"
-    for container in $(docker-compose -f docker-compose-20250224.yml ps -q); do
+    for container in $(docker-compose -f $DOCKER_COMPOSE_FILE ps -q); do
         container_name=$(docker inspect --format '{{.Name}}' $container | sed 's/\///')
         echo -e "\n${GREEN}$container_name 的最新日志:${NC}"
         docker logs --tail 10 $container
@@ -270,7 +271,7 @@ generate_deployment_report() {
     
     # 检查服务健康状态
     echo -e "\n${YELLOW}服务健康状态:${NC}"
-    for container in $(docker-compose -f docker-compose-20250224.yml ps -q); do
+    for container in $(docker-compose -f $DOCKER_COMPOSE_FILE ps -q); do
         container_name=$(docker inspect --format '{{.Name}}' $container | sed 's/\///')
         health_status=$(docker inspect --format='{{.State.Health.Status}}' $container 2>/dev/null || echo "未配置健康检查")
         echo "$container_name: $health_status"
@@ -296,8 +297,8 @@ deploy_application() {
     
     # 构建并启动服务
     log "构建并启动服务..."
-    docker-compose -f docker-compose-20250224.yml build --no-cache
-    docker-compose -f docker-compose-20250224.yml up -d
+    docker-compose -f $DOCKER_COMPOSE_FILE build --no-cache
+    docker-compose -f $DOCKER_COMPOSE_FILE up -d
     
     # 等待服务启动
     log "等待服务启动..."
@@ -368,15 +369,17 @@ check_certificates() {
     fi
 }
 
-# 在部署流程中添加网络验证（开发规则第 0.3 条） # new change 20250224
+# 修改网络验证函数（添加容器启动状态检查）
 verify_network_connectivity() {
     log "验证网络连通性..."
-    local max_retries=3
-    local retry_interval=5
+    local max_retries=5
+    local retry_interval=10
+    local payment_container_id=""
 
     for ((i=1; i<=max_retries; i++)); do
         # 使用更可靠的容器ID检查方式
-        local payment_container_id=$(docker ps -q --filter "name=payment-server")
+        # 使用docker-compose项目标签过滤容器
+        local payment_container_id=$(docker ps -q --filter "label=com.docker.compose.project=ai-chat-application-1113-main" --filter "label=com.docker.compose.service=payment")
         
         if [ -z "$payment_container_id" ]; then
             warn "payment 服务容器未找到 (尝试 $i/$max_retries)"
@@ -395,8 +398,11 @@ verify_network_connectivity() {
     done
 
     error "payment 服务未连接到 saga4v_network"
-    error "请检查 docker-compose.yml 中的网络配置："
-    error "应包含以下配置：\nnetworks:\n  - saga4v_network"
+    error "请按以下步骤检查："
+    error "1. 确认 $DOCKER_COMPOSE_FILE 中 payment 服务配置包含："
+    error "   networks:\n     - saga4v_network"
+    error "2. 确保网络已创建：docker network ls | grep saga4v_network"
+    error "3. 检查容器日志：docker logs $payment_container_id"
     return 1
 }
 
@@ -433,13 +439,13 @@ main() {
         exit 1
     }
     
-    # 设置网络（先创建网络）
+    # 设置网络（独立创建，不依赖Nginx部署）
     setup_network || {
         error "网络设置失败"
         exit 1
     }
     
-    # 部署应用（此时服务还未启动）
+    # 部署应用
     deploy_application || {
         error "应用部署失败"
         generate_deployment_report
