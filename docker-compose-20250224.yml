@@ -76,6 +76,42 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend # 需要创建这个文件
+    container_name: ai-chat-application-1113-main-backend-1
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      - NODE_ENV=production
+      - PORT=4245 # 使用不同端口避免与payment冲突
+      - CORS_ORIGIN=https://love.saga4v.com
+    ports:
+      - "4245:4245" # new change 20250225
+    volumes:
+      - ./server:/app/server
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4245/health || exit 0"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+    networks:
+      - saga4v_network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    command: npm run server:prod # 使用package.json中的生产服务器脚本
+
 networks:
   saga4v_network:
     external: true
