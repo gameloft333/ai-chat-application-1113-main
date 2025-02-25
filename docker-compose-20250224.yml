@@ -51,12 +51,12 @@ services:
       - PORT=4242
       - CORS_ORIGIN=https://love.saga4v.com
       - SKIP_FIREBASE_CONFIG=true
-      - SSL_CERT_PATH=/etc/ssl/certs/fullchain.pem # new change 20250224
-      - SSL_KEY_PATH=/etc/ssl/certs/privkey.pem # new change 20250224
+      - SSL_CERT_PATH=/etc/nginx/ssl/payment.saga4v.com/fullchain.pem # new change 20250225
+      - SSL_KEY_PATH=/etc/nginx/ssl/payment.saga4v.com/privkey.pem # new change 20250225
     ports:
       - "4242:4242" # new change 20250224
     volumes:
-      - /etc/letsencrypt/live/payment.saga4v.com/:/etc/ssl/certs:ro # new change 20250224
+      - /etc/letsencrypt/live/payment.saga4v.com/:/etc/nginx/ssl/payment.saga4v.com:ro # new change 20250225
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:4242/health || exit 0"]
       interval: 60s
