@@ -1,0 +1,13 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+COPY server ./server
+COPY .env.production ./
+
+RUN npm install
+
+EXPOSE 4245
+
+CMD ["npm", "run", "server:prod"]
