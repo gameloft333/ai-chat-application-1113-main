@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "dev:test": "vite --mode test",
-    "dev:prod": "vite --mode production",
+    "dev:prod": "vite build --mode production && vite preview --port 4173",
     "dev:server": "cross-env NODE_ENV=development nodemon --env-file=.env.development server/index.js",
     "dev:ton": "nodemon --exec ts-node-esm ton-payment/index.ts",
     "build": "vite build",

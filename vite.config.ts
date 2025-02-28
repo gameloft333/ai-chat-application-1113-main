@@ -14,7 +14,12 @@ export default defineConfig(({ mode }) => {
   })
 
   return {
-    plugins: [react()],
+    plugins: [
+      react({
+        jsxRuntime: 'classic',
+        fastRefresh: process.env.NODE_ENV !== 'production'
+      })
+    ],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src')
