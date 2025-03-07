@@ -1,5 +1,10 @@
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 function generateRandomNumber(length) {
     return Math.floor(Math.random() * Math.pow(10, length))
@@ -9,7 +14,7 @@ function generateRandomNumber(length) {
 
 function updateVersion(updateType = 'patch') {
     const packagePath = path.join(__dirname, '../package.json');
-    const pkgJson = require(packagePath);
+    const pkgJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
     
     // 解析当前版本号
     const versionParts = pkgJson.version.split('.');

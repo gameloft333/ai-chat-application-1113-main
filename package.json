@@ -1,7 +1,7 @@
 {
   "name": "companion",
   "private": true,
-  "version": "1.286.705.27515",
+  "version": "1.286.706.42017",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -31,6 +31,9 @@
     "characters": "cross-env DEBUG=* tsx src/scripts/characterManager.ts"
   },
   "dependencies": {
+    "@capacitor/cli": "^7.0.1",
+    "@capacitor/core": "^7.0.1",
+    "@capacitor/ios": "^7.0.1",
     "@firebase/auth": "^1.6.0",
     "@firebase/firestore": "^4.4.2",
     "@stripe/react-stripe-js": "^2.4.0",
@@ -47,6 +50,7 @@
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "firebase": "^10.8.0",
+    "firebase-admin": "^12.0.0",
     "i18next": "^23.7.16",
     "lucide-react": "^0.344.0",
     "nodemon": "^3.0.2",
@@ -58,10 +62,10 @@
     "socket.io-client": "^4.7.2",
     "stripe": "^14.10.0",
     "tailwind-merge": "^2.5.5",
-    "ts-node": "^10.9.2",
-    "firebase-admin": "^12.0.0"
+    "ts-node": "^10.9.2"
   },
   "devDependencies": {
+    "@babel/plugin-transform-react-jsx": "^7.23.4",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/node": "^20.10.5",
@@ -70,8 +74,9 @@
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
     "@vitejs/plugin-react": "^4.2.0",
-    "@babel/plugin-transform-react-jsx": "^7.23.4",
     "autoprefixer": "^10.4.14",
+    "csv-parse": "^5.5.3",
+    "csv-stringify": "^6.4.5",
     "eslint": "^8.45.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.3",
@@ -79,11 +84,9 @@
     "rimraf": "^5.0.5",
     "tailwindcss": "^3.3.3",
     "terser": "^5.24.0",
+    "ts-node": "^10.9.2",
     "tsx": "^4.7.0",
     "typescript": "^5.0.2",
-    "ts-node": "^10.9.2",
-    "vite": "^5.0.0",
-    "csv-parse": "^5.5.3",
-    "csv-stringify": "^6.4.5"
+    "vite": "^5.0.0"
   }
 }
