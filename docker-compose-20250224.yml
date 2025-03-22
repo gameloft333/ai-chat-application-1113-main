@@ -1,0 +1,118 @@
+# version: '3.8'
+
+services:
+  frontend:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai-chat-application-1113-main-frontend-1
+    restart: unless-stopped
+    env_file: 
+      - .env.production
+    ports:
+      - "4173:4173"
+    environment:
+      - NODE_ENV=production
+      - VITE_API_URL=https://love.saga4v.com
+      - VITE_SOCKET_URL=wss://love.saga4v.com
+      - VITE_WEBSOCKET_PATH=/socket.io
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4173/ || exit 0"]
+      interval: 60s
+      timeout: 30s
+      retries: 3
+      start_period: 180s
+    networks:
+      - saga4v_network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  payment:
+    build:
+      context: .
+      dockerfile: Dockerfile.payment
+    container_name: ai-chat-application-1113-main-payment-server-1
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      - NODE_ENV=production
+      - PORT=4242
+      - CORS_ORIGIN=https://love.saga4v.com
+      - SKIP_FIREBASE_CONFIG=true
+      - SSL_CERT_PATH=/etc/nginx/ssl/payment.saga4v.com/fullchain.pem # new change 20250225
+      - SSL_KEY_PATH=/etc/nginx/ssl/payment.saga4v.com/privkey.pem # new change 20250225
+    ports:
+      - "4242:4242" # new change 20250224
+    volumes:
+      - /etc/letsencrypt/live/payment.saga4v.com/:/etc/nginx/ssl/payment.saga4v.com:ro # new change 20250225
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:4242/health || exit 0"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+    networks:
+      - saga4v_network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend # 需要创建这个文件
+    container_name: ai-chat-application-1113-main-backend-1
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      - NODE_ENV=production
+      - PORT=4245 # 使用不同端口避免与payment冲突
+      - CORS_ORIGIN=https://love.saga4v.com
+    ports:
+      - "4245:4245" # new change 20250225
+    volumes:
+      - ./server:/app/server
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4245/health || exit 0"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+    networks:
+      - saga4v_network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    command: npm run server:prod # 使用package.json中的生产服务器脚本
+
+networks:
+  saga4v_network:
+    external: true
+    name: saga4v_network

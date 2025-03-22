@@ -90,6 +90,33 @@ export class PayPalService {
             if (!currency) {
                 throw new Error('货币代码不能为空');
             }
+            
+            // 处理多语言键 - 如果是多语言键，使用通用描述文本
+            const actualDescription = description.startsWith('subscription.') 
+                ? 'Subscription Plan' 
+                : description;
+            
+            // 构建请求体
+            const requestBody = {
+                intent: 'CAPTURE',
+                application_context: {
+                    brand_name: import.meta.env.VITE_APP_NAME || 'AI Love',  // 使用环境变量
+                    landing_page: 'LOGIN',
+                    user_action: 'PAY_NOW',
+                    return_url: `${window.location.origin}/payment-callback`,
+                    cancel_url: `${window.location.origin}/payment-cancel`,
+                    shipping_preference: 'NO_SHIPPING'
+                },
+                purchase_units: [{
+                    amount: {
+                        currency_code: currency.toUpperCase(),
+                        value: price.toFixed(2)
+                    },
+                    description: actualDescription
+                }]
+            };
+            
+            console.log('PayPal 请求体:', JSON.stringify(requestBody));
 
             const response = await fetch(`${PAYPAL_CONFIG.API_URL}/v2/checkout/orders`, {
                 method: 'POST',
@@ -97,29 +124,13 @@ export class PayPalService {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${accessToken}`,
                 },
-                body: JSON.stringify({
-                    intent: 'CAPTURE',
-                    application_context: {
-                        brand_name: 'Your App Name',
-                        landing_page: 'LOGIN',
-                        user_action: 'PAY_NOW',
-                        return_url: `${window.location.origin}/payment-callback`,
-                        cancel_url: `${window.location.origin}/payment-cancel`,
-                        shipping_preference: 'NO_SHIPPING'
-                    },
-                    purchase_units: [{
-                        amount: {
-                            currency_code: currency.toUpperCase(),
-                            value: price.toFixed(2)
-                        },
-                        description
-                    }]
-                })
+                body: JSON.stringify(requestBody)
             });
 
             if (!response.ok) {
                 const errorData = await response.json();
-                console.error('PayPal API error:', errorData);
+                console.error('PayPal API 错误:', errorData);
+                console.error('错误详情:', errorData.details);  // 显示详细错误信息
                 throw new Error(`PayPal API error: ${errorData.message}`);
             }
 
@@ -140,7 +151,8 @@ export class PayPalService {
             console.error('PayPal 订单创建失败:', {
                 error: error.message,
                 response: error.response?.data,
-                status: error.response?.status
+                status: error.response?.status,
+                details: error.response?.data?.details || '无详细信息'
             });
             throw new Error('PayPal API error: ' + (error.response?.data?.message || error.message));
         }
