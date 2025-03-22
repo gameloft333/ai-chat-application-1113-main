@@ -31,6 +31,9 @@
     "characters": "cross-env DEBUG=* tsx src/scripts/characterManager.ts"
   },
   "dependencies": {
+    "@capacitor/core": "^5.6.0",
+    "@capacitor/ios": "^5.6.0",
+    "@capacitor/cli": "^5.6.0",
     "@firebase/auth": "^1.6.0",
     "@firebase/firestore": "^4.4.2",
     "@stripe/react-stripe-js": "^2.4.0",
@@ -59,7 +62,9 @@
     "stripe": "^14.10.0",
     "tailwind-merge": "^2.5.5",
     "ts-node": "^10.9.2",
-    "firebase-admin": "^12.0.0"
+    "firebase-admin": "^12.0.0",
+    "pg": "^8.11.3",
+    "pg-pool": "^3.6.1"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
