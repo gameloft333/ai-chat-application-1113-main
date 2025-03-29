@@ -3,7 +3,7 @@
 services:
   frontend:
     build: 
-      context: .  # 改为使用当前目录
+      context: ./frontend  # 只包含前端相关目录
       dockerfile: Dockerfile
     container_name: ai-chat-application-1113-main-frontend-1
     restart: unless-stopped
@@ -40,7 +40,7 @@ services:
 
   payment:
     build:
-      context: .  # 改为使用当前目录
+      context: ./payment  # 只包含payment相关目录
       dockerfile: Dockerfile.payment
     container_name: ai-chat-application-1113-main-payment-server-1
     restart: unless-stopped
