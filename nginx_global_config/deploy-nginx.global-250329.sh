@@ -358,21 +358,26 @@ check_certificates() {
             return 1
         fi
         
-        # 检查证书有效期
-        local current_time=$(date +%s)
-        local not_before=$(openssl x509 -in "$cert_path" -noout -startdate | cut -d= -f2)
-        local not_after=$(openssl x509 -in "$cert_path" -noout -enddate | cut -d= -f2)
+        # 分开声明和赋值
+        local current_time
+        local not_before
+        local not_after
+        local start_time
+        local end_time
         
-        local start_time=$(date -d "$not_before" +%s)
-        local end_time=$(date -d "$not_after" +%s)
+        current_time=$(date +%s)
+        not_before=$(openssl x509 -in "$cert_path" -noout -startdate | cut -d= -f2)
+        not_after=$(openssl x509 -in "$cert_path" -noout -enddate | cut -d= -f2)
+        start_time=$(date -d "$not_before" +%s)
+        end_time=$(date -d "$not_after" +%s)
         
-        if [ $current_time -lt $start_time ]; then
+        if [ "$current_time" -lt "$start_time" ]; then
             error "$domain 的证书尚未生效 (生效时间: $not_before)"
             error "需要重新申请证书"
             return 1
         fi
         
-        if [ $current_time -gt $end_time ]; then
+        if [ "$current_time" -gt "$end_time" ]; then
             error "$domain 的证书已过期 (过期时间: $not_after)"
             log "尝试自动更新证书..."
             
@@ -380,7 +385,7 @@ check_certificates() {
             docker-compose -f "$DOCKER_COMPOSE_FILE" down
             
             # 使用certbot更新证书
-            if certbot certonly --standalone -d $domain --force-renewal; then
+            if certbot certonly --standalone -d "$domain" --force-renewal; then
                 log "证书更新成功"
                 # 重新启动Nginx
                 docker-compose -f "$DOCKER_COMPOSE_FILE" up -d
@@ -391,8 +396,8 @@ check_certificates() {
             fi
         fi
         
-        # 检查剩余有效期
-        local days_left=$(( ($end_time - $current_time) / 86400 ))
+        # 修复算术运算
+        local days_left=$(( (end_time - current_time) / 86400 ))
         if [ $days_left -lt 30 ]; then
             warn "$domain 的证书将在 $days_left 天后过期"
         fi
@@ -513,15 +518,9 @@ debug_nginx_status() {
     local container_id=$1
     log "收集 Nginx 诊断信息..."
     
-    # 检查进程
-    docker exec $container_id sh -c "ps aux" || true
-    
-    # 检查端口绑定
-    docker exec $container_id sh -c "cat /proc/net/tcp /proc/net/tcp6" || true
-    
-    # 检查 Nginx 配置
-    docker exec $container_id sh -c "nginx -T" || true
-    
-    # 检查错误日志
-    docker exec $container_id sh -c "tail -n 50 /var/log/nginx/error.log" || true
+    # 添加双引号防止词分割
+    docker exec "$container_id" sh -c "ps aux" || true
+    docker exec "$container_id" sh -c "cat /proc/net/tcp /proc/net/tcp6" || true
+    docker exec "$container_id" sh -c "nginx -T" || true
+    docker exec "$container_id" sh -c "tail -n 50 /var/log/nginx/error.log" || true
 }
