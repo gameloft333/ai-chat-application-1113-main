@@ -13,7 +13,7 @@ dist-ssr
 *.local
 npm-debug.log
 build
-.dockerignore
+# .dockerignore
 **/.git
 **/.DS_Store
 **/node_modules

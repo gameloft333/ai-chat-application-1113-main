@@ -1,0 +1,25 @@
+# 排除所有不需要的文件
+node_modules/
+.git/
+dist/
+build/
+*.log
+.env*
+.DS_Store
+*.md
+*.zip
+*.tar.gz
+*.pdf
+*.csv
+*.sql
+*.db
+*.cache
+*.tmp
+*.bak
+*.swp
+*.swo
+*.idea
+*.vscode
+*.history
+logs/
+temp/
