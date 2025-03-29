@@ -31,3 +31,5 @@ build
 
 ~$*
 *.7z
+payment-server/.env.production.gold.old
+.env.production
