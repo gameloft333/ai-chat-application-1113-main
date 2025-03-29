@@ -313,6 +313,13 @@ check_nginx_logs() {
 # Error handling
 cleanup() {
     if [ $? -ne 0 ]; then
+        # 检查容器是否正在运行且健康
+        if docker ps | grep -q saga4v-nginx && \
+           docker exec saga4v-nginx nginx -t >/dev/null 2>&1; then
+            warn "检测到非致命错误，但服务似乎正常运行，跳过回滚..."
+            return 0
+        fi
+        
         error "部署失败，正在回滚..."
         if [ -d "$BACKUP_DIR" ]; then
             cp "$BACKUP_DIR"/* ./ 2>/dev/null || true
@@ -502,4 +509,5 @@ debug_nginx_status() {
     docker exec $container_id sh -c "nginx -T" || true
     
     # 检查错误日志
-    docker exec $container_id sh -c "tail -n 50 /var/log/nginx/error.log" || true}
+    docker exec $container_id sh -c "tail -n 50 /var/log/nginx/error.log" || true
+}
