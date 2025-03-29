@@ -96,12 +96,14 @@ check_dependencies() {
     local has_ssl=false
     
     while IFS= read -r line; do
-        # 提取域名
-        local server_name=$(echo "$line" | awk '/server_name/ {print $2}' | tr -d ';')
-        # 提取 SSL 证书路径
-        local ssl_cert=$(echo "$line" | grep -o '/etc/nginx/ssl/[^/]*/fullchain.pem' || true)
-        # 提取完整的代理地址，包括整个 proxy_pass 行
-        local proxy_pass=$(echo "$line" | grep -o 'proxy_pass http://[^;]*' | sed 's/proxy_pass http:\/\///')
+        # 分开声明和赋值
+        local server_name
+        local ssl_cert
+        local proxy_pass
+        
+        server_name=$(echo "$line" | awk '/server_name/ {print $2}' | tr -d ';')
+        ssl_cert=$(echo "$line" | grep -o '/etc/nginx/ssl/[^/]*/fullchain.pem' || true)
+        proxy_pass=$(echo "$line" | grep -o 'proxy_pass http://[^;]*' | sed 's/proxy_pass http:\/\///')
         
         if [[ -n "$server_name" ]]; then
             current_domain="$server_name"
@@ -120,11 +122,12 @@ check_dependencies() {
     # 检查配置了 SSL 的服务
     for service_addr in "${!SSL_SERVICES[@]}"; do
         local domain=${SSL_SERVICES[$service_addr]}
-        local port=$(echo "$service_addr" | grep -o ':[0-9]*$' | tr -d ':')
-        
-        # 获取所有运行中的容器名称
-        local containers=$(docker ps --format '{{.Names}}')
+        local port
+        local containers
         local matched_container=""
+        
+        port=$(echo "$service_addr" | grep -o ':[0-9]*$' | tr -d ':')
+        containers=$(docker ps --format '{{.Names}}')
         
         # 根据端口匹配容器
         while IFS= read -r container; do
@@ -193,7 +196,8 @@ health_check() {
     local wait_time=2
     
     while [ $retry -lt $max_retries ]; do
-        local container_status=$(docker inspect -f '{{.State.Status}}' saga4v-nginx 2>/dev/null || echo "not_found")
+        local container_status
+        container_status=$(docker inspect -f '{{.State.Status}}' saga4v-nginx 2>/dev/null || echo "not_found")
         
         case "$container_status" in
             "running")
@@ -225,7 +229,8 @@ verify_deployment() {
     log "[STEP 6/6] 验证部署..."
     
     # 检查 saga4v-nginx 容器状态
-    local nginx_container_id=$(docker ps -q --filter "name=saga4v-nginx")
+    local nginx_container_id
+    nginx_container_id=$(docker ps -q --filter "name=saga4v-nginx")
     if [ -z "$nginx_container_id" ]; then
         error "找不到 saga4v-nginx 容器"
         return 1
@@ -235,25 +240,25 @@ verify_deployment() {
     local check_failed=0
     
     # 1. 检查 Nginx 主进程
-    if ! docker exec $nginx_container_id sh -c "cat /proc/1/comm" | grep -q "nginx"; then
+    if ! docker exec "$nginx_container_id" sh -c "cat /proc/1/comm" | grep -q "nginx"; then
         error "Nginx 主进程未运行"
         check_failed=1
     fi
     
     # 2. 检查 Nginx worker 进程
-    if ! docker exec $nginx_container_id sh -c "cat /proc/[0-9]*/comm" | grep -q "nginx"; then
+    if ! docker exec "$nginx_container_id" sh -c "cat /proc/[0-9]*/comm" | grep -q "nginx"; then
         error "Nginx worker 进程未运行"
         check_failed=1
     fi
     
     # 3. 检查配置文件权限
-    if ! docker exec $nginx_container_id sh -c "ls -l /etc/nginx/nginx.conf"; then
+    if ! docker exec "$nginx_container_id" sh -c "ls -l /etc/nginx/nginx.conf"; then
         error "无法访问 Nginx 配置文件"
         check_failed=1
     fi
     
     # 4. 检查日志目录权限
-    if ! docker exec $nginx_container_id sh -c "ls -l /var/log/nginx/"; then
+    if ! docker exec "$nginx_container_id" sh -c "ls -l /var/log/nginx/"; then
         error "无法访问日志目录"
         check_failed=1
     fi
@@ -272,8 +277,8 @@ verify_deployment() {
     # 如果任何检查失败，收集诊断信息
     if [ $check_failed -eq 1 ]; then
         log "收集诊断信息..."
-        docker exec $nginx_container_id sh -c "nginx -T" || true
-        docker logs $nginx_container_id
+        docker exec "$nginx_container_id" sh -c "nginx -T" || true
+        docker logs "$nginx_container_id"
         return 1
     fi
     
@@ -294,7 +299,7 @@ check_nginx_logs() {
     # 使用volume而不是直接操作容器内部
     docker run --rm \
         --volumes-from saga4v-nginx \
-        -v $(pwd)/scripts:/scripts \
+        -v "$(pwd)/scripts:/scripts" \
         nginx:stable-alpine \
         sh -c '
             mkdir -p /var/log/nginx && \
@@ -302,7 +307,16 @@ check_nginx_logs() {
             chmod 755 /var/log/nginx
         '
     
-    if [ $? -eq 0 ]; then
+    # 直接检查命令的退出码
+    if docker run --rm \
+        --volumes-from saga4v-nginx \
+        -v "$(pwd)/scripts:/scripts" \
+        nginx:stable-alpine \
+        sh -c '
+            mkdir -p /var/log/nginx && \
+            chown -R nginx:nginx /var/log/nginx && \
+            chmod 755 /var/log/nginx
+        '; then
         log "✓ Nginx 日志目录配置完成"
     else
         error "Nginx 日志目录配置失败"
