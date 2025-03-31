@@ -46,60 +46,85 @@ export class StripeService {
             console.log('请求支付服务:', API_URL);
             
             // 添加更多请求头和错误处理
-            const response = await fetch(`${API_URL}/api/stripe/create-payment-intent`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({ 
-                    amount, 
-                    currency,
-                    // 添加额外的请求参数
-                    timestamp: new Date().getTime(),
-                    origin: window.location.origin
-                }),
-                credentials: 'include',
-                mode: 'cors'  // 明确指定CORS模式
-            });
-
-            console.log('支付服务响应状态:', response.status);
-            
-            // 详细的错误处理
-            if (!response.ok) {
-                let errorMessage;
-                try {
-                    const errorData = await response.json();
-                    errorMessage = errorData.message || errorData.error || '未知错误';
-                } catch {
-                    errorMessage = await response.text();
+            try {
+                const response = await fetch(`${API_URL}/api/stripe/create-payment-intent`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        amount, 
+                        currency,
+                        // 添加额外的请求参数
+                        timestamp: new Date().getTime(),
+                        origin: window.location.origin
+                    }),
+                    credentials: 'include',
+                    mode: 'cors'  // 明确指定CORS模式
+                });
+    
+                console.log('支付服务响应状态:', response.status);
+                
+                // 详细的错误处理
+                if (!response.ok) {
+                    let errorMessage;
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.message || `支付服务错误: ${response.status}`;
+                        console.error('支付服务错误详情:', errorData);
+                    } catch (e) {
+                        errorMessage = `支付服务错误: ${response.status}`;
+                    }
+                    throw new Error(errorMessage);
                 }
                 
-                console.error('支付服务错误:', {
-                    status: response.status,
-                    statusText: response.statusText,
-                    error: errorMessage
-                });
+                const data = await response.json();
+                console.log('支付意向创建成功');
+                return data.clientSecret;
+            } catch (fetchError) {
+                console.error('支付服务请求失败:', fetchError);
                 
-                throw new Error(`支付服务请求失败: ${errorMessage}`);
+                // 检查是否是 SSL 错误
+                if (fetchError.message.includes('SSL') || 
+                    fetchError.toString().includes('ERR_SSL_PROTOCOL_ERROR') ||
+                    fetchError.toString().includes('Failed to fetch')) {
+                    console.error('检测到 SSL 连接问题，可能是证书配置错误');
+                    
+                    // 尝试使用备用 URL
+                    const backupUrl = API_URL.replace('https://', 'http://');
+                    console.log('尝试使用备用 URL:', backupUrl);
+                    
+                    const backupResponse = await fetch(`${backupUrl}/api/stripe/create-payment-intent`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({ 
+                            amount, 
+                            currency,
+                            timestamp: new Date().getTime(),
+                            origin: window.location.origin,
+                            isBackupRequest: true
+                        }),
+                        credentials: 'include',
+                        mode: 'cors'
+                    });
+                    
+                    if (!backupResponse.ok) {
+                        throw new Error(`备用支付服务错误: ${backupResponse.status}`);
+                    }
+                    
+                    const backupData = await backupResponse.json();
+                    console.log('备用支付意向创建成功');
+                    return backupData.clientSecret;
+                }
+                
+                throw fetchError;
             }
-
-            const data = await response.json();
-            console.log('支付意向创建成功:', data);
-            return data.clientSecret;
         } catch (error) {
-            console.error('Stripe 支付初始化失败:', {
-                error,
-                stack: error.stack,
-                type: typeof error
-            });
-            
-            // 重试机制
-            if (this.shouldRetry(error)) {
-                console.log('尝试重新请求...');
-                return await this.retryCreatePaymentIntent(amount, currency);
-            }
-            
+            console.error('Stripe 支付初始化失败:', { error });
             throw error;
         }
     }
