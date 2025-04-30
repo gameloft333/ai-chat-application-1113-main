@@ -241,24 +241,28 @@ const getPlanLevelName = (planLevel?: string, duration?: string) => {
             </div>
 
             {/* UID显示 */}
-            <div className="flex items-center justify-between text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50 p-2 rounded-lg">
-              <div className="flex items-center">
-                <Key className="w-4 h-4 mr-2" />
-                <span className="text-sm">{getMaskedUid()}</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => setShowUid(!showUid)}
-                  className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-                >
-                  {showUid ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-                <button
-                  onClick={handleCopyUid}
-                  className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-                >
-                  {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                </button>
+            <div className="flex flex-col text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50 p-2 rounded-lg">
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center min-w-0 flex-1">
+                  <Key className="w-4 h-4 mr-2 flex-shrink-0" />
+                  <span className={`text-sm ${showUid ? 'break-all' : 'truncate'}`}>{getMaskedUid()}</span>
+                </div>
+                <div className="flex items-center space-x-2 ml-2 flex-shrink-0">
+                  <button
+                    onClick={() => setShowUid(!showUid)}
+                    className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                    title={showUid ? t('common.hide') : t('common.show')}
+                  >
+                    {showUid ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                  <button
+                    onClick={handleCopyUid}
+                    className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                    title={t('common.copy')}
+                  >
+                    {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
             </div>
 
