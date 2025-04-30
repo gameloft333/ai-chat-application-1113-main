@@ -11,6 +11,8 @@ import { Modal } from 'antd';
 import { SUBSCRIPTION_PLANS } from '../config/subscription-config';
 import { useSubscription } from '../contexts/SubscriptionContext';
 import LoginModal from './LoginModal';
+import { logger } from '../utils/logger';
+import { getLoggerConfig, LogLevel } from '../config/logger-config';
 
 interface CharacterSelectorProps {
   onSelectCharacter: (character: Character) => void;
@@ -36,7 +38,7 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
   const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
 
   useEffect(() => {
-    console.log('Language Check:', {
+    logger.debug('Language Check:', {
       currentLanguage,
       availableLanguages: ['zh', 'en']
     });
@@ -44,10 +46,13 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
 
   // 添加调试日志
   useEffect(() => {
-    console.log('Current Language:', currentLanguage);
-    console.log('Characters data:', sortedCharacters);
-    sortedCharacters.forEach(char => {
-      console.log(`Character ${char.id} i18n:`, char.i18n?.[currentLanguage]);
+    logger.debug('Character Selection State:', {
+      currentLanguage,
+      characterCount: sortedCharacters.length,
+      characters: sortedCharacters.map(char => ({
+        id: char.id,
+        i18n: char.i18n?.[currentLanguage]
+      }))
     });
   }, [sortedCharacters, currentLanguage]);
 
@@ -151,7 +156,7 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
       ? SUBSCRIPTION_PLANS.CHARACTER_LIMITS.trial 
       : SUBSCRIPTION_PLANS.CHARACTER_LIMITS[subscriptionType || 'trial'];
     
-    console.log('获取最大角色数:', {
+    logger.debug('Character Limit Check:', {
       currentUser: !!currentUser,
       subscriptionType,
       maxChars
@@ -190,9 +195,20 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
         return;
       }
 
+      logger.debug('Attempting to select character:', {
+        characterId: character.id,
+        userId: currentUser.uid
+      });
+
       const result = await CharacterStatsService.incrementCharacterChat(character.id);
       
       if (!result.success) {
+        logger.warn('Character selection failed:', {
+          reason: result.reason,
+          characterId: character.id,
+          userId: currentUser.uid
+        });
+
         if (result.reason === 'notLoggedIn') {
           Modal.error({
             title: t('error.notLoggedIn'),
@@ -222,8 +238,14 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
       const newUsedCharacters = usedCharacters + 1;
       setUsedCharacters(newUsedCharacters);
       onSelectCharacter(character);
+
+      logger.info('Character selected successfully:', {
+        characterId: character.id,
+        userId: currentUser.uid,
+        newUsedCharacters
+      });
     } catch (error) {
-      console.error('Error in handleSelectCharacter:', error);
+      logger.error('Error in handleSelectCharacter:', error);
       Modal.error({
         title: t('error.selectionFailed'),
         content: t('error.unexpectedError')
@@ -239,24 +261,29 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
         const used = Object.keys(stats).length;
         setUsedCharacters(used);
         
-        console.log('已使用角色数:', used, '最大限制:', maxCharacters);
+        logger.debug('Character usage stats:', {
+          used,
+          maxLimit: maxCharacters,
+          userId: currentUser.uid
+        });
       }
     };
     fetchUsedCharacters();
   }, [currentUser]);
 
   const renderCharacterInfo = (character: Character) => {
-    // 从 i18n 数据中获取描述信息
     const description = character.i18n?.[currentLanguage]?.description;
     const age = character.i18n?.[currentLanguage]?.age;
 
-    // 添加调试日志
-    console.log(`Rendering info for ${character.id}:`, {
-      currentLanguage,
-      description,
-      age,
-      i18n: character.i18n
-    });
+    const config = getLoggerConfig();
+    if (config.enabled && config.level === LogLevel.DEBUG) {
+      logger.debug('Rendering character info:', {
+        characterId: character.id,
+        currentLanguage,
+        hasDescription: !!description,
+        hasAge: !!age
+      });
+    }
 
     return (
       <>
@@ -270,13 +297,17 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
     );
   };
 
-  console.log('显示的角色数量:', sortedCharacters.length);
-  console.log('所有可用角色:', characters.length);
-  console.log('当前订阅类型:', subscriptionType);
-  console.log('当前用户:', currentUser?.uid);
-  console.log('订阅类型:', subscriptionType);
-  console.log('角色限制:', SUBSCRIPTION_PLANS.CHARACTER_LIMITS[subscriptionType || 'normal']);
-  console.log('已使用角色:', usedCharacters);
+  const config = getLoggerConfig();
+  if (config.enabled && config.level === LogLevel.DEBUG) {
+    logger.debug('Character Selector State:', {
+      totalCharacters: sortedCharacters.length,
+      availableCharacters: characters.length,
+      subscriptionType,
+      userId: currentUser?.uid,
+      characterLimit: SUBSCRIPTION_PLANS.CHARACTER_LIMITS[subscriptionType || 'normal'],
+      usedCharacters
+    });
+  }
 
   return (
     <>
@@ -305,11 +336,6 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
                 />
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 rounded-b-lg">
                   <h3 className="text-white text-lg font-bold mb-1">{character.name}</h3>
-                  {/* 添加调试日志 */}
-                  {console.log('Character data:', character)}
-                  {console.log('i18n data:', character.i18n)}
-                  {console.log('Current language:', currentLanguage)}
-                  
                   {renderCharacterInfo(character)}
                 </div>
               </div>

@@ -35,6 +35,7 @@ export interface PaymentRecord {
     expiredAt: Date;
     completedAt?: Date;
     paymentAccount?: string;
+    userEmail?: string;
     paymentChannel: PaymentChannel;
     duration: SubscriptionDuration;
     tonAmount?: number;

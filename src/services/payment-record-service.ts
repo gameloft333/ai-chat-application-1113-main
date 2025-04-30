@@ -2,6 +2,7 @@ import { db } from '../config/firebase-config';
 import { collection, doc, setDoc, getDoc, query, where, getDocs, updateDoc, addDoc, limit, orderBy } from 'firebase/firestore';
 import { PaymentRecord, PaymentChannel } from '../types/payment';
 import { auth } from '../config/firebase-config';
+import { logger } from '../utils/logger';
 
 interface SubscriptionStatus {
   isSubscribed: boolean;
@@ -28,7 +29,7 @@ export class PaymentRecordService {
                 paymentAccount: record.paymentAccount || ''
             });
         } catch (error) {
-            console.error('创建支付记录失败:', error);
+            logger.error('创建支付记录失败:', error);
             throw error;
         }
     }
@@ -44,7 +45,7 @@ export class PaymentRecordService {
             
             await updateDoc(docRef, updateData);
         } catch (error) {
-            console.error('更新支付记录失败:', error);
+            logger.error('更新支付记录失败:', error);
             throw error;
         }
     }
@@ -73,7 +74,7 @@ export class PaymentRecordService {
                 });
             }
         } catch (error) {
-            console.error('更新支付账号信息失败:', error);
+            logger.error('更新支付账号信息失败:', error);
             throw error;
         }
     }
@@ -99,7 +100,7 @@ export class PaymentRecordService {
             }
             return null;
         } catch (error) {
-            console.error('获取支付记录失败:', error);
+            logger.error('获取支付记录失败:', error);
             return null;
         }
     }
@@ -126,7 +127,7 @@ export class PaymentRecordService {
         
         while (retryCount < maxRetries) {
             try {
-                console.log(`尝试获取活跃订阅 (尝试 ${retryCount + 1}/${maxRetries})`, { uid });
+                logger.debug(`尝试获取活跃订阅 (尝试 ${retryCount + 1}/${maxRetries})`, { uid });
                 
                 const paymentsRef = collection(db, this.COLLECTION);
                 const q = query(
@@ -143,7 +144,7 @@ export class PaymentRecordService {
                     const doc = querySnapshot.docs[0];
                     const data = doc.data();
                     
-                    console.log('获取到订阅数据:', {
+                    logger.debug('获取到订阅数据:', {
                         id: doc.id,
                         expiredAt: data.expiredAt,
                         status: data.status
@@ -158,20 +159,20 @@ export class PaymentRecordService {
                     } as PaymentRecord;
                 }
                 
-                console.log('未找到活跃订阅');
+                logger.debug('未找到活跃订阅');
                 return null;
                 
             } catch (error) {
-                console.error(`获取活跃订阅失败 (尝试 ${retryCount + 1}/${maxRetries}):`, error);
+                logger.error(`获取活跃订阅失败 (尝试 ${retryCount + 1}/${maxRetries}):`, error);
                 
                 if (error instanceof Error && error.message.includes('PERMISSION_DENIED')) {
-                    console.error('权限被拒绝，请检查用户认证状态');
+                    logger.error('权限被拒绝，请检查用户认证状态');
                     return null;
                 }
                 
                 retryCount++;
                 if (retryCount === maxRetries) {
-                    console.error('达到最大重试次数，获取活跃订阅失败');
+                    logger.error('达到最大重试次数，获取活跃订阅失败');
                     return null;
                 }
                 
@@ -214,7 +215,7 @@ export class PaymentRecordService {
                 await updateDoc(docRef, updateData);
             }
         } catch (error) {
-            console.error('更新支付状态失败:', error);
+            logger.error('更新支付状态失败:', error);
             throw error;
         }
     }
@@ -224,7 +225,7 @@ export class PaymentRecordService {
             // 添加调试日志
             const validateUserAuth = () => {
                 const user = auth.currentUser;
-                console.log('认证状态:', {
+                logger.debug('认证状态:', {
                     isAuthenticated: !!user,
                     uid: user?.uid,
                     email: user?.email,
@@ -235,17 +236,17 @@ export class PaymentRecordService {
 
             // 在调用获取订阅记录之前验证
             if (!validateUserAuth()) {
-                console.error('用户未登录或认证失败');
+                logger.error('用户未登录或认证失败');
                 return null;
             }
 
             // 确保查询的邮箱与当前用户匹配
             if (email !== auth.currentUser.email) {
-                console.warn('getActiveSubscriptionByEmail: 无权访问其他用户的订阅记录');
+                logger.warn('getActiveSubscriptionByEmail: 无权访问其他用户的订阅记录');
                 return null;
             }
 
-            console.log('开始查询订阅记录:', {
+            logger.debug('开始查询订阅记录:', {
                 email,
                 currentUser: auth.currentUser.uid,
                 isAuthenticated: !!auth.currentUser
@@ -274,7 +275,7 @@ export class PaymentRecordService {
 
             return validRecords[0] || null;
         } catch (error) {
-            console.error('获取邮箱订阅记录失败:', error);
+            logger.error('获取邮箱订阅记录失败:', error);
             return null;
         }
     }
@@ -287,7 +288,7 @@ export class PaymentRecordService {
             }
             return null;
         } catch (error) {
-            console.error('获取到期时间失败:', error);
+            logger.error('获取到期时间失败:', error);
             return null;
         }
     }
@@ -302,7 +303,7 @@ export class PaymentRecordService {
             const updatedRecord = await this.getPaymentRecordByOrderId(orderId);
             
             if (updatedRecord) {
-                console.log('支付成功，更新后的记录:', updatedRecord);
+                logger.debug('支付成功，更新后的记录:', updatedRecord);
                 // 触发订阅更新事件
                 window.dispatchEvent(new CustomEvent('subscription-updated', {
                     detail: {
@@ -314,7 +315,7 @@ export class PaymentRecordService {
                 }));
             }
         } catch (error) {
-            console.error('处理支付成功失败:', error);
+            logger.error('处理支付成功失败:', error);
             throw error;
         }
     }
@@ -348,7 +349,7 @@ export class PaymentRecordService {
 */
     static async getSubscriptionStatus(uid: string, userEmail?: string): Promise<SubscriptionStatus> {
         try {
-            console.log('开始查询订阅状态:', { uid, userEmail });
+            logger.debug('开始查询订阅状态:', { uid, userEmail });
             const activeSubscription = await this.getActiveSubscription(uid);
             
             if (activeSubscription && activeSubscription.expiredAt) {
@@ -369,7 +370,7 @@ export class PaymentRecordService {
                     const diffTime = end.getTime() - start.getTime();
                     const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                     
-                    console.log('天数计算详情:', {
+                    logger.debug('天数计算详情:', {
                         startDate: start.toISOString(),
                         endDate: end.toISOString(),
                         diffTime,
@@ -393,7 +394,7 @@ export class PaymentRecordService {
             
             return { isSubscribed: false };
         } catch (error) {
-            console.error('获取订阅状态失败:', error);
+            logger.error('获取订阅状态失败:', error);
             return { isSubscribed: false };
         }
     }
@@ -408,7 +409,7 @@ export class PaymentRecordService {
         planId: 'trial' | 'basic' | 'pro' | 'premium'
     ): Promise<void> {
         try {
-            console.log('创建 TON 支付记录:', {
+            logger.debug('创建 TON 支付记录:', {
                 uid,
                 userEmail,
                 orderId,
@@ -449,9 +450,9 @@ export class PaymentRecordService {
             };
 
             await this.createPaymentRecord(paymentRecord);
-            console.log('TON支付记录已创建:', paymentRecord);
+            logger.debug('TON支付记录已创建:', paymentRecord);
         } catch (error) {
-            console.error('创建TON支付记录失败:', error);
+            logger.error('创建TON支付记录失败:', error);
             throw error;
         }
     }
@@ -461,7 +462,7 @@ export class PaymentRecordService {
         walletAddress: string
     ): Promise<void> {
         try {
-            console.log('处理TON支付成功:', { orderId, walletAddress });
+            logger.debug('处理TON支付成功:', { orderId, walletAddress });
             
             // 更新支付状态
             await this.updatePaymentStatus(orderId, 'completed');
@@ -491,7 +492,7 @@ export class PaymentRecordService {
                 }));
             }
         } catch (error) {
-            console.error('处理TON支付成功失败:', error);
+            logger.error('处理TON支付成功失败:', error);
             throw error;
         }
     }
@@ -524,7 +525,7 @@ export class PaymentRecordService {
             }
             return null;
         } catch (error) {
-            console.error('获取TON支付记录失败:', error);
+            logger.error('获取TON支付记录失败:', error);
             return null;
         }
     }

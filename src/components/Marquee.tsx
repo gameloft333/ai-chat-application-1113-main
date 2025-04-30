@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { MarqueeMessage } from '../config/marquee-config';
 import { io, Socket } from 'socket.io-client';
+import { logger } from '../utils/logger';
 
 interface MarqueeProps {
   websocketUrl: string;
@@ -10,42 +11,70 @@ interface MarqueeProps {
 export const Marquee: React.FC<MarqueeProps> = ({ websocketUrl }) => {
   const [messages, setMessages] = useState<MarqueeMessage[]>([]);
   const [socket, setSocket] = useState<Socket | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
   const { currentLanguage } = useLanguage();
   
   useEffect(() => {
-    console.log('连接到跑马灯WebSocket:', websocketUrl);
-    const newSocket = io(websocketUrl);
+    logger.debug('Initializing Marquee WebSocket:', { websocketUrl });
+    
+    if (!websocketUrl) {
+      logger.error('WebSocket URL not provided');
+      return;
+    }
+
+    const newSocket = io(websocketUrl, {
+      transports: ['websocket', 'polling'],
+      reconnectionAttempts: 5,
+      reconnectionDelay: 2000,
+      timeout: 20000,
+      withCredentials: true,
+      forceNew: true
+    });
     
     newSocket.on('connect', () => {
-      console.log('跑马灯WebSocket已连接');
+      logger.info('Marquee WebSocket connected');
+      setIsConnected(true);
     });
     
     newSocket.on('marquee:update', (newMessages: MarqueeMessage[]) => {
-      console.log('收到新的跑马灯消息:', newMessages);
+      logger.debug('Received new marquee messages:', {
+        count: newMessages.length,
+        language: currentLanguage
+      });
       setMessages(newMessages);
     });
     
     newSocket.on('error', (error) => {
-      console.error('跑马灥WebSocket错误:', error);
+      logger.error('Marquee WebSocket error:', {
+        error,
+        socketState: newSocket.connected
+      });
+      setIsConnected(false);
+    });
+
+    newSocket.on('disconnect', (reason) => {
+      logger.info('Marquee WebSocket disconnected:', { reason });
+      setIsConnected(false);
     });
     
     setSocket(newSocket);
     
     return () => {
-      console.log('关闭跑马灯WebSocket连接');
+      logger.debug('Cleaning up Marquee WebSocket connection');
       newSocket.close();
     };
   }, [websocketUrl]);
   
   useEffect(() => {
-    // 设置动画持续时间
-    document.documentElement.style.setProperty(
-      '--marquee-duration', 
-      `${import.meta.env.VITE_MARQUEE_ANIMATION_DURATION}ms`
-    );
+    const duration = Number(import.meta.env.VITE_MARQUEE_ANIMATION_DURATION) || 20000;
+    logger.debug('Setting marquee animation duration:', { duration });
+    document.documentElement.style.setProperty('--marquee-duration', `${duration}ms`);
   }, []);
   
-  if (messages.length === 0) return null;
+  if (messages.length === 0) {
+    logger.debug('No messages to display');
+    return null;
+  }
   
   return (
     <div className="marquee-container overflow-hidden bg-gray-800 p-2">
