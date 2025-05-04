@@ -106,7 +106,24 @@ export default {
         error: 'Error processing payment, please contact customer service',
         invalidToken: 'Invalid payment information',
         selectMethod: 'Select Payment Method',
-        stripe: 'Pay with Stripe',
+        stripe: {
+            title: 'Card Payment',
+            amount: 'Payment Amount',
+            cardDetails: 'Card Details',
+            processing: 'Processing payment...',
+            success: 'Payment successful!',
+            failed: 'Payment failed, please try again',
+            error: {
+                default: 'An error occurred during payment processing. Please try again or contact support.',
+                minimumAmount: 'Payment amount must be at least {{min}}. Your amount: {{current}}',
+                cardDeclined: 'Your card was declined. Please try another payment method.',
+                invalidCard: 'Invalid card information. Please check and try again.',
+                expired: 'Your card has expired. Please use another card.',
+                insufficientFunds: 'Insufficient funds. Please use another payment method.',
+                processingError: 'An error occurred while processing your payment. Please try again.',
+                networkError: 'Network error. Please check your connection and try again.'
+            }
+        },
         paypal: 'Pay with PayPal',
         stripeProcessing: 'Processing Stripe payment...',
         stripeSuccess: 'Stripe payment successful!',
@@ -164,7 +181,23 @@ export default {
             processingFailed: 'Payment processing failed',
             liveTestCard: 'Invalid card number: Please use a real payment card instead of a test card',
             cardDeclined: 'Card declined, please check your card information or try another payment method',
-            cardValidationFailed: 'Card validation failed'
+            cardValidationFailed: 'Card validation failed',
+            webhookError: 'Webhook processing error',
+            signatureError: 'Signature verification failed',
+            payloadError: 'Invalid payload format',
+            eventTypeError: 'Unhandled event type',
+            default: 'An unexpected payment error occurred. Please try again or contact support.'
+        },
+        webhook: {
+            signatureVerificationFailed: 'Webhook signature verification failed',
+            invalidPayload: 'Invalid webhook payload',
+            processingError: 'Error processing webhook event',
+            eventHandled: 'Webhook event handled successfully',
+            eventType: 'Event type: {{type}}',
+            paymentIntentCreated: 'Payment intent created',
+            paymentIntentSucceeded: 'Payment intent succeeded',
+            paymentIntentFailed: 'Payment intent failed',
+            paymentIntentCancelled: 'Payment intent cancelled'
         }
     },
     alerts: {

@@ -1,49 +1,81 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper functions
+    // 通用辅助函数
     function isAuthenticated() {
       return request.auth != null;
     }
     
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
+    }    
+    
+    // 数据验证辅助函数
+    function isValidStatus(status, allowedStatuses) {
+      return status is string && status in allowedStatuses;
     }
 
-    // User profiles
+    function isValidTimestamp(time) {
+      return time is timestamp && time <= request.time;
+    }
+
+    // User profiles - 允许admin SDK访问
     match /users/{userId} {
-      allow read: if request.auth != null && request.auth.uid == userId;
-      allow update: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if isOwner(userId) || request.auth.token.admin == true;
     }
 
     // Token transactions
     match /transactions/{transactionId} {
-      allow read: if isAuthenticated() && 
-        request.auth.uid == resource.data.userId;
-      allow create: if isAuthenticated() && 
-        request.auth.uid == request.resource.data.userId;
+      allow read: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
     }
 
+    // User checkins
     match /userCheckins/{userId} {
-      allow read, write: if 
-        request.auth != null && 
-        (request.auth.uid == userId || userId == 'test');
+      allow read, write: if isOwner(userId) || userId == 'test';
     }
 
+    // User profiles
     match /userProfiles/{userId} {
-      allow read, write: if 
-        request.auth != null && 
-        (request.auth.uid == userId || userId == 'test');
+      allow read, write: if isOwner(userId) || userId == 'test';
     }
 
     // Orders
     match /orders/{orderId} {
-      allow read: if request.auth != null && request.auth.uid == resource.data.uid;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null && (
-        request.auth.uid == resource.data.uid ||
+      allow read: if isOwner(resource.data.uid);
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        isOwner(resource.data.uid) ||
         request.resource.data.status == 'completed'
       );
+    }
+    
+    // Payment records 规则
+    match /paymentRecords/{paymentId} {
+      // 允许已认证用户通过邮箱查询自己的记录
+      allow read: if isAuthenticated() && (
+        isOwner(resource.data.uid) || 
+        resource.data.email == request.auth.token.email);
+
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // Payment intents
+    match /paymentIntents/{intentId} {
+      allow read: if isOwner(resource.data.userId);
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // Subscription records
+    match /subscriptions/{subscriptionId} {
+      allow read: if isOwner(resource.data.userId);
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
   }
 }

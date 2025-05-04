@@ -164,6 +164,17 @@ export default {
             cvc: 'CVC',
             postal: '邮编'
         },
+        webhook: {
+            signatureVerificationFailed: 'Webhook签名验证失败',
+            invalidPayload: '无效的Webhook负载',
+            processingError: '处理Webhook事件时出错',
+            eventHandled: 'Webhook事件处理成功',
+            eventType: '事件类型：{{type}}',
+            paymentIntentCreated: '支付意向已创建',
+            paymentIntentSucceeded: '支付意向已成功',
+            paymentIntentFailed: '支付意向失败',
+            paymentIntentCancelled: '支付意向已取消'
+        },
         errors: {
             postalCode: '请输入完整的邮政编码',
             initFailed: '支付服务初始化失败',
@@ -172,7 +183,12 @@ export default {
             processingFailed: '支付处理失败',
             liveTestCard: '无效的支付卡号：请使用真实的支付卡，而不是测试卡号',
             cardDeclined: '支付卡被拒绝，请检查卡片信息或尝试使用其他支付方式',
-            cardValidationFailed: '支付卡验证失败'
+            cardValidationFailed: '支付卡验证失败',
+            webhookError: 'Webhook处理错误',
+            signatureError: '签名验证失败',
+            payloadError: '无效的负载格式',
+            eventTypeError: '未处理的事件类型',
+            default: '发生意外的支付错误。请重试或联系支持人员。'
         }
     },
     alerts: {
