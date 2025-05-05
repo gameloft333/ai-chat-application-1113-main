@@ -7,6 +7,12 @@ import { Server } from 'socket.io';
 import http from 'http';
 import { generateRandomColor } from './utils/color-generator.js';
 import WebhookService from './services/WebhookService.js';
+import { fileURLToPath } from 'url';
+
+// --- Add Firebase Admin and Supabase --- 
+import admin from 'firebase-admin';
+import { createClient } from '@supabase/supabase-js';
+// --- End Add --- 
 
 // 根据 NODE_ENV 加载对应的环境变量文件
 const envFile = process.env.NODE_ENV === 'production' 
@@ -26,6 +32,8 @@ console.log('当前环境:', process.env.NODE_ENV);
 console.log('环境文件路径:', envPath);
 console.log('Stripe密钥配置:', !!process.env.STRIPE_SECRET_KEY);
 console.log('Webhook密钥配置:', !!process.env.STRIPE_WEBHOOK_SECRET);
+// Add console log for the intended Stripe Webhook URL
+console.log('Stripe Webhook URL:', process.env.VITE_STRIPE_WEBHOOK_URL || '未配置');
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('未设置 STRIPE_SECRET_KEY 环境变量');
@@ -227,3 +235,150 @@ server.listen(port, () => {
 server.on('listening', () => {
   console.log(`服务器健康检查就绪，运行在 http://localhost:${port}/health`);
 });
+
+// --- Initialize Supabase Admin Client --- 
+const supabaseUrl = process.env.PROJECT_URL;
+const supabaseServiceKey = process.env.FUNC_SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !supabaseServiceKey) {
+    console.error('Missing Supabase URL or Service Role Key in environment variables!');
+}
+
+// Create a single instance of the Supabase client for the server
+// IMPORTANT: Use the Service Role Key here for admin privileges
+// Remove non-null assertions for JS
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey); 
+console.log('Supabase Admin Client initialized (or attempted).');
+// --- End Supabase Admin Init --- 
+
+// --- Add API Route for User Sync --- 
+app.post('/api/sync-user', async (req, res) => {
+    console.log('[API /api/sync-user] Received request'); // Restore original log
+    const { idToken } = req.body;
+
+    if (!idToken) {
+        console.error('[API /api/sync-user] Missing idToken');
+        return res.status(400).json({ error: 'Missing idToken' });
+    }
+
+    try {
+        // 1. Verify Firebase ID Token
+        console.log('[API /api/sync-user] Verifying Firebase token...');
+        const decodedToken = await admin.auth().verifyIdToken(idToken);
+        const firebaseUid = decodedToken.uid;
+        const email = decodedToken.email;
+        const displayName = decodedToken.name;
+        const photoURL = decodedToken.picture;
+        console.log(`[API /api/sync-user] Token verified for UID: ${firebaseUid}`);
+
+        // Use the initialized Supabase Admin Client
+        // 2. Check if user exists in public.users by firebase_uid
+        console.log(`[API /api/sync-user] Checking Supabase public.users for firebase_uid: ${firebaseUid}`);
+        const { data: existingUser, error: selectError } = await supabaseAdmin
+            .from('users')
+            .select('*')
+            .eq('firebase_uid', firebaseUid)
+            .maybeSingle();
+
+        if (selectError) {
+            console.error('[API /api/sync-user] Error selecting user by firebase_uid:', selectError);
+            throw selectError;
+        }
+
+        let finalSupabaseProfile = null;
+
+        // 3. User Exists - Update
+        if (existingUser) {
+            // ... (Keep original update logic) ...
+            console.log(`[API /api/sync-user] Found existing user by firebase_uid (${existingUser.id}). Updating...`);
+            const updateData = {
+                last_login_at: new Date().toISOString(),
+                email: email || existingUser.email,
+                ...(displayName && { username: displayName }),
+                ...(photoURL && { avatar_url: photoURL }),
+            };
+            const { data: updatedUser, error: updateError } = await supabaseAdmin
+                .from('users')
+                .update(updateData)
+                .eq('id', existingUser.id)
+                .select('*')
+                .single();
+            if (updateError) { /* handle error */ throw updateError; }
+            finalSupabaseProfile = updatedUser;
+            console.log(`[API /api/sync-user] User ${updatedUser?.id} updated successfully.`);
+        } else {
+            // 4. User Does Not Exist by firebase_uid - Check auth.users & Insert/Link
+            console.log(`[API /api/sync-user] User not found by firebase_uid. Checking auth.users for email: ${email}`);
+            
+            // 4a. Find user in Supabase Auth by email
+            const { data: { users: authUsers }, error: authListError } = await supabaseAdmin.auth.admin.listUsers({
+                filter: `email = "${email}"`,
+                limit: 1
+            });
+            
+            if (authListError && authListError.message !== "No users found matching the provided criteria.") {
+                 console.error('[API /api/sync-user] Error searching Supabase auth users by email:', authListError);
+                 throw new Error('Failed to check Supabase auth users.');
+             }
+
+            let supabaseUserId = null;
+            let isNewSupabaseAuthUser = false;
+
+            if (authUsers && authUsers.length > 0) {
+                supabaseUserId = authUsers[0].id;
+                console.log(`[API /api/sync-user] Found existing Supabase auth user by email: ${supabaseUserId}`);
+            } else {
+                // 4b. User doesn't exist in Supabase Auth - Create them (Simplified call)
+                console.log(`[API /api/sync-user] No Supabase auth user found for email ${email}. Creating...`);
+                const { data: { user: newAuthUser }, error: createAuthError } = await supabaseAdmin.auth.admin.createUser({
+                    email: email
+                    // Keep email_confirm and metadata commented out
+                });
+
+                if (createAuthError) {
+                    console.error('[API /api/sync-user] Error creating Supabase auth user:', createAuthError);
+                    throw createAuthError; // This is still the likely failure point
+                }
+                supabaseUserId = newAuthUser.id;
+                isNewSupabaseAuthUser = true;
+                console.log(`[API /api/sync-user] Created new Supabase auth user: ${supabaseUserId}`);
+            }
+
+            // 4c. Now Upsert into public.users using the determined supabaseUserId
+            console.log(`[API /api/sync-user] Upserting into public.users for Supabase ID: ${supabaseUserId}`);
+            const upsertData = {
+                id: supabaseUserId,
+                firebase_uid: firebaseUid,
+                email: email,
+                username: displayName || email?.split('@')[0] || 'New User',
+                avatar_url: photoURL,
+                last_login_at: new Date().toISOString(),
+                subscription_status: 'normal',
+                subscription_expires_at: null,
+                metadata: { provider: 'firebase' }, // Restore minimal metadata
+            };
+
+            const { data: upsertedUser, error: upsertError } = await supabaseAdmin
+                .from('users')
+                .upsert(upsertData)
+                .select('*')
+                .single();
+
+            if (upsertError) {
+                console.error('[API /api/sync-user] Error upserting into public.users:', upsertError);
+                throw upsertError;
+            }
+            finalSupabaseProfile = upsertedUser;
+            console.log(`[API /api/sync-user] User ${upsertedUser?.id} ${isNewSupabaseAuthUser ? 'created' : 'linked/updated'} in public.users.`);
+        }
+
+        // 5. Return the final profile to the client
+        res.status(200).json(finalSupabaseProfile);
+
+    } catch (error) {
+        // Restore original catch block message
+        console.error('[API /api/sync-user] Error processing sync request:', error);
+        res.status(500).json({ error: 'Failed to sync user', details: error.message });
+    }
+});
+// --- End API Route --- 

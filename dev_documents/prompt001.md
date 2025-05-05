@@ -20,3 +20,10 @@ supabase 架构师：
 非常好，我现在希望你能帮我根据我当前的项目 @README.md 情况以及架构，参考 @dev_supabase_db_design_v018.md 这个数据库架构设计，设计出一套适用于当前项目的 sql 迁移文件，方便我初始化supabase 数据库，
 
 同时，我希望你能慎用 drop 以及 delete之类的功能，确保每次sql命令的迁移都不会对原有数据库中的数据造成破坏和丢失，提前做好保护检查。如果有需要我提供的信息，请及时告知。 @dev_rule_v017.md @monorepo-tamagui.mdc sql文件单独存储于一个文件夹下，方便统一管理。
+
+
+
+
+---
+IMPLEMENTED SUPABASE IN CURRENT PROJECT:
+i create a supabase database, with keys in file @dev_supabase_key.md , please deeply read the project from @README.md to know how the structure the project is and help me to follow the rule @dev_rule_v017.md  to make support the supabase in this project but do not remove the firebase support which implemented already. the target is to make supabase and firebase in parallel in the same project, supabase is used to the user data info and store, the firebase is worked for the login of 3rd party for google auth now, all new user registered in firebase or login via google should be stored in supabase as well. i will also provide you some refer documents for this implementation, you can refer this file @dev_supabase_db_design_v018.md . NOW, please help me to do design what you will do for the implement the supabase function in this project but do not impact the current projejct working normallly. i need you to design it with more details which it can be landed instead of implemented directly until you got the APPROVE from me with "GO WITH IMPLEMENT".

@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - YYYY-MM-DD
+
+## [1.286.705.27516] - 2025-05-05 
+
+### Added
+- Integrated Supabase for user data persistence (user profiles, conversations, etc.) alongside Firebase Authentication.
+- Created backend API endpoint (`/api/sync-user` in `server/index.js`) to handle secure synchronization of Firebase authenticated users to Supabase (`auth.users` and `public.users`).
+
+### Changed
+- Refactored authentication flow (`AuthContext.tsx`) to call the backend sync API instead of client-side Supabase calls or Edge Functions.
+- Updated Supabase schema (`public.users`) to include `firebase_uid` for linking.
+- Added necessary environment variables for backend Supabase (Service Role Key) and Firebase Admin SDK configuration.
+- Updated Node.js server (`server/index.js`) dependencies (`firebase-admin`, `@supabase/supabase-js`) and initialization logic.
+
+### Removed
+- Removed unused Supabase Edge Function files (`sync-firebase-user`, `_shared/cors.ts`).
+- Removed unused client-side `userService.ts`.
+
+### Fixed
+- Resolved persistent errors related to creating users in Supabase by switching to a backend-driven synchronization approach.
+
 ## [0.19.3] - 2024-04-03
 
 ### Added

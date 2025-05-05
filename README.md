@@ -2,7 +2,11 @@
 
 ## 项目简介
 
-本项目是一个多角色、多语言、支持多种支付方式的 AI 聊天应用，集成了丰富的会员体系、角色扮演、实时消息、语音合成、支付订阅等功能。前后端分离，支持多端部署，适合快速扩展和二次开发。
+本项目是一个多角色、多语言、支持多种支付方式的 AI 聊天应用，集成了丰富的会员体系、角色扮演、实时消息、语音合成、支付订阅等功能。
+
+**核心架构**: 采用 **Firebase** 进行用户认证（邮箱、Google登录），并使用 **Supabase** 作为主要的数据存储后端（用户信息、聊天记录、订阅等）。通过 Node.js 后端服务实现 Firebase 用户到 Supabase 数据库的安全同步。
+
+前后端分离，支持多端部署，适合快速扩展和二次开发。
 
 ---
 
@@ -63,12 +67,18 @@
 
 ### 后端
 - **Node.js** + **Express**
-- **Firebase/Firebase Admin**（认证与数据）
+- **Firebase Authentication** (用户认证)
+- **Firebase Admin SDK** (Token 验证)
+- **Supabase** (数据库 Postgres + Auth 用户管理)
+- **@supabase/supabase-js** (Supabase 客户端)
 - **socket.io**（实时通信）
 - **dotenv**（环境变量管理）
 - **stripe/paypal/ton**（支付服务）
 - **TypeScript/JavaScript**（后端服务）
-- **Supabase**（数据库、认证、存储）
+
+### 数据库
+- **Supabase Postgres** (主要数据存储)
+- **Firebase Firestore** (部分用户配置或历史数据，如 `userProfiles`)
 
 ### 脚本与自动化
 - **run-commit.bat**（自动提交与推送）
@@ -79,39 +89,44 @@
 
 ## 数据库结构
 
-项目使用 **Supabase** 作为后端数据库服务，提供了一套完整的数据模型设计，主要表结构如下：
+项目主要使用 **Supabase (Postgres)** 作为后端数据库服务，**Firebase Firestore** 用于部分辅助数据。Supabase 提供了完整的数据模型设计。
 
-### 核心表
-- **users**：用户信息表，扩展自 Supabase auth.users
-- **characters**：AI角色定义表，包含角色信息、多语言描述等
-- **conversations**：用户与AI的对话会话表
-- **messages**：对话中的消息内容表，区分用户和AI消息
+### 核心表 (Supabase)
+- **users (public)**：用户信息表，扩展自 Supabase **auth.users** (通过 `id` 关联)。包含 `firebase_uid` 用于关联 Firebase 认证用户。
+- **characters (public)**：AI角色定义表。
+- **conversations (public)**：用户与AI的对话会话表。
+- **messages (public)**：对话中的消息内容表。
 
-### 支付与会员相关表
+### 支付与会员相关表 (Supabase)
 - **payments**：支付记录表，记录所有交易
 - **subscriptions**：订阅管理表，记录用户订阅计划、状态、到期时间等
 - **share_rewards**：分享奖励记录表
 
-### 系统与配置相关表
+### 系统与配置相关表 (Supabase)
 - **system_settings**：系统设置表，全局配置项
 - **marquee_messages**：系统公告表
 - **locales**：动态多语言文本（可选，主要使用文件式多语言）
 - **feedback**：用户反馈表
 - **character_stats**：角色使用统计表
 
-### 数据关系
-- 用户(users) → 会话(conversations) → 消息(messages)
+### 辅助表 (Firestore)
+- **userProfiles**: 用于存储一些客户端直接读写的用户配置或历史数据。
+
+### 数据关系 (Supabase)
+- 用户(auth.users) -> 用户资料(public.users) (通过 id)
+- 用户资料(public.users) -> 会话(conversations)
+- 会话(conversations) -> 消息(messages)
 - 角色(characters) → 消息(messages)
 - 用户(users) → 支付(payments) → 订阅(subscriptions)
 - 角色(characters) → 统计(character_stats)
 
-### 安全策略
-- 所有表均启用行级安全策略(RLS)
-- 用户只能访问自己的数据
-- 认证用户可查看所有启用的角色
-- 系统设置仅限管理员访问
+### 安全策略 (Supabase)
+- 所有 `public` 模式下的表均启用行级安全策略 (RLS)。
+- `public.users` 表策略允许用户读写自己的记录。
+- 其他表策略通常基于 `auth.uid()` 检查关联记录的所有权。
+- 后端服务 (`server/index.js`) 使用 **Service Role Key** 操作数据库，绕过 RLS 进行用户同步等管理任务。
 
-详细的数据库结构请参考 `dev_documents/supabase/migrations/` 目录下的迁移文件。
+详细的数据库结构请参考 `supabase/migrations/` 目录下的 SQL 文件。
 
 ---
 
@@ -136,15 +151,24 @@
 
 ## 环境与配置
 
-- 所有敏感key、API地址、支付配置等均存储于 `.env` 文件，**严禁在代码中明文暴露**。
+- 所有敏感key、API地址、数据库凭证等均存储于 `.env` 文件。
 - 支持多环境（开发、测试、生产），分别对应 `.env.development`、`.env.test`、`.env.production`。
+- **前端所需 Supabase 配置:**
+  - `VITE_SUPABASE_URL`: Supabase 项目 URL。
+  - `VITE_SUPABASE_ANON_KEY`: Supabase 公共 Anon Key。
+- **后端所需 Firebase/Supabase 配置:**
+  - Firebase Admin SDK 凭证 (e.g., `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`)。
+  - `PROJECT_URL`: Supabase 项目 URL (与 `VITE_SUPABASE_URL` 值相同)。
+  - `FUNC_SUPABASE_SERVICE_ROLE_KEY`: Supabase **Service Role Key** (高度机密)。
 - 新增配置项需同步更新 `.env.example` 及相关文档。
 
 ---
 
 ## 主要功能模块
 
-- **用户认证**：邮箱/Google登录，基于Firebase。
+- **用户认证**：邮箱/Google登录 (Firebase Auth)，用户数据同步至 Supabase。
+- **用户数据存储**: 主要用户信息、聊天记录、订阅状态等存储于 Supabase。
+- **后端同步服务**: Node.js 后端提供 `/api/sync-user` 端点，安全地将 Firebase 用户同步到 Supabase Auth 和 `public.users` 表。
 - **角色扮演**：多角色选择，支持自定义与多语言描述。
 - **AI聊天**：支持多轮对话、上下文记忆、语音合成。
 - **会员体系**：多级会员订阅，支持多种支付方式，自动管理到期与续费。
