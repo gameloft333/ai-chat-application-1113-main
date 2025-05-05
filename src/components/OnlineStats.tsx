@@ -60,10 +60,14 @@ const OnlineStats: React.FC<OnlineStatsProps> = ({
       const db = getFirestore();
       const usersRef = collection(db, 'users');
       const q = query(usersRef, where('status', '==', 'active'));
-      console.log('正在查询Firebase用户数...');
+      if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+        console.log('正在查询Firebase用户数...');
+      }
       const snapshot = await getCountFromServer(q);
       const count = snapshot.data().count;
-      console.log('Firebase用户数查询成功:', count);
+      if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+        console.log('Firebase用户数查询成功:', count);
+      }
       return count;
     } catch (error) {
       console.error('获取Firebase用户数失败:', error);
@@ -107,13 +111,15 @@ const OnlineStats: React.FC<OnlineStatsProps> = ({
     const firebaseBonus = firebaseUsers * firebaseMultiplier; // Firebase用户数的贡献
     const finalCount = Math.floor((baseCount + firebaseBonus) * timeMultiplier);
     
-    console.log('在线人数计算:', {
-      Firebase用户数: firebaseUsers,
-      基础人数: baseCount,
-      时间系数: timeMultiplier,
-      Firebase加成: firebaseBonus,
-      最终人数: finalCount
-    });
+    if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+      console.log('在线人数计算:', {
+        Firebase用户数: firebaseUsers,
+        基础人数: baseCount,
+        时间系数: timeMultiplier,
+        Firebase加成: firebaseBonus,
+        最终人数: finalCount
+      });
+    }
 
     return finalCount;
   };

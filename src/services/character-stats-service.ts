@@ -14,16 +14,22 @@ export class CharacterStatsService {
   
       // 获取用户订阅类型
       const userSubscription = await this.getUserSubscriptionType(userId);
-      console.log('当前用户订阅类型:', userSubscription);
+      if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+        console.log('当前用户订阅类型:', userSubscription);
+      }
       
       // 获取角色限制
       const characterLimit = SUBSCRIPTION_PLANS.CHARACTER_LIMITS[userSubscription];
-      console.log('角色数量限制:', characterLimit);
+      if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+        console.log('角色数量限制:', characterLimit);
+      }
   
       // 获取已使用的角色统计
       const stats = await this.getUserCharacterStats(userId);
       const usedCount = Object.keys(stats).length;
-      console.log('已使用角色数:', usedCount);
+      if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+        console.log('已使用角色数:', usedCount);
+      }
   
       // 严格检查限制
       if (characterLimit !== -1 && usedCount >= characterLimit) {
@@ -38,7 +44,9 @@ export class CharacterStatsService {
       const userStatsKey = `character_stats_${userId}`;
       localStorage.setItem(userStatsKey, JSON.stringify(newStats));
       
-      console.log('角色统计更新成功:', newStats);
+      if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+        console.log('角色统计更新成功:', newStats);
+      }
       return { success: true };
     } catch (error) {
       console.error('更新角色统计失败:', error);
@@ -67,7 +75,9 @@ export class CharacterStatsService {
   public static async getUserCharacterStats(userId: string): Promise<Record<string, number>> {
     try {
       // 添加调试日志
-      console.log('获取用户角色统计:', userId);
+      if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+        console.log('获取用户角色统计:', userId);
+      }
       
       // 从本地存储获取数据
       const stats = localStorage.getItem(`character_stats_${userId}`);

@@ -80,7 +80,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (error.code === 'auth/popup-closed-by-user') {
                 throw new Error('登录已取消');
             }
-            console.error('Google登录错误:', error);
+            if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+                console.error('Google登录错误:', error);
+            }
             throw new Error('登录失败，请稍后重试');
         }
     };
@@ -98,7 +100,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             await signOut(auth);
             localStorage.removeItem('chatHistory');
         } catch (error) {
-            console.error('退出登录错误:', error);
+            if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+                console.error('退出登录错误:', error);
+            }
             throw new Error('退出登录失败，请稍后重试');
         }
     };
@@ -109,20 +113,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     useEffect(() => {
-        console.log('[AuthContext] Setting up onAuthStateChanged listener...');
+        if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+            console.log('[AuthContext] Setting up onAuthStateChanged listener...');
+        }
         const unsubscribe = onAuthStateChanged(auth, async (user: FirebaseUserAuth | null) => {
-            console.log('[AuthContext] onAuthStateChanged triggered. User:', user?.uid || 'null');
+            if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+                console.log('[AuthContext] onAuthStateChanged triggered. User:', user?.uid || 'null');
+            }
             setCurrentUser(user);
 
             if (user) {
-                console.log(`[AuthContext] User ${user.uid} detected, processing...`);
+                if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+                    console.log(`[AuthContext] User ${user.uid} detected, processing...`);
+                }
                 setLoading(true);
                 let firestoreSuccess = false;
                 try {
                     // --- Firestore Profile Creation/Update --- 
                     const userProfileRef = doc(db, "userProfiles", user.uid);
                     try {
-                        console.log(`[AuthContext] Trying Firestore setDoc for ${user.uid}...`);
+                        if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+                            console.log(`[AuthContext] Trying Firestore setDoc for ${user.uid}...`);
+                        }
                         await setDoc(userProfileRef, {
                             email: user.email,
                             displayName: user.displayName || user.email?.split('@')[0] || 'New User',
@@ -130,7 +142,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                             createdAt: serverTimestamp(),
                             tokens: 0 
                         }, { merge: true });
-                        console.log(`[AuthContext] Firestore profile set/updated successfully for ${user.uid}`);
+                        if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+                            console.log(`[AuthContext] Firestore profile set/updated successfully for ${user.uid}`);
+                        }
                         firestoreSuccess = true;
                     } catch (firestoreError) {
                         console.error(`[AuthContext] !!! Firestore setDoc failed for ${user.uid}:`, firestoreError);
@@ -139,7 +153,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     // --- End Firestore --- 
 
                     // --- Supabase Sync via Backend API --- 
-                    console.log(`[AuthContext] Attempting Supabase sync via Backend API for ${user.uid}...`);
+                    if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+                        console.log(`[AuthContext] Attempting Supabase sync via Backend API for ${user.uid}...`);
+                    }
                     let idToken: string | null = null;
                     try {
                         idToken = await user.getIdToken(); // Get Firebase ID Token
@@ -171,9 +187,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
                             setSupabaseProfile(profile as SupabaseUser | null); // Store the result
                             if (profile) {
-                                console.log(`[AuthContext] Backend API sync successful. Supabase ID: ${(profile as SupabaseUser).id}`);
+                                if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+                                    console.log(`[AuthContext] Backend API sync successful. Supabase ID: ${(profile as SupabaseUser).id}`);
+                                }
                             } else {
-                                console.warn(`[AuthContext] Backend API sync returned null profile.`);
+                                if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+                                    console.warn(`[AuthContext] Backend API sync returned null profile.`);
+                                }
                             }
 
                         } catch(apiError) {
@@ -197,14 +217,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     setLoading(false);
                 }
             } else {
-                console.log('[AuthContext] User signed out, clearing Supabase profile.');
+                if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+                    console.log('[AuthContext] User signed out, clearing Supabase profile.');
+                }
                 setSupabaseProfile(null);
                 setLoading(false);
             }
         });
 
         return () => {
-            console.log('[AuthContext] Unsubscribing from onAuthStateChanged.');
+            if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+                console.log('[AuthContext] Unsubscribing from onAuthStateChanged.');
+            }
             unsubscribe();
         }
     }, []);

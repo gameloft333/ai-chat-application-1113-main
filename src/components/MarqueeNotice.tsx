@@ -73,17 +73,23 @@ const MarqueeNotice: React.FC<MarqueeNoticeProps> = ({ messages }) => {
   }, [messages]);
 
   if (!MARQUEE_CONFIG.enabled) {
-    console.log('MarqueeNotice 已在配置中禁用');
+    if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+      console.log('MarqueeNotice 已在配置中禁用');
+    }
     return null;
   }
 
   useEffect(() => {
-    console.log('MarqueeNotice 收到新消息:', messages);
-    console.log('当前语言:', currentLanguage);
+    if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+      console.log('MarqueeNotice 收到新消息:', messages);
+      console.log('当前语言:', currentLanguage);
+    }
     if (messages?.length > 0) {
       setIsVisible(true);
       setCurrentMessages(messages);
-      console.log('设置当前消息:', messages);
+      if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+        console.log('设置当前消息:', messages);
+      }
     }
   }, [messages, currentLanguage]);
 
@@ -98,13 +104,17 @@ const MarqueeNotice: React.FC<MarqueeNoticeProps> = ({ messages }) => {
 
   // 如果组件不可见或没有消息内容，则不渲染任何内容
   if (!isVisible || !currentMessages?.length) {
-    console.log('MarqueeNotice 不显示, isVisible:', isVisible, 'currentMessages:', currentMessages);
+    if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+      console.log('MarqueeNotice 不显示, isVisible:', isVisible, 'currentMessages:', currentMessages);
+    }
     return null;
   }
 
   // 确定显示语言，如果没有设置当前语言则使用默认语言
   const displayLanguage = currentLanguage || defaultLanguage;
-  console.log('使用显示语言:', displayLanguage);
+  if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+    console.log('使用显示语言:', displayLanguage);
+  }
 
   // 跑马灯容器刷新位置 top-16 是跑马灯到顶部的距离，z-40 是跑马灯的层级（现在和导航栏一样）
   return (

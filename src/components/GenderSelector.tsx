@@ -40,7 +40,9 @@ export const GenderSelector: React.FC<GenderSelectorProps> = ({
       try {
         // 获取统计数据
         const stats = CharacterStatsService.getCharacterCounts();
-        console.log('Character stats:', stats);
+        if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+          console.log('Character stats:', stats);
+        }
         
         // 获取所有角色并排序
         const sortedCharacterIds = characters
@@ -75,15 +77,17 @@ export const GenderSelector: React.FC<GenderSelectorProps> = ({
 
   // 添加语言切换时的调试日志
   useEffect(() => {
-    console.log('Current language:', currentLanguage);
-    console.log('Gender translations:', {
-      popular: t('gender.popular'),
-      female: t('gender.female'),
-      male: t('gender.male'),
-      celebrity: t('gender.celebrity'),
-      pet: t('gender.pet'),
-      god: t('gender.god')
-    });
+    if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+      console.log('Current language:', currentLanguage);
+      console.log('Gender translations:', {
+        popular: t('gender.popular'),
+        female: t('gender.female'),
+        male: t('gender.male'),
+        celebrity: t('gender.celebrity'),
+        pet: t('gender.pet'),
+        god: t('gender.god')
+      });
+    }
   }, [currentLanguage]);
 
   const genderButtons = [

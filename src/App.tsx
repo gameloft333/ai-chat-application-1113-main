@@ -245,7 +245,9 @@ const AppContent: React.FC<AppContentProps> = ({
 
   const handleSubscribe = async (planId: string, duration: string, paymentMethod: 'paypal' | 'stripe' | 'ton') => {
     try {
-      console.log('订阅参数:', { planId, duration, paymentMethod }); // 添加日志
+      if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+        console.log('订阅参数:', { planId, duration, paymentMethod }); // 添加日志
+      }
       
       if (!currentUser) {
         throw new Error(t('alerts.error.loginRequired'));
@@ -294,11 +296,13 @@ const AppContent: React.FC<AppContentProps> = ({
 
       if (paymentMethod === 'paypal') {
         // PayPal 支付逻辑
-        console.log('开始 PayPal 支付流程...', {
-          price: plan.prices[duration].price,
-          currency: currentCurrency.code,
-          description: plan.description || `订阅 ${plan.name}`
-        });
+        if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+          console.log('开始 PayPal 支付流程...', {
+            price: plan.prices[duration].price,
+            currency: currentCurrency.code,
+            description: plan.description || `订阅 ${plan.name}`
+          });
+        }
         
         const paypalService = PayPalService.getInstance();
         const { orderId, approvalUrl } = await paypalService.createPaymentOrder({
@@ -339,22 +343,26 @@ const AppContent: React.FC<AppContentProps> = ({
         
       } else if (paymentMethod === 'stripe') {
         try {
-          console.log('开始 Stripe 支付流程...');
+          if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+            console.log('开始 Stripe 支付流程...');
+          }
           const stripeService = StripeService.getInstance();
           
           // 确保金额符合最小支付要求（至少 400 cents HKD ≈ 0.51 USD
           const minAmount = 0.55; // USD，设置为 1 USD 以确保足够支付
           const amount = Math.max(plan.prices[duration].price, minAmount);
           
-          console.log('创建支付意向，参数:', {
-            price: amount,
-            currency: currentCurrency.code,
-            originalPrice: plan.prices[duration].price,
-            minRequired: {
-              HKD: 4.00,
-              USD: 0.51
-            }
-          });
+          if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+            console.log('创建支付意向，参数:', {
+              price: amount,
+              currency: currentCurrency.code,
+              originalPrice: plan.prices[duration].price,
+              minRequired: {
+                HKD: 4.00,
+                USD: 0.51
+              }
+            });
+          }
           
           const clientSecret = await stripeService.createPaymentIntent(
             amount,
@@ -378,7 +386,9 @@ const AppContent: React.FC<AppContentProps> = ({
 
           await PaymentRecordService.createPaymentRecord(paymentRecord);
           
-          console.log('支付意向创建成功，准备打开支付表单...');
+          if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+            console.log('支付意向创建成功，准备打开支付表单...');
+          }
           setShowStripePaymentModal(true);
           setStripePaymentData({
             clientSecret,
@@ -392,7 +402,9 @@ const AppContent: React.FC<AppContentProps> = ({
             expiredAt: expiredAt,
             onClose: () => {
               setShowStripePaymentModal(false); // 关闭支付模态框
-              console.log('用户取消支付');
+              if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+                console.log('用户取消支付');
+              }
             }
           });
         } catch (error) {
@@ -417,7 +429,9 @@ const AppContent: React.FC<AppContentProps> = ({
         }
       } else if (paymentMethod === 'ton') {
         try {
-          console.log('开始 TON 支付流程...');
+          if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+            console.log('开始 TON 支付流程...');
+          }
           const tonService = TonService.getInstance();
           
           const paymentId = await tonService.createPaymentIntent(
@@ -531,16 +545,20 @@ const AppContent: React.FC<AppContentProps> = ({
 
   useEffect(() => {
     // 添加调试日志
-    console.log('当前用户:', currentUser);
-    console.log('订阅状态:', subscriptionType);
+    if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+      console.log('当前用户:', currentUser);
+      console.log('订阅状态:', subscriptionType);
+    }
     
     if (currentUser) {
       CharacterStatsService.getUserCharacterStats(currentUser.uid)
         .then(stats => {
-          console.log('获取到的角色统计:', stats);
+          if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+            console.log('获取到的角色统计:', stats);
+          }
         })
         .catch(error => {
-          console.error('获取角色统计失败:', error);
+          console.error('获取角色统计失败:', error); // Keep error log
         });
     }
   }, [currentUser]);

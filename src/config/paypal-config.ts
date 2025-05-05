@@ -5,12 +5,14 @@ const API_URL = SANDBOX_MODE
     ? 'https://api-m.sandbox.paypal.com'
     : 'https://api-m.paypal.com';
 
-console.log('PayPal Configuration:', {
-    hasClientId: !!CLIENT_ID,
-    hasClientSecret: !!CLIENT_SECRET,
-    sandboxMode: SANDBOX_MODE,
-    apiUrl: API_URL
-});
+if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+    console.log('PayPal Configuration:', {
+        hasClientId: !!CLIENT_ID,
+        hasClientSecret: !!CLIENT_SECRET,
+        sandboxMode: SANDBOX_MODE,
+        apiUrl: API_URL
+    });
+}
 
 if (!CLIENT_ID || !CLIENT_SECRET) {
     console.error('PayPal credentials are missing! Please check your environment variables.');
@@ -27,7 +29,7 @@ export const PAYPAL_CONFIG = {
 };
 
 export const validatePayPalConfig = () => {
-    const issues = [];
+    const issues: string[] = [];
     if (!PAYPAL_CONFIG.CLIENT_ID) issues.push('Missing CLIENT_ID');
     if (!PAYPAL_CONFIG.CLIENT_SECRET) issues.push('Missing CLIENT_SECRET');
     if (!PAYPAL_CONFIG.API_URL) issues.push('Missing API_URL');
@@ -39,4 +41,8 @@ export const validatePayPalConfig = () => {
     
     console.log('PayPal configuration validated successfully');
     return true;
+};
+
+export const loadPayPalScript = () => {
+    // ... existing code ...
 };

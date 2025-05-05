@@ -3,12 +3,14 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 // 添加调试日志
-console.log('Firebase 配置初始化开始');
-console.log('环境变量检查:', {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY ? '已设置' : '未设置',
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN ? '已设置' : '未设置',
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID ? '已设置' : '未设置'
-});
+if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+  console.log('Firebase 配置初始化开始');
+  console.log('环境变量检查:', {
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY ? '已设置' : '未设置',
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN ? '已设置' : '未设置',
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID ? '已设置' : '未设置'
+  });
+}
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -28,7 +30,9 @@ try {
   app = initializeApp(firebaseConfig);
   auth = getAuth(app);
   db = getFirestore(app);
-  console.log('Firebase 初始化成功');
+  if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+    console.log('Firebase 初始化成功');
+  }
 } catch (error) {
   console.error('Firebase 初始化失败:', error);
   throw error;
@@ -46,10 +50,14 @@ export const initializeAnalytics = async () => {
     
     if (supported) {
       const analytics = getAnalytics(app);
-      console.log('Firebase Analytics 初始化成功');
+      if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+        console.log('Firebase Analytics 初始化成功');
+      }
       return analytics;
     } else {
-      console.log('当前环境不支持 Firebase Analytics');
+      if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
+        console.log('当前环境不支持 Firebase Analytics');
+      }
       return null;
     }
   } catch (error) {
