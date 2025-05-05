@@ -48,28 +48,27 @@ app.use(cors({
 }));
 
 app.post('/webhook/stripe', express.raw({type: 'application/json'}), async (req, res) => {
-  // 立即响应 Stripe，避免超时
-  const response = { received: true };
-  res.json(response);
-  
-  // 异步处理 webhook 事件
   const sig = req.headers['stripe-signature'];
-  
+  let event;
+
   try {
-    const event = stripe.webhooks.constructEvent(
+    // Verify the signature *before* responding
+    event = stripe.webhooks.constructEvent(
       req.body,
       sig,
-      process.env.STRIPE_WEBHOOK_SECRET
+      process.env.STRIPE_WEBHOOK_SECRET // Ensure this matches the Stripe Dashboard secret
     );
-    
-    console.log('开始异步处理 Stripe Webhook 事件:', {
-      type: event.type,
-      id: event.id,
-      timestamp: new Date().toISOString()
-    });
 
-    // 异步处理不同类型的事件
+    // Signature verified, send 200 OK response
+    res.json({ received: true });
+
+    // Asynchronously handle the verified event
     setImmediate(async () => {
+      console.log('开始异步处理已验证的 Stripe Webhook 事件:', {
+        type: event.type,
+        id: event.id,
+        timestamp: new Date().toISOString()
+      });
       try {
         switch (event.type) {
           case 'payment_intent.succeeded':
@@ -79,14 +78,30 @@ app.post('/webhook/stripe', express.raw({type: 'application/json'}), async (req,
             const session = event.data.object;
             await WebhookService.handleCheckoutCompleted(session);
             break;
+          // Add other event types as needed
+          default:
+            console.log(`未处理的事件类型: ${event.type}`);
         }
       } catch (err) {
-        console.error('异步处理 Webhook 事件失败:', err);
-        // 记录错误到日志系统
+        console.error('异步处理 Webhook 事件失败:', {
+          error: err.message,
+          stack: err.stack,
+          eventId: event.id,
+          eventType: event.type
+        });
+        // Optional: Add to a retry queue or log more persistently
       }
     });
+
   } catch (err) {
-    console.error('Webhook 签名验证失败:', err.message);
+    // Signature verification failed
+    console.error('Webhook 签名验证失败:', {
+      error: err.message,
+      headers: req.headers, // Log headers for debugging signature issues
+      timestamp: new Date().toISOString()
+    });
+    // Send a 400 Bad Request response to Stripe
+    res.status(400).send(`Webhook Error: ${err.message}`);
   }
 });
 

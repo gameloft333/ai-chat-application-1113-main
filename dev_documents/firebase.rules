@@ -1,0 +1,89 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 通用辅助函数
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }    
+    
+    // 数据验证辅助函数
+    function isValidStatus(status, allowedStatuses) {
+      return status is string && status in allowedStatuses;
+    }
+
+    function isValidTimestamp(time) {
+      return time is timestamp && time <= request.time;
+    }
+
+    // User profiles
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId);
+    }
+
+    // Token transactions
+    match /transactions/{transactionId} {
+      allow read: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+
+    // User checkins
+    match /userCheckins/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // User profiles
+    match /userProfiles/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Orders
+    match /orders/{orderId} {
+      allow read: if isOwner(resource.data.uid);
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        isOwner(resource.data.uid) ||
+        request.resource.data.status == 'completed'
+      );
+    }
+    
+    // Payment records 规则
+    match /paymentRecords/{document=**} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
+      allow update: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid;
+      allow delete: if false;
+    }
+
+    // Payment intents
+    match /paymentIntents/{intentId} {
+      allow read: if isOwner(resource.data.userId);
+      allow create: if isAuthenticated() && 
+        request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid;
+      allow delete: if false;
+    }
+
+    // Subscription records
+    match /subscriptions/{subscriptionId} {
+      allow read: if isOwner(resource.data.userId);
+      allow create: if isAuthenticated() && 
+        request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid;
+      allow delete: if false;
+    }
+
+    // Offline queue for failed operations
+    match /offlineQueue/{document=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+  }
+}
