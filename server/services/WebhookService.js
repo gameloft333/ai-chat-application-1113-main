@@ -38,29 +38,47 @@ class WebhookService {
   }
 
   static async updatePaymentRecord(paymentIntent) {
+    let recordRef;
+    let recordData;
+
     await withRetry(async () => {
       const paymentSnapshot = await db.collection('paymentRecords')
         .where('orderId', '==', paymentIntent.id)
         .get();
 
       if (paymentSnapshot.empty) {
-        await db.collection('paymentRecords').add({
+        const newRecord = {
           orderId: paymentIntent.id,
-          status: 'completed',
+          status: 'completed', // Assuming successful payment at this stage
           amount: paymentIntent.amount,
           currency: paymentIntent.currency,
+          userId: paymentIntent.metadata?.userId || null, // Store userId if available
+          planId: paymentIntent.metadata?.planId || null, // Store planId if available
+          duration: paymentIntent.metadata?.duration || null, // Store duration if available
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           completedAt: new Date().toISOString()
-        });
+        };
+        recordRef = await db.collection('paymentRecords').add(newRecord);
+        recordData = { id: recordRef.id, ...newRecord };
       } else {
-        await paymentSnapshot.docs[0].ref.update({
-          status: 'completed',
+        recordRef = paymentSnapshot.docs[0].ref;
+        const updatedData = {
+          status: 'completed', // Assuming successful payment at this stage
           updatedAt: new Date().toISOString(),
-          completedAt: new Date().toISOString()
-        });
+          completedAt: new Date().toISOString(),
+          // Optionally re-add metadata if it might change or was missing
+          userId: paymentIntent.metadata?.userId || paymentSnapshot.docs[0].data().userId || null,
+          planId: paymentIntent.metadata?.planId || paymentSnapshot.docs[0].data().planId || null,
+          duration: paymentIntent.metadata?.duration || paymentSnapshot.docs[0].data().duration || null,
+        };
+        await recordRef.update(updatedData);
+        // Fetch the updated document to return its data
+        const updatedDoc = await recordRef.get();
+        recordData = { id: updatedDoc.id, ...updatedDoc.data() };
       }
     });
+    return recordData; // Return the created or updated record data
   }
 
   static async updateUserInfo(paymentIntent) {
