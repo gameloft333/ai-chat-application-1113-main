@@ -25,6 +25,13 @@ service cloud.firestore {
       allow write: if isOwner(userId);
     }
 
+    // Explicitly allow counting active users in the 'users' collection
+    match /users {
+        allow list: if true; // Allow listing needed for aggregation in some cases
+        // Allow the specific count aggregation
+        allow get: if request.query.limit == 0; // This pattern often signifies aggregation queries
+    }
+
     // Token transactions
     match /transactions/{transactionId} {
       allow read: if isOwner(resource.data.userId);

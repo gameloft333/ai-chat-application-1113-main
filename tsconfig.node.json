@@ -26,5 +26,5 @@
     "esm": true,
     "experimentalSpecifierResolution": "node"
   },
-  "include": ["ton-payment/**/*"]
+  "include": ["ton-payment/**/*", "vite.config.ts"]
 }

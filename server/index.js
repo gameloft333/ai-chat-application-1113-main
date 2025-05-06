@@ -253,7 +253,7 @@ console.log('Supabase Admin Client initialized (or attempted).');
 
 // --- Add API Route for User Sync --- 
 app.post('/api/sync-user', async (req, res) => {
-    console.log('[API /api/sync-user] Received request'); // Restore original log
+    console.log('[API /api/sync-user] Received request');
     const { idToken } = req.body;
 
     if (!idToken) {
@@ -269,14 +269,13 @@ app.post('/api/sync-user', async (req, res) => {
         const email = decodedToken.email;
         const displayName = decodedToken.name;
         const photoURL = decodedToken.picture;
-        console.log(`[API /api/sync-user] Token verified for UID: ${firebaseUid}`);
+        console.log(`[API /api/sync-user] Token verified for Firebase UID: ${firebaseUid}`);
 
-        // Use the initialized Supabase Admin Client
         // 2. Check if user exists in public.users by firebase_uid
         console.log(`[API /api/sync-user] Checking Supabase public.users for firebase_uid: ${firebaseUid}`);
-        const { data: existingUser, error: selectError } = await supabaseAdmin
+        const { data: existingPublicUser, error: selectError } = await supabaseAdmin
             .from('users')
-            .select('*')
+            .select('*') // Select all columns needed for update/return
             .eq('firebase_uid', firebaseUid)
             .maybeSingle();
 
@@ -287,98 +286,185 @@ app.post('/api/sync-user', async (req, res) => {
 
         let finalSupabaseProfile = null;
 
-        // 3. User Exists - Update
-        if (existingUser) {
-            // ... (Keep original update logic) ...
-            console.log(`[API /api/sync-user] Found existing user by firebase_uid (${existingUser.id}). Updating...`);
+        // 3. User Exists in public.users by firebase_uid - Update
+        if (existingPublicUser) {
+            console.log(`[API /api/sync-user] Found existing user by firebase_uid (${existingPublicUser.id}). Updating...`);
             const updateData = {
                 last_login_at: new Date().toISOString(),
-                email: email || existingUser.email,
+                email: email || existingPublicUser.email, // Update email if provided, otherwise keep existing
+                // Only update username/avatar if provided in token, otherwise keep existing
                 ...(displayName && { username: displayName }),
                 ...(photoURL && { avatar_url: photoURL }),
+                // Add any other fields you want to update on login
             };
+
             const { data: updatedUser, error: updateError } = await supabaseAdmin
                 .from('users')
                 .update(updateData)
-                .eq('id', existingUser.id)
+                .eq('firebase_uid', firebaseUid) // Match by firebase_uid for safety
                 .select('*')
                 .single();
-            if (updateError) { /* handle error */ throw updateError; }
+
+            if (updateError) {
+                console.error(`[API /api/sync-user] Error updating user with firebase_uid ${firebaseUid}:`, updateError);
+                throw updateError;
+            }
             finalSupabaseProfile = updatedUser;
             console.log(`[API /api/sync-user] User ${updatedUser?.id} updated successfully.`);
+
         } else {
-            // 4. User Does Not Exist by firebase_uid - Check auth.users & Insert/Link
-            console.log(`[API /api/sync-user] User not found by firebase_uid. Checking auth.users for email: ${email}`);
-            
-            // 4a. Find user in Supabase Auth by email
+            // 4. User Does Not Exist in public.users by firebase_uid - Attempt Insert
+            console.log(`[API /api/sync-user] User with firebase_uid ${firebaseUid} not found in public.users. Proceeding.`);
+
+            // 4a. Find Supabase Auth User ID by email
+            console.log(`[API /api/sync-user] Checking auth.users for email: ${email}`);
             const { data: { users: authUsers }, error: authListError } = await supabaseAdmin.auth.admin.listUsers({
-                filter: `email = "${email}"`,
+                filter: `email = "${email}"`, // Ensure email is quoted
                 limit: 1
             });
-            
+
             if (authListError && authListError.message !== "No users found matching the provided criteria.") {
                  console.error('[API /api/sync-user] Error searching Supabase auth users by email:', authListError);
                  throw new Error('Failed to check Supabase auth users.');
-             }
+            }
 
-            let supabaseUserId = null;
+            let supabaseAuthUserId = null;
             let isNewSupabaseAuthUser = false;
+            let requiresNewAuthUser = false; // Flag to force creation
 
             if (authUsers && authUsers.length > 0) {
-                supabaseUserId = authUsers[0].id;
-                console.log(`[API /api/sync-user] Found existing Supabase auth user by email: ${supabaseUserId}`);
+                const potentialAuthUserId = authUsers[0].id;
+                console.log(`[API /api/sync-user] Found potential Supabase auth user by email: ${potentialAuthUserId}`);
+
+                // <<<<------ CHECK FOR INCONSISTENCY ------>>>>
+                console.log(`[API /api/sync-user] Verifying if public.users ID ${potentialAuthUserId} is already linked correctly...`);
+                const { data: conflictingPublicUser, error: conflictCheckError } = await supabaseAdmin
+                    .from('users')
+                    .select('id, firebase_uid, email')
+                    .eq('id', potentialAuthUserId)
+                    .maybeSingle();
+
+                if (conflictCheckError) {
+                    console.error(`[API /api/sync-user] Error checking for conflicting public user ID ${potentialAuthUserId}:`, conflictCheckError);
+                    throw new Error('Failed to verify user consistency.');
+                }
+
+                if (conflictingPublicUser) {
+                    if (conflictingPublicUser.firebase_uid !== firebaseUid) {
+                        // DATA INCONSISTENCY DETECTED!
+                        console.warn(`[API /api/sync-user] DATA INCONSISTENCY DETECTED!`);
+                        console.warn(`  Supabase Auth ID ${potentialAuthUserId} (found via email ${email}) is linked in public.users to different Firebase UID: ${conflictingPublicUser.firebase_uid}`);
+                        console.warn(`  Forcing creation of a new Supabase Auth user for Firebase UID: ${firebaseUid}`);
+                        requiresNewAuthUser = true; // Set the flag
+                    } else {
+                        // ID and Firebase UID match - user already synced.
+                        console.log(`[API /api/sync-user] Found matching public user via Supabase ID ${potentialAuthUserId}. User already synced.`);
+                        finalSupabaseProfile = conflictingPublicUser; // Assign the found profile
+                        supabaseAuthUserId = potentialAuthUserId; // Assign the ID
+                    }
+                } else {
+                  // No public.users record found for this Auth ID.
+                  // Safe to link the new Firebase user to this existing Supabase Auth ID.
+                  console.log(`[API /api/sync-user] No conflicting public user found for ID ${potentialAuthUserId}. Proceeding to link.`);
+                  supabaseAuthUserId = potentialAuthUserId; // Assign the ID
+                }
+                // <<<<------ END CHECK ------>>>>
+
             } else {
-                // 4b. User doesn't exist in Supabase Auth - Create them (Simplified call)
-                console.log(`[API /api/sync-user] No Supabase auth user found for email ${email}. Creating...`);
+                // No Supabase auth user found by email at all.
+                 requiresNewAuthUser = true;
+            }
+
+            // 4b. Create new Supabase Auth user if needed
+            if (requiresNewAuthUser) {
+                 console.log(`[API /api/sync-user] Creating new Supabase auth user for email ${email}...`);
                 const { data: { user: newAuthUser }, error: createAuthError } = await supabaseAdmin.auth.admin.createUser({
-                    email: email
-                    // Keep email_confirm and metadata commented out
+                    email: email,
+                    // email_confirm: decodedToken.email_verified || false, // Optional
                 });
 
                 if (createAuthError) {
                     console.error('[API /api/sync-user] Error creating Supabase auth user:', createAuthError);
-                    throw createAuthError; // This is still the likely failure point
+                    // Handle specific errors like email already existing if needed
+                    throw createAuthError;
                 }
-                supabaseUserId = newAuthUser.id;
+                supabaseAuthUserId = newAuthUser.id; // Get the *new* ID
                 isNewSupabaseAuthUser = true;
-                console.log(`[API /api/sync-user] Created new Supabase auth user: ${supabaseUserId}`);
+                console.log(`[API /api/sync-user] Created new Supabase auth user: ${supabaseAuthUserId}`);
+                 finalSupabaseProfile = null; // Ensure we proceed to insert in public.users
             }
 
-            // 4c. Now Upsert into public.users using the determined supabaseUserId
-            console.log(`[API /api/sync-user] Upserting into public.users for Supabase ID: ${supabaseUserId}`);
-            const upsertData = {
-                id: supabaseUserId,
-                firebase_uid: firebaseUid,
-                email: email,
-                username: displayName || email?.split('@')[0] || 'New User',
-                avatar_url: photoURL,
-                last_login_at: new Date().toISOString(),
-                subscription_status: 'normal',
-                subscription_expires_at: null,
-                metadata: { provider: 'firebase' }, // Restore minimal metadata
-            };
+            // 4c. Insert into public.users if no complete profile was assigned yet
+            if (!finalSupabaseProfile && supabaseAuthUserId) {
+                console.log(`[API /api/sync-user] Inserting into public.users for Supabase ID: ${supabaseAuthUserId} and Firebase UID: ${firebaseUid}`);
+                const insertData = {
+                    id: supabaseAuthUserId, 
+                    firebase_uid: firebaseUid,
+                    email: email, 
+                    username: displayName || email?.split('@')[0] || `user_${firebaseUid.substring(0, 6)}`, 
+                    avatar_url: photoURL,
+                    created_at: new Date().toISOString(),
+                    last_login_at: new Date().toISOString(),
+                    subscription_status: 'normal',
+                    subscription_expires_at: null,
+                    metadata: { provider: 'firebase' }
+                };
 
-            const { data: upsertedUser, error: upsertError } = await supabaseAdmin
-                .from('users')
-                .upsert(upsertData)
-                .select('*')
-                .single();
+                const { data: insertedUser, error: insertError } = await supabaseAdmin
+                    .from('users')
+                    .insert(insertData)
+                    .select('*')
+                    .single();
 
-            if (upsertError) {
-                console.error('[API /api/sync-user] Error upserting into public.users:', upsertError);
-                throw upsertError;
+                if (insertError) {
+                    console.error('[API /api/sync-user] Error inserting into public.users:', insertError);
+                    // Original error handling for insert (e.g., 23505 on firebase_uid constraint if added later)
+                    if (insertError.code === '23505') { 
+                        // Check if it's the firebase_uid constraint or the primary key constraint
+                         if (insertError.message.includes('users_firebase_uid_key')) {
+                             console.warn(`[API /api/sync-user] Insert failed due to unique firebase_uid constraint (code: 23505). User ${firebaseUid} might have been created concurrently.`);
+                             // Attempt to fetch the user again
+                             const { data: concurrentUser, error: fetchError } = await supabaseAdmin.from('users').select('*').eq('firebase_uid', firebaseUid).single();
+                             if (fetchError) {
+                                 console.error(`[API /api/sync-user] Error fetching user after firebase_uid unique constraint violation:`, fetchError);
+                                 throw insertError;
+                             }
+                             finalSupabaseProfile = concurrentUser;
+                         } else if (insertError.message.includes('users_pkey')) {
+                            console.error(`[API /api/sync-user] Insert failed due to primary key conflict (code: 23505) for ID ${supabaseAuthUserId}. This indicates a severe data inconsistency.`);
+                             // We already checked for this, but handle defensively
+                              return res.status(500).json({ error: 'Internal Server Error', message: 'Failed to insert user due to persistent data conflict.' });
+                         } else {
+                              throw insertError; // Re-throw other unique constraint errors
+                         }
+                    } else {
+                        throw insertError; // Throw other insert errors
+                    }
+                } else {
+                    finalSupabaseProfile = insertedUser;
+                    console.log(`[API /api/sync-user] User ${insertedUser?.id} inserted into public.users successfully.`);
+                }
             }
-            finalSupabaseProfile = upsertedUser;
-            console.log(`[API /api/sync-user] User ${upsertedUser?.id} ${isNewSupabaseAuthUser ? 'created' : 'linked/updated'} in public.users.`);
         }
 
-        // 5. Return the final profile to the client
+        // 5. Return the final profile (either updated or newly inserted/fetched)
+        if (!finalSupabaseProfile) {
+            // This should ideally not happen if error handling is correct
+            console.error('[API /api/sync-user] Failed to obtain final user profile.');
+            return res.status(500).json({ error: 'Internal server error processing user sync' });
+        }
         res.status(200).json(finalSupabaseProfile);
 
     } catch (error) {
-        // Restore original catch block message
-        console.error('[API /api/sync-user] Error processing sync request:', error);
-        res.status(500).json({ error: 'Failed to sync user', details: error.message });
+        console.error('[API /api/sync-user] Error processing sync request:', { 
+            message: error.message, 
+            stack: error.stack, 
+            code: error.code, 
+            details: error.details 
+        });
+        // Return a more specific error code if possible (e.g., 401 for invalid token)
+        const statusCode = (error.message.includes('verifyIdToken') || error.code?.includes('auth')) ? 401 : 500;
+        res.status(statusCode).json({ error: 'Failed to sync user', details: error.message });
     }
 });
 // --- End API Route --- 
