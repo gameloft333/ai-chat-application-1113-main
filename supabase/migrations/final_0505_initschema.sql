@@ -467,3 +467,7 @@ ON CONFLICT (key) DO NOTHING;
 -- End of Migration
 -- =====================================================
 COMMENT ON DATABASE postgres IS 'AI Chat Application Schema Initialized.';
+
+ALTER TABLE auth.users DISABLE TRIGGER on_auth_user_created;-- Optional: To remove it completely (if you are sure)
+-- DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+-- DROP FUNCTION IF EXISTS public.handle_new_user();
