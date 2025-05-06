@@ -1,45 +1,167 @@
 import { db, withRetry } from '../config/firebase.js';
 import { FieldValue } from 'firebase-admin/firestore';
+import { supabaseAdmin } from '../index.js';
 
 class WebhookService {
   static async handlePaymentSuccess(paymentIntent) {
     try {
-      console.log('开始处理支付成功:', paymentIntent.id);
+      console.log('[WebhookService] 开始处理支付成功:', paymentIntent.id);
       
-      // 1. 记录支付状态
-      const paymentRecord = await this.updatePaymentRecord(paymentIntent);
+      // 1. 记录支付状态 (Firebase)
+      const paymentRecord = await this.updatePaymentRecordFirebase(paymentIntent);
+      console.log('[WebhookService] Firebase paymentRecord updated:', paymentRecord);
       
-      // 2. 如果支付成功，更新用户信息
+      // 2. 如果支付成功，更新用户信息 (Firebase)
       if (paymentRecord.status === 'completed') {
-        const { userId, planId, duration } = paymentIntent.metadata;
+        const { userId: firebaseUid, planId, duration } = paymentIntent.metadata;
         
-        // 更新用户信息
-        const userRef = db.collection('users').doc(userId);
+        if (!firebaseUid) {
+          console.error('[WebhookService] Firebase UID (userId) missing in paymentIntent metadata. Skipping Firebase user update and Supabase sync.');
+          // Still return success to Stripe as the payment itself was recorded in Firebase paymentRecords
+          return { success: true, orderId: paymentIntent.id, message: 'Firebase UID missing, partial success.' };
+        }
+
+        const userRef = db.collection('users').doc(firebaseUid);
+        const newExpiryDate = calculateExpiredAt(duration);
         await userRef.update({
           planLevel: planId,
           planDuration: duration,
-          expiredAt: calculateExpiredAt(duration),
+          expiredAt: newExpiryDate,
           updatedAt: new Date().toISOString()
         });
+        console.log(`[WebhookService] Firebase user ${firebaseUid} updated with plan: ${planId}, duration: ${duration}, expires: ${newExpiryDate}`);
         
-        // 3. 发送 WebSocket 消息通知前端
-        global.io.to(userId).emit('payment:success', {
-          orderId: paymentIntent.id,
-          planId,
-          duration
-        });
+        // 3. 发送 WebSocket 消息通知前端 (Firebase related)
+        if (global.io) {
+            global.io.to(firebaseUid).emit('payment:success', {
+                orderId: paymentIntent.id,
+                planId,
+                duration
+            });
+            console.log(`[WebhookService] WebSocket event 'payment:success' emitted to ${firebaseUid}`);
+        } else {
+            console.warn('[WebhookService] global.io not available for WebSocket message.');
+        }
+
+        // 4. Sync to Supabase (New Logic)
+        try {
+          console.log('[WebhookService] Attempting Supabase sync...');
+          const { data: supabaseUser, error: supabaseUserError } = await supabaseAdmin
+            .from('users')
+            .select('id')
+            .eq('firebase_uid', firebaseUid)
+            .single();
+
+          if (supabaseUserError || !supabaseUser) {
+            console.error(`[WebhookService] Supabase user not found for Firebase UID ${firebaseUid}. Error: ${supabaseUserError?.message}. Skipping Supabase payment/subscription sync.`);
+          } else {
+            const supabaseUserId = supabaseUser.id;
+            console.log(`[WebhookService] Found Supabase user ID: ${supabaseUserId} for Firebase UID: ${firebaseUid}`);
+
+            // 4a. Sync to Supabase 'payments' table
+            const paymentAmountSupabase = paymentIntent.amount / 100; // Convert cents to decimal
+            const { data: supabasePayment, error: supabasePaymentError } = await supabaseAdmin
+              .from('payments')
+              .insert({
+                user_id: supabaseUserId,
+                amount: paymentAmountSupabase,
+                currency: paymentIntent.currency.toUpperCase(),
+                payment_method: 'stripe',
+                status: 'succeeded', // Match paymentRecord.status or be explicit
+                transaction_id: paymentIntent.id, // Stripe Payment Intent ID
+                metadata: {
+                  firebasePaymentRecordId: paymentRecord.id, // Link to Firebase record
+                  rawStripeEvent: paymentIntent // Store the raw event if needed, can be large
+                }
+              })
+              .select('id') // Select the ID of the newly inserted payment
+              .single();
+
+            if (supabasePaymentError) {
+              console.error(`[WebhookService] Error inserting into Supabase payments table for user ${supabaseUserId}:`, supabasePaymentError);
+            } else {
+              console.log(`[WebhookService] Successfully inserted into Supabase payments table for user ${supabaseUserId}, payment ID: ${supabasePayment?.id}`);
+              
+              // 4b. Sync to Supabase 'subscriptions' table (Upsert logic)
+              // We will upsert based on user_id, assuming one primary subscription for this flow.
+              // If a plan_id changes, this will update it.
+              const subscriptionData = {
+                user_id: supabaseUserId,
+                plan_id: planId,
+                status: 'active',
+                started_at: new Date().toISOString(),
+                expires_at: newExpiryDate.toISOString(), 
+                current_period_started_at: new Date().toISOString(), // For simplicity, same as started_at
+                current_period_expires_at: newExpiryDate.toISOString(), // For simplicity, same as expires_at
+                last_payment_id: supabasePayment?.id || null, // Link to the Supabase payment record
+                // provider_subscription_id: null, // If not using Stripe Subscriptions API directly
+                updated_at: new Date().toISOString() // Ensure updated_at is set
+              };
+
+              // Attempt to update existing active subscription or insert a new one.
+              // First, try to find an existing subscription for the user.
+              const { data: existingSub, error: findSubError } = await supabaseAdmin
+                .from('subscriptions')
+                .select('id')
+                .eq('user_id', supabaseUserId)
+                // .eq('status', 'active') // Optionally only target active ones to update
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .maybeSingle(); 
+
+              if (findSubError) {
+                 console.error(`[WebhookService] Error finding existing Supabase subscription for user ${supabaseUserId}:`, findSubError);
+              } else if (existingSub) {
+                // Update existing subscription
+                const { error: updateSubError } = await supabaseAdmin
+                  .from('subscriptions')
+                  .update({
+                      ...subscriptionData, // spread all fields, ID will be ignored if primary key
+                      id: undefined, // ensure id is not in update payload if not intending to change PK
+                  })
+                  .eq('id', existingSub.id);
+                if (updateSubError) {
+                    console.error(`[WebhookService] Error updating Supabase subscription ${existingSub.id} for user ${supabaseUserId}:`, updateSubError);
+                } else {
+                    console.log(`[WebhookService] Successfully updated Supabase subscription ${existingSub.id} for user ${supabaseUserId}`);
+                }
+              } else {
+                // Insert new subscription
+                const { error: insertSubError } = await supabaseAdmin
+                  .from('subscriptions')
+                  .insert(subscriptionData)
+                  .select(); // Select to confirm insertion
+                 if (insertSubError) {
+                    console.error(`[WebhookService] Error inserting new Supabase subscription for user ${supabaseUserId}:`, insertSubError);
+                 } else {
+                    console.log(`[WebhookService] Successfully inserted new Supabase subscription for user ${supabaseUserId}`);
+                 }
+              }
+            }
+          }
+        } catch (supabaseSyncError) {
+          console.error('[WebhookService] Error during Supabase sync process:', supabaseSyncError);
+          // Do not re-throw; allow Firebase part to be considered success for Stripe
+        }
+
+      } else {
+        console.log('[WebhookService] Payment record status is not completed. Status:', paymentRecord.status);
       }
 
       return { success: true, orderId: paymentIntent.id };
     } catch (error) {
-      console.error('处理支付失败:', error);
+      console.error('[WebhookService] Error in handlePaymentSuccess:', error);
+      // Consider if this should throw to indicate failure to Stripe, 
+      // or if Firebase payment record creation is enough to signal success.
+      // For now, re-throwing to align with previous behavior.
       throw error;
     }
   }
 
-  static async updatePaymentRecord(paymentIntent) {
+  static async updatePaymentRecordFirebase(paymentIntent) {
     let recordRef;
     let recordData;
+    const firebaseUid = paymentIntent.metadata?.userId || null;
 
     await withRetry(async () => {
       const paymentSnapshot = await db.collection('paymentRecords')
@@ -49,12 +171,12 @@ class WebhookService {
       if (paymentSnapshot.empty) {
         const newRecord = {
           orderId: paymentIntent.id,
-          status: 'completed', // Assuming successful payment at this stage
+          status: 'completed', 
           amount: paymentIntent.amount,
           currency: paymentIntent.currency,
-          userId: paymentIntent.metadata?.userId || null, // Store userId if available
-          planId: paymentIntent.metadata?.planId || null, // Store planId if available
-          duration: paymentIntent.metadata?.duration || null, // Store duration if available
+          userId: firebaseUid, 
+          planId: paymentIntent.metadata?.planId || null, 
+          duration: paymentIntent.metadata?.duration || null, 
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           completedAt: new Date().toISOString()
@@ -63,22 +185,21 @@ class WebhookService {
         recordData = { id: recordRef.id, ...newRecord };
       } else {
         recordRef = paymentSnapshot.docs[0].ref;
+        const existingData = paymentSnapshot.docs[0].data();
         const updatedData = {
-          status: 'completed', // Assuming successful payment at this stage
+          status: 'completed', 
           updatedAt: new Date().toISOString(),
           completedAt: new Date().toISOString(),
-          // Optionally re-add metadata if it might change or was missing
-          userId: paymentIntent.metadata?.userId || paymentSnapshot.docs[0].data().userId || null,
-          planId: paymentIntent.metadata?.planId || paymentSnapshot.docs[0].data().planId || null,
-          duration: paymentIntent.metadata?.duration || paymentSnapshot.docs[0].data().duration || null,
+          userId: firebaseUid || existingData.userId || null,
+          planId: paymentIntent.metadata?.planId || existingData.planId || null,
+          duration: paymentIntent.metadata?.duration || existingData.duration || null,
         };
         await recordRef.update(updatedData);
-        // Fetch the updated document to return its data
         const updatedDoc = await recordRef.get();
         recordData = { id: updatedDoc.id, ...updatedDoc.data() };
       }
     });
-    return recordData; // Return the created or updated record data
+    return recordData; 
   }
 
   static async updateUserInfo(paymentIntent) {

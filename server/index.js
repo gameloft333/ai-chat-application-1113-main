@@ -119,12 +119,15 @@ app.options('*', cors());
 
 app.post('/api/stripe/create-payment-intent', async (req, res) => {
   try {
-    const { amount, currency } = req.body;
+    const { amount, currency, userId } = req.body;
     console.log('创建支付意向:', { amount, currency });
     
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(amount * 100),
       currency: currency.toLowerCase(),
+      metadata: {
+        userId: userId || '', // Pass the Firebase UID to metadata
+      }
     });
 
     console.log('支付意向创建成功:', paymentIntent.client_secret);
@@ -250,6 +253,8 @@ if (!supabaseUrl || !supabaseServiceKey) {
 const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey); 
 console.log('Supabase Admin Client initialized (or attempted).');
 // --- End Supabase Admin Init --- 
+
+export { supabaseAdmin };
 
 // --- Add API Route for User Sync --- 
 app.post('/api/sync-user', async (req, res) => {

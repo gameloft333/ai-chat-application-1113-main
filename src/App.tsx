@@ -366,7 +366,8 @@ const AppContent: React.FC<AppContentProps> = ({
           
           const clientSecret = await stripeService.createPaymentIntent(
             amount,
-            currentCurrency.code
+            currentCurrency.code,
+            currentUser.uid
           );
           
           // 创建支付记录

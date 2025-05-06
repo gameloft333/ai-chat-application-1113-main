@@ -19,33 +19,57 @@ export class StripeService {
     private async ensureInitialized() {
         if (this.stripe) return;
         if (this.isInitializing) {
-            await new Promise(resolve => setTimeout(resolve, 100));
-            return this.ensureInitialized();
+            // Wait for initialization to complete
+            await new Promise(resolve => {
+                const checkInitialization = () => {
+                    if (!this.isInitializing) {
+                        resolve(null);
+                    } else {
+                        setTimeout(checkInitialization, 100);
+                    }
+                };
+                checkInitialization();
+            });
+            // After waiting, stripe should be initialized, or we throw if still not.
+            if (!this.stripe) throw new Error('Stripe initialization failed after wait.');
+            return; 
         }
 
         try {
             this.isInitializing = true;
-            this.stripe = await loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
-            if (!this.stripe) throw new Error('Stripe 初始化失败');
-        } finally {
+            const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+            if (!stripeKey) {
+                throw new Error('VITE_STRIPE_PUBLISHABLE_KEY is not set in environment variables.');
+            }
+            this.stripe = await loadStripe(stripeKey);
+            if (!this.stripe) {
+                // This case should ideally be caught by loadStripe itself if key is invalid,
+                // but good to have a check.
+                throw new Error('Stripe.js failed to load. Check your publishable key.');
+            }
+        } catch(error) {
+            console.error("Error during Stripe initialization:", error);
+            this.isInitializing = false; // Reset flag on error
+            throw error; // Re-throw to signal failure
+        } 
+        finally {
             this.isInitializing = false;
         }
     }
 
-    async createPaymentIntent(amount: number, currency: string): Promise<string> {
-        console.log('开始创建支付意向...', { amount, currency });
+    async createPaymentIntent(amount: number, currency: string, userId: string): Promise<string> {
+        console.log('StripeService: Creating payment intent...', { amount, currency, userId });
         
         try {
             await this.ensureInitialized();
-            console.log('Stripe 初始化完成');
+            console.log('StripeService: Stripe initialized.');
             
-            const API_URL = STRIPE_CONFIG.API_URL;
+            const API_URL = STRIPE_CONFIG.API_URL || import.meta.env.VITE_PAYMENT_API_URL;
             if (!API_URL) {
-                throw new Error('支付服务地址未配置');
+                throw new Error('Payment API URL (VITE_PAYMENT_API_URL) is not configured.');
             }
-            console.log('请求支付服务:', API_URL);
+            console.log('StripeService: Requesting payment intent from API URL:', API_URL);
             
-            // 添加更多请求头和错误处理
             const response = await fetch(`${API_URL}/api/stripe/create-payment-intent`, {
                 method: 'POST',
                 headers: {
@@ -55,77 +79,90 @@ export class StripeService {
                 body: JSON.stringify({ 
                     amount, 
                     currency,
-                    // 添加额外的请求参数
+                    userId, // Include Firebase UID
                     timestamp: new Date().getTime(),
-                    origin: window.location.origin
+                    origin: window.location.origin 
                 }),
                 credentials: 'include',
-                mode: 'cors'  // 明确指定CORS模式
+                mode: 'cors'
             });
 
-            console.log('支付服务响应状态:', response.status);
+            console.log('StripeService: Create payment intent API response status:', response.status);
             
-            // 详细的错误处理
             if (!response.ok) {
-                let errorMessage;
+                let errorMessage = `Payment service request failed with status ${response.status}`;
                 try {
                     const errorData = await response.json();
-                    errorMessage = errorData.message || errorData.error || '未知错误';
-                } catch {
-                    errorMessage = await response.text();
+                    errorMessage = errorData.message || errorData.error || errorMessage;
+                } catch (e) {
+                    // If parsing error JSON fails, use the text content if available
+                    const textError = await response.text().catch(() => '');
+                    if (textError) errorMessage += ` - ${textError}`;
                 }
                 
-                console.error('支付服务错误:', {
+                console.error('StripeService: Payment service error:', {
                     status: response.status,
                     statusText: response.statusText,
                     error: errorMessage
                 });
                 
-                throw new Error(`支付服务请求失败: ${errorMessage}`);
+                throw new Error(errorMessage);
             }
 
             const data = await response.json();
-            console.log('支付意向创建成功:', data);
+            if (!data.clientSecret) {
+                console.error('StripeService: clientSecret missing in API response:', data);
+                throw new Error('Failed to retrieve payment client secret from server.');
+            }
+            console.log('StripeService: Payment intent created successfully. Client Secret:', data.clientSecret.substring(0, 10) + "..."); // Log part of secret
             return data.clientSecret;
         } catch (error) {
-            console.error('Stripe 支付初始化失败:', {
-                error,
-                stack: error.stack,
-                type: typeof error
-            });
+            console.error('StripeService: Error creating payment intent:', error);
             
-            // 重试机制
-            if (this.shouldRetry(error)) {
-                console.log('尝试重新请求...');
-                return await this.retryCreatePaymentIntent(amount, currency);
-            }
+            // Simplified retry logic for this example, or remove if causing issues
+            // Be cautious with retrying payment intent creation as it might lead to multiple intents
+            // For this specific flow, if createPaymentIntent fails, it's usually better to show error to user.
+            // if (this.shouldRetry(error)) {
+            //     console.log('StripeService: Attempting to retry createPaymentIntent...');
+            //     return await this.retryCreatePaymentIntent(amount, currency, userId);
+            // }
             
-            throw error;
+            throw error; // Re-throw the error to be handled by the caller
         }
     }
 
-    // 添加重试逻辑
+    // Retry logic might be too aggressive for payment intent creation. 
+    // Consider removing or simplifying if it causes issues.
     private shouldRetry(error: any): boolean {
+        // Only retry on specific network-related errors, not on Stripe API errors usually
+        const message = String(error?.message || '').toLowerCase();
         return error instanceof TypeError || 
-               error.message.includes('NetworkError') ||
-               error.message.includes('Failed to fetch');
+               message.includes('networkerror') || // For Firefox
+               message.includes('failed to fetch');  // For Chrome and others
     }
 
-    private async retryCreatePaymentIntent(amount: number, currency: string, retries = 3): Promise<string> {
+    private async retryCreatePaymentIntent(amount: number, currency: string, userId: string, retries = 1): Promise<string> { // Reduced default retries
         for (let i = 0; i < retries; i++) {
             try {
-                // 延迟重试，避免立即重试
-                await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
-                return await this.createPaymentIntent(amount, currency);
+                await new Promise(resolve => setTimeout(resolve, 1500 * (i + 1))); // Increased delay
+                console.log(`StripeService: Retrying createPaymentIntent (attempt ${i + 1}/${retries})`);
+                return await this.createPaymentIntent(amount, currency, userId); // Call the main method for retry
             } catch (error) {
-                if (i === retries - 1) throw error;
-                console.log(`重试失败 ${i + 1}/${retries}:`, error);
+                console.log(`StripeService: Retry attempt ${i + 1} failed:`, error);
+                if (i === retries - 1) throw error; // Throw last error if all retries fail
             }
         }
-        throw new Error('重试次数已达上限');
+        // This line should not be reached if logic is correct, but as a fallback:
+        throw new Error('StripeService: Max retries reached for payment intent creation.');
     }
 
     getStripe(): Stripe | null {
+        if (!this.stripe && !this.isInitializing) {
+            // console.warn("StripeService: getStripe called before initialization or after failed init. Attempting to initialize.");
+            // this.ensureInitialized().catch(err => console.error("StripeService: Auto-init in getStripe failed:", err));
+            // It's generally better to ensure `ensureInitialized` is called and awaited by the consuming component.
+            // Returning null if not initialized, or throwing error, depends on desired strictness.
+        }
         return this.stripe;
     }
 }
