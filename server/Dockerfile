@@ -47,5 +47,5 @@ EXPOSE 4242
 # HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 #   CMD curl -f http://localhost:4242/health || exit 1
 
-# Modified CMD for runtime check
-CMD ls -la /usr/src/app && echo "--- package.json content at RUNTIME: ---" && cat /usr/src/app/package.json && echo "--- END package.json content at RUNTIME --- Starting node..." && node index.js 
+# Modified CMD to print environment variables before starting node
+CMD echo "RUNTIME ENV VARS (from CMD):" && printenv && echo "--- ls -la /usr/src/app (from CMD): ---" && ls -la /usr/src/app && echo "--- package.json content at RUNTIME (from CMD): ---" && cat /usr/src/app/package.json && echo "--- END package.json --- Starting node..." && node index.js 
