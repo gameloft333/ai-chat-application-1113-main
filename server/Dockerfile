@@ -8,10 +8,16 @@ COPY package-lock.json ./
 # If you use yarn:
 # COPY yarn.lock ./
 
+# Force IPv4 for DNS resolution during npm install
+ENV NODE_OPTIONS=--dns-result-order=ipv4first
+
 # Install dependencies
 RUN npm install --production
 # Or if you use yarn: 
 # RUN yarn install --production --frozen-lockfile
+
+# Unset NODE_OPTIONS if it's not needed for runtime
+ENV NODE_OPTIONS=
 
 # Copy the server-specific application code from the ./server directory (relative to context)
 COPY ./server/ /usr/src/app/
