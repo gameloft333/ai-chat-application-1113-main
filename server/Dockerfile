@@ -2,21 +2,19 @@ FROM node:18-alpine
 
 WORKDIR /usr/src/app
 
-# Copy package.json and package-lock.json from the project root
-# The build context for this service is ./server, so ../ refers to the project root.
-COPY ../package.json ./
-COPY ../package-lock.json ./
+# Copy package.json and package-lock.json from the project root (build context is now project root)
+COPY package.json ./
+COPY package-lock.json ./
 # If you use yarn:
-# COPY ../yarn.lock ./
+# COPY yarn.lock ./
 
 # Install dependencies
 RUN npm install --production
 # Or if you use yarn: 
 # RUN yarn install --production --frozen-lockfile
 
-# Copy the rest of the server-specific application code from the ./server directory
-# Since WORKDIR is /usr/src/app and context is ./server, COPY . . copies ./server contents
-COPY . .
+# Copy the server-specific application code from the ./server directory (relative to context)
+COPY ./server/ /usr/src/app/
 
 # Expose the port the app runs on (as defined by SERVER_PORT in .env.production)
 # The default is 4242, Nginx will map to this.

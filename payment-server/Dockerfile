@@ -8,33 +8,31 @@ RUN apk add --no-cache curl
 # 创建必要的目录
 RUN mkdir -p /app/config /app/services
 
-# Copy package.json and package-lock.json from the project root
-# The build context for this service is ./payment-server, so ../ refers to the project root.
-COPY ../package.json ./
-COPY ../package-lock.json ./
+# Copy package.json and package-lock.json from the project root (build context is now project root)
+COPY package.json ./
+COPY package-lock.json ./
 # If you use yarn:
-# COPY ../yarn.lock ./
+# COPY yarn.lock ./
 
 # Install payment server dependencies
 RUN npm install --production
 # Or if you use yarn:
 # RUN yarn install --production --frozen-lockfile
 
-# Copy the rest of the payment-server-specific application code
-# Since WORKDIR is /usr/src/app and context is ./payment-server, COPY . . copies ./payment-server contents
-COPY . .
+# Copy the payment-server-specific application code from the ./payment-server directory (relative to context)
+COPY ./payment-server/ /usr/src/app/
 
-# Copy .env.production from build context (./payment-server) to .env in WORKDIR (/usr/src/app)
-# This assumes .env.production is specific to payment-server and located in its directory
-# If .env.production is at project root and shared, the path should be ../.env.production
-COPY .env.production .env
+# Copy .env.production from ./payment-server (relative to context) to .env in WORKDIR (/usr/src/app)
+# This assumes .env.production is specific to payment-server and meant to be copied from its subdirectory.
+# If .env.production is at project root and shared by all services, this should be: COPY .env.production .env
+COPY ./payment-server/.env.production .env
 
 # 添加环境文件调试信息
 RUN echo "检查环境文件 (in /usr/src/app):"
 RUN ls -la /usr/src/app/.env*
 RUN echo "当前目录结构 (of /usr/src/app):"
 RUN find /usr/src/app -maxdepth 1 -type f -name ".env*"
-RUN echo "Listing /app just in case it was intended for .env (created by mkdir):"
+RUN echo "Listing /app (created by mkdir earlier):"
 RUN ls -la /app
 
 # 添加调试信息
@@ -47,8 +45,8 @@ ENV HOST=0.0.0.0
 
 EXPOSE 4242
 
-# 添加健康检查脚本
-COPY healthcheck.sh /healthcheck.sh
+# healthcheck.sh needs to be copied from its location relative to new context
+COPY ./payment-server/healthcheck.sh /healthcheck.sh
 RUN chmod +x /healthcheck.sh
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
