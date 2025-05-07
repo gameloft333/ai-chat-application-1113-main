@@ -25,9 +25,9 @@ COPY .env.production .env
 
 # 添加环境文件调试信息
 RUN echo "检查环境文件:"
-RUN ls -la /app/.env*
+RUN ls -la /usr/src/app/.env*
 RUN echo "当前目录结构:"
-RUN find /app -type f -name ".env*"
+RUN find /usr/src/app -type f -name ".env*"
 
 # 添加调试信息
 RUN ls -la /app
