@@ -1,6 +1,6 @@
 FROM node:18-alpine
 
-WORKDIR /app
+WORKDIR /usr/src/app
 
 # 安装必要的工具
 RUN apk add --no-cache curl
@@ -8,8 +8,14 @@ RUN apk add --no-cache curl
 # 创建必要的目录
 RUN mkdir -p /app/config /app/services
 
+# Copy package.json and package-lock.json (or yarn.lock) for the payment server
+# Adjust the path if your payment server's package.json is in a subdirectory
 COPY package*.json ./
-RUN npm install
+# COPY yarn.lock ./
+
+# Install payment server dependencies
+RUN npm install --production
+# Or RUN yarn install --production
 
 # 复制源代码和环境变量文件
 COPY . .
@@ -40,4 +46,5 @@ RUN chmod +x /healthcheck.sh
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
     CMD /healthcheck.sh
 
-CMD ["node", "index.js"]
+# Start the payment server
+CMD [ "node", "index.js" ]
