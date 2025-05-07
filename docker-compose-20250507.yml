@@ -23,9 +23,6 @@ services:
     environment:
       - NODE_ENV=production
       - SERVER_PORT=4242
-    volumes:
-      - ./server:/usr/src/app
-      - /usr/src/app/node_modules
     networks:
       - saga4v_network
     expose:
@@ -42,9 +39,6 @@ services:
     environment:
       - NODE_ENV=production
       - PAYMENT_SERVER_PORT=4242
-    volumes:
-      - ./payment-server:/usr/src/app
-      - /usr/src/app/node_modules
     networks:
       - saga4v_network
     expose:
