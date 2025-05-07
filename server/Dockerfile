@@ -4,8 +4,8 @@ WORKDIR /usr/src/app
 
 # Copy package.json and package-lock.json (or yarn.lock) for the server
 # Adjust the path if your server's package.json is in a subdirectory
-COPY package*.json ./
-# COPY yarn.lock ./
+COPY ../package*.json ./
+# COPY ../yarn.lock ./
 
 # Install server dependencies
 # If server and client have separate package.json, ensure you copy the correct one
