@@ -2,18 +2,20 @@ FROM node:18-alpine
 
 WORKDIR /usr/src/app
 
-# Copy package.json and package-lock.json (or yarn.lock) for the server
-# Adjust the path if your server's package.json is in a subdirectory
-COPY ../package*.json ./
+# Copy package.json and package-lock.json from the project root
+# The build context for this service is ./server, so ../ refers to the project root.
+COPY ../package.json ./
+COPY ../package-lock.json ./
+# If you use yarn:
 # COPY ../yarn.lock ./
 
-# Install server dependencies
-# If server and client have separate package.json, ensure you copy the correct one
+# Install dependencies
 RUN npm install --production
-# Or RUN yarn install --production
+# Or if you use yarn: 
+# RUN yarn install --production --frozen-lockfile
 
-# Copy the rest of the server application code
-# This assumes the Dockerfile is in the 'server' directory
+# Copy the rest of the server-specific application code from the ./server directory
+# Since WORKDIR is /usr/src/app and context is ./server, COPY . . copies ./server contents
 COPY . .
 
 # Expose the port the app runs on (as defined by SERVER_PORT in .env.production)
