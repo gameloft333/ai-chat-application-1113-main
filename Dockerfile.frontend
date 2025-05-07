@@ -24,11 +24,14 @@ FROM nginx:1.25-alpine
 # Copy the build output from the builder stage to Nginx's web root
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Copy a custom Nginx configuration (optional, if default is not sufficient for SPA)
-# COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Remove default Nginx configuration
+RUN rm /etc/nginx/conf.d/default.conf
 
-# Expose port 80
-EXPOSE 80
+# Copy our custom Nginx configuration that listens on port 4173
+COPY nginx-custom.conf /etc/nginx/conf.d/nginx-custom.conf
+
+# Expose port 4173
+EXPOSE 4173
 
 # Start Nginx
-CMD ["nginx", "-g", "daemon off;"] 
+CMD ["nginx", "-g", "daemon off;"]

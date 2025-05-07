@@ -1,92 +1,56 @@
-# version: '3.8'
+version: '3.8'
 
 services:
   frontend:
     build:
       context: .
       dockerfile: Dockerfile.frontend
-    container_name: ai_chat_frontend
+    container_name: ai-chat-application-1113-main-frontend-1
     restart: unless-stopped
+    expose:
+      - "4173"
     networks:
-      - app_network
-    # No ports exposed directly, Nginx handles access
+      - saga4v_network
 
   main_backend:
     build:
       context: ./server
       dockerfile: Dockerfile
-    container_name: ai_chat_main_backend
+    container_name: ai-chat-application-1113-main-backend-1
     restart: unless-stopped
     env_file:
       - .env.production
     environment:
       - NODE_ENV=production
-      - SERVER_PORT=4242 # Internal port
+      - SERVER_PORT=4242
     volumes:
-      - ./server:/usr/src/app # Optional: For development live reload, remove for production build
-      - /usr/src/app/node_modules # Ensures node_modules within container is used
+      - ./server:/usr/src/app
+      - /usr/src/app/node_modules
     networks:
-      - app_network
-    depends_on:
-      - frontend # Or remove if no direct build dependency
-    # No ports exposed directly, Nginx handles access
+      - saga4v_network
+    expose:
+      - "4242"
 
   payment_backend:
     build:
       context: ./payment-server
       dockerfile: Dockerfile
-    container_name: ai_chat_payment_backend
+    container_name: ai-chat-application-1113-main-payment-server-1
     restart: unless-stopped
     env_file:
       - .env.production
     environment:
       - NODE_ENV=production
-      - PAYMENT_SERVER_PORT=4242 # Internal port, distinct from main_backend in terms of service name
+      - PAYMENT_SERVER_PORT=4242
     volumes:
-      - ./payment-server:/usr/src/app # Optional: For development live reload, remove for production build
-      - /usr/src/app/node_modules # Ensures node_modules within container is used
+      - ./payment-server:/usr/src/app
+      - /usr/src/app/node_modules
     networks:
-      - app_network
-    # No ports exposed directly, Nginx handles access
-
-  nginx_proxy:
-    image: nginx:1.25-alpine
-    container_name: ai_chat_nginx_proxy
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/default.conf:/etc/nginx/nginx.conf:ro # Mount the main Nginx config
-      # - ./nginx/conf.d:/etc/nginx/conf.d:ro # Alternative: mount site configs here
-      - certbot_certs:/etc/letsencrypt
-      - certbot_www:/var/www/certbot
-    networks:
-      - app_network
-    depends_on:
-      - frontend
-      - main_backend
-      - payment_backend
-
-  certbot:
-    image: certbot/certbot
-    container_name: ai_chat_certbot
-    restart: unless-stopped
-    volumes:
-      - certbot_certs:/etc/letsencrypt
-      - certbot_www:/var/www/certbot
-    # Command to obtain/renew certificate. Run initially, then set up cron for renewal.
-    # IMPORTANT: You need to run this manually first after Nginx is up and DNS is propagated.
-    # Example initial command (run once from your server where docker-compose is):
-    # docker-compose run --rm certbot certonly --webroot --webroot-path /var/www/certbot --email your-email@example.com --agree-tos --no-eff-email -d love.saga4v.com
-    # For renewal, certbot image usually has a cron job or you can set one up on the host:
-    # command: ["renew", "--quiet", "--disable-hook-validation"]
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew --quiet --disable-hook-validation; sleep 12h & wait $${!}; done;'"
+      - saga4v_network
+    expose:
+      - "4242"
 
 networks:
-  app_network:
-    driver: bridge
-
-volumes:
-  certbot_certs:
-  certbot_www: 
+  saga4v_network:
+    external: true
+    name: saga4v_network
