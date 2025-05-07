@@ -32,4 +32,14 @@ build
 ~$*
 *.7z
 payment-server/.env.production.gold.old
-.env.production
+*.*env*.*production*
+.production
+
+# Environment variables
+.env
+.env.*
+!.env.example
+!.env.template
+
+# Optional: If you have a specific .env.production.template or similar that IS safe to commit
+# !.env.production.template
