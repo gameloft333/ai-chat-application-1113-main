@@ -185,3 +185,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Updated character prompts to prevent AI from revealing its virtual nature
 - Added additional filtering in llm-service.ts to remove content that might expose AI identity
+
+## [1.397.1816.502fix] - 2025-05-08
+
+### Fixed
+- 修复生产环境 love.saga4v.com 502 Bad Gateway 问题。
+- 主要原因：Nginx全局代理配置与前端容器Nginx端口、CORS头、OPTIONS预检处理等存在冲突。
+- 解决方案：
+  - 确认全局Nginx的 `proxy_pass` 指向前端容器的正确端口（4173）。
+  - 临时简化 `location /` 代理配置，去除多余CORS和OPTIONS处理，恢复正常访问。
+  - 建议如需CORS或自定义header，逐步引入并测试。
+- 优化前端Nginx日志配置，便于后续排查。
+- 明确 `nginx/default.conf` 如未被include可删除，避免配置冲突。

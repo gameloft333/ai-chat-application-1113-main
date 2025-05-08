@@ -253,3 +253,16 @@
 - 变更日志见 `CHANGELOG.md`
 - 角色设计参考 `ai_character_design_v01.xlsx`
 - 具体API、服务、组件说明请查阅 `src/` 目录下各模块及注释
+
+## 部署与Nginx代理修复说明（2025-05-08）
+
+- 修复了生产环境下 love.saga4v.com 访问502 Bad Gateway的问题。
+- 主要原因：Nginx全局代理配置（saga4v-nginx）与前端容器Nginx端口、CORS头、OPTIONS预检处理等存在冲突。
+- 解决方案：
+  - 确认全局Nginx的 `proxy_pass` 指向前端容器的正确端口（4173）。
+  - 临时简化了 `location /` 代理配置，去除多余CORS和OPTIONS处理，恢复正常访问。
+  - 建议如需CORS或自定义header，逐步引入并测试。
+- 相关配置文件：
+  - `nginx.global.250128.conf`（主配置，已修正）
+  - `nginx-custom.conf`（前端容器Nginx，已显式日志）
+  - `nginx/default.conf`（如未被include可删除）
