@@ -31,24 +31,6 @@ if [ ! -f nginx_global_config/docker-compose.nginx-global_v06.yml ]; then
   exit 1
 fi
 
-green "[预处理] 进行可选的全局 Docker 资源清理 (仅针对未使用资源)..."
-
-yellow "清理全局未使用的 Docker 构建缓存..."
-# This removes build cache not associated with any specific image, which is generally safe and frees up space.
-docker builder prune -af >/dev/null 2>&1 || true
-
-yellow "移除全局未使用和悬空的 Docker 镜像..."
-# This removes images that are not tagged and not used by any container.
-# It should not affect running applications or images they are actively using.
-docker image prune -af >/dev/null 2>&1 || true
-
-# The docker-compose down -v in Step 1 will handle project-specific volumes and networks.
-# So, global volume and network prune are not needed here and would increase risk.
-
-green "可选的全局 Docker 资源清理完成。"
-yellow "清理后的 Docker 系统状态 (显示总体 Docker 磁盘使用情况):"
-docker system df
-
 green "[步骤1] 停止并清理旧的主服务容器..."
 docker-compose --env-file .env.production -f docker-compose-20250507.yml down -v || yellow "[警告] 主服务容器清理时出现警告，可忽略。"
 
