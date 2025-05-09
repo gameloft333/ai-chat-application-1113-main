@@ -8,6 +8,7 @@ import http from 'http';
 import { generateRandomColor } from './utils/color-generator.js';
 import WebhookService from './services/WebhookService.js';
 import { fileURLToPath } from 'url';
+import { getOrCreateChatUsage, incrementChatUsage, getUserSubscriptionStatus } from './services/chatUsageService.js';
 
 // --- Add Firebase Admin and Supabase --- 
 import admin from 'firebase-admin';
@@ -254,6 +255,34 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 console.log('Supabase Admin Client initialized (or attempted).');
 // --- End Supabase Admin Init --- 
 
+// Middleware to verify Firebase ID token from Authorization header
+const authenticateUser = async (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        console.warn('[AuthMiddleware] No Bearer token found in Authorization header.');
+        return res.status(401).json({ error: 'Unauthorized', message: 'No token provided.' });
+    }
+
+    const idToken = authHeader.split('Bearer ')[1];
+    if (!idToken) {
+        console.warn('[AuthMiddleware] Bearer token is empty.');
+        return res.status(401).json({ error: 'Unauthorized', message: 'Malformed token.' });
+    }
+
+    try {
+        const decodedToken = await admin.auth().verifyIdToken(idToken);
+        req.user = decodedToken; // Attach user info (includes uid, email etc.) to request object
+        // console.log(`[AuthMiddleware] Token verified for UID: ${decodedToken.uid}`);
+        next();
+    } catch (error) {
+        console.error('[AuthMiddleware] Error verifying Firebase ID token:', error.message);
+        if (error.code === 'auth/id-token-expired') {
+            return res.status(401).json({ error: 'Unauthorized', message: 'Token expired.', code: 'TOKEN_EXPIRED' });
+        }
+        return res.status(401).json({ error: 'Unauthorized', message: 'Invalid token.' });
+    }
+};
+
 export { supabaseAdmin };
 
 // --- Add API Route for User Sync --- 
@@ -472,4 +501,149 @@ app.post('/api/sync-user', async (req, res) => {
         res.status(statusCode).json({ error: 'Failed to sync user', details: error.message });
     }
 });
+
+// API Endpoint to get today's chat usage
+app.get('/api/chat-usage/today', authenticateUser, async (req, res) => {
+    const firebaseUid = req.user.uid; // Firebase UID
+    const todayUTC = new Date().toISOString().split('T')[0]; // YYYY-MM-DD in UTC
+
+    try {
+        // Fetch Supabase user ID (UUID) using firebase_uid
+        const { data: userProfile, error: profileError } = await supabaseAdmin
+            .from('users')
+            .select('id') // Select the Supabase UUID primary key
+            .eq('firebase_uid', firebaseUid)
+            .single();
+
+        if (profileError || !userProfile) {
+            console.error(`[API /api/chat-usage/today] User profile not found for firebase_uid ${firebaseUid}:`, profileError);
+            return res.status(404).json({ error: 'User profile not found in Supabase.' });
+        }
+        const supabaseUserId = userProfile.id; // This is the Supabase UUID
+
+        const [usage, subscription] = await Promise.all([
+            getOrCreateChatUsage(supabaseUserId, todayUTC), // Use Supabase UUID
+            getUserSubscriptionStatus(supabaseUserId)     // Use Supabase UUID
+        ]);
+
+        if (!usage) {
+            // This case should ideally be handled within getOrCreateChatUsage by throwing an error
+            console.error(`[API /api/chat-usage/today] Failed to get or create usage record for user: ${supabaseUserId}`);
+            return res.status(500).json({ error: 'Failed to retrieve chat usage.' });
+        }
+
+        const isSubscriber = subscription?.subscription_status && subscription.subscription_status !== 'normal' && 
+                             (subscription.subscription_expires_at ? new Date(subscription.subscription_expires_at) > new Date() : true);
+        
+        let limit;
+        if (isSubscriber) {
+            const subLimit = process.env.CHARACTER_CHAT_LIMIT_SUBSCRIBER;
+            if (subLimit && subLimit.toLowerCase() === 'unlimited') {
+                limit = Infinity;
+            } else {
+                limit = parseInt(subLimit, 10) || 100; // Default to 100 if parsing fails or not set
+            }
+        } else {
+            limit = parseInt(process.env.CHARACTER_CHAT_LIMIT, 10) || 10; // Default to 10
+        }
+
+        const remaining = limit === Infinity ? Infinity : Math.max(0, limit - usage.used_count);
+
+        res.json({
+            date: todayUTC,
+            limit: limit === Infinity ? 'unlimited' : limit,
+            used: usage.used_count,
+            remaining: remaining === Infinity ? 'unlimited' : remaining,
+            isSubscriber: !!isSubscriber // Ensure boolean
+        });
+
+    } catch (error) {
+        console.error(`[API /api/chat-usage/today] Error for firebase_uid ${firebaseUid} (Supabase ID ${supabaseUserId || 'unknown'}):`, error);
+        res.status(500).json({ error: 'Internal server error while fetching chat usage.', details: error.message });
+    }
+});
+
+// API Endpoint to increment chat usage for the day
+app.post('/api/chat-usage/increment', authenticateUser, async (req, res) => {
+    const firebaseUid = req.user.uid; // Firebase UID
+    const todayUTC = new Date().toISOString().split('T')[0]; // YYYY-MM-DD in UTC
+    let supabaseUserId = null; // For logging in case of early error
+
+    try {
+        // Fetch Supabase user ID (UUID) using firebase_uid
+        const { data: userProfile, error: profileError } = await supabaseAdmin
+            .from('users')
+            .select('id')
+            .eq('firebase_uid', firebaseUid)
+            .single();
+
+        if (profileError || !userProfile) {
+            console.error(`[API /api/chat-usage/increment] User profile not found for firebase_uid ${firebaseUid}:`, profileError);
+            return res.status(404).json({ error: 'User profile not found in Supabase.' });
+        }
+        supabaseUserId = userProfile.id; // This is the Supabase UUID
+
+        // First, check if the user is allowed to chat (idempotency for increment)
+        const [usage, subscription] = await Promise.all([
+            getOrCreateChatUsage(supabaseUserId, todayUTC), // Use Supabase UUID
+            getUserSubscriptionStatus(supabaseUserId)     // Use Supabase UUID
+        ]);
+
+        if (!usage) {
+            console.error(`[API /api/chat-usage/increment] Failed to get or create usage record for user: ${supabaseUserId} before increment.`);
+            return res.status(500).json({ error: 'Failed to retrieve chat usage before increment.' });
+        }
+
+        const isSubscriber = subscription?.subscription_status && subscription.subscription_status !== 'normal' && 
+                             (subscription.subscription_expires_at ? new Date(subscription.subscription_expires_at) > new Date() : true);
+
+        let limit;
+        if (isSubscriber) {
+            const subLimit = process.env.CHARACTER_CHAT_LIMIT_SUBSCRIBER;
+            if (subLimit && subLimit.toLowerCase() === 'unlimited') {
+                limit = Infinity;
+            } else {
+                limit = parseInt(subLimit, 10) || 100;
+            }
+        } else {
+            limit = parseInt(process.env.CHARACTER_CHAT_LIMIT, 10) || 10;
+        }
+
+        if (limit !== Infinity && usage.used_count >= limit) {
+            console.warn(`[API /api/chat-usage/increment] User ${firebaseUid} attempted to increment chat usage beyond limit.`);
+            return res.status(403).json({ 
+                error: 'chat.limit.exceeded', // For i18n on client
+                message: 'Chat limit exceeded for today.',
+                currentUsage: {
+                    date: todayUTC,
+                    limit: limit,
+                    used: usage.used_count,
+                    remaining: 0,
+                    isSubscriber: !!isSubscriber
+                }
+            });
+        }
+
+        // If allowed, then increment
+        const updatedUsage = await incrementChatUsage(supabaseUserId, todayUTC); // Use Supabase UUID
+        const newRemaining = limit === Infinity ? Infinity : Math.max(0, limit - updatedUsage.used_count);
+
+        res.json({
+            success: true,
+            message: 'Chat usage incremented.',
+            updatedUsage: {
+                date: todayUTC,
+                limit: limit === Infinity ? 'unlimited' : limit,
+                used: updatedUsage.used_count,
+                remaining: newRemaining === Infinity ? 'unlimited' : newRemaining,
+                isSubscriber: !!isSubscriber
+            }
+        });
+
+    } catch (error) {
+        console.error(`[API /api/chat-usage/increment] Error for firebase_uid ${firebaseUid} (Supabase ID ${supabaseUserId || 'unknown'}):`, error);
+        res.status(500).json({ error: 'Internal server error while incrementing chat usage.', details: error.message });
+    }
+});
+
 // --- End API Route --- 

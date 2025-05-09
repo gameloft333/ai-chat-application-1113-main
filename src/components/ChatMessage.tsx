@@ -8,7 +8,7 @@ interface ChatMessageProps {
     message: Message;
     character?: {
         name: string;
-        voice: string;
+        voice?: string;
     };
     isTyping?: boolean;
 }

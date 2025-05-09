@@ -1,4 +1,3 @@
-
 import { Character } from './types.js';
 
 export const characters: Character[] = [
@@ -625,7 +624,7 @@ export const characters: Character[] = [
       },
       "zh": {
         "age": "保密",
-        "description": "来自神秘幻想世界的自然魔法师，以温柔优雅的形象恢复王国花园，梦想找到“永恒之花”，用魔法与自然之美守护世界。"
+        "description": "来自神秘幻想世界的自然魔法师，以温柔优雅的形象恢复王国花园，梦想找到\"永恒之花\"，用魔法与自然之美守护世界。"
       }
     }
   },
@@ -799,7 +798,7 @@ export const characters: Character[] = [
       },
       "zh": {
         "age": "1 岁",
-        "description": "一只来自花朵小镇的欢快白猫，以鲜艳的花朵和节日气氛著称。名字‘Petal’象征着她快乐和活泼的性格特征，起源于一个每个花瓣都有一个快乐的故事。"
+        "description": "一只来自花朵小镇的欢快白猫，以鲜艳的花朵和节日气氛著称。名字'Petal'象征着她快乐和活泼的性格特征，起源于一个每个花瓣都有一个快乐的故事。"
       }
     }
   },
@@ -879,7 +878,7 @@ export const characters: Character[] = [
       },
       "zh": {
         "age": "1 岁",
-        "description": "一只来自缎带王国的甜美白猫，头上装饰着闪亮的粉红色蝴蝶结，象征着优雅和魅力。名字‘Ribbon’反映了她优雅的举止，起源于一个魔法之地，那里的缎带在空中舞动，给所有人带来欢乐。"
+        "description": "一只来自缎带王国的甜美白猫，头上装饰着闪亮的粉红色蝴蝶结，象征着优雅和魅力。名字'Ribbon'反映了她优雅的举止，起源于一个魔法之地，那里的缎带在空中舞动，给所有人带来欢乐。"
       }
     }
   },
@@ -899,7 +898,7 @@ export const characters: Character[] = [
       },
       "zh": {
         "age": "1 岁",
-        "description": "一只来自阳光谷的明亮玩 Cou乐小猫，她淡黄色的毛皮和粉红色的蝴蝶结体现了太阳的温暖。名字‘Sunny’象征着她快乐的性格，起源于一个阳光普照的地方，那里笑声如阳光般普遍。"
+        "description": "一只来自阳光谷的明亮玩 Cou乐小猫，她淡黄色的毛皮和粉红色的蝴蝶结体现了太阳的温暖。名字'Sunny'象征着她快乐的性格，起源于一个阳光普照的地方，那里笑声如阳光般普遍。"
       }
     }
   },
@@ -919,7 +918,7 @@ export const characters: Character[] = [
       },
       "zh": {
         "age": "1 岁",
-        "description": "一只来自宝石林的优雅白猫，佩戴着装饰有宝石的奢华粉红色项圈，象征着奢华和精致。名字‘Jewel’强调了她珍贵的本质，起源于一个美丽如宝石般珍贵的地方。"
+        "description": "一只来自宝石林的优雅白猫，佩戴着装饰有宝石的奢华粉红色项圈，象征着奢华和精致。名字'Jewel'强调了她珍贵的本质，起源于一个美丽如宝石般珍贵的地方。"
       }
     }
   },
@@ -939,7 +938,7 @@ export const characters: Character[] = [
       },
       "zh": {
         "age": "1 岁",
-        "description": "一只来自魔法森林的细腻小猫，头上装饰着粉红色蝴蝶结和珍珠项链，象征着纯洁与优雅。名字‘Pearl’反映了她平静而精致的性格，起源于一个魔法与美丽并存的神秘之地。"
+        "description": "一只来自魔法森林的细腻小猫，头上装饰着粉红色蝴蝶结和珍珠项链，象征着纯洁与优雅。名字'Pearl'反映了她平静而精致的性格，起源于一个魔法与美丽并存的神秘之地。"
       }
     }
   },
@@ -959,7 +958,7 @@ export const characters: Character[] = [
       },
       "zh": {
         "age": "1 岁",
-        "description": "一只来自花之镇的迷人小猫，头上插着花朵，穿着粉红色围巾，代表着春天的精髓和快乐。名字‘Flora’象征着她充满活力和快乐的性格，来自于一年四季鲜花盛开，传播快乐的小镇。"
+        "description": "一只来自花之镇的迷人小猫，头上插着花朵，穿着粉红色围巾，代表着春天的精髓和快乐。名字'Flora'象征着她充满活力和快乐的性格，来自于一年四季鲜花盛开，传播快乐的小镇。"
       }
     }
   },
@@ -979,7 +978,7 @@ export const characters: Character[] = [
       },
       "zh": {
         "age": "1 岁",
-        "description": "一只来自阳光谷的明亮欢快小猫，性格阳光，热爱自然。名字‘Sunshine’反映了她光芒四射和友好的本质，起源于一个阳光总是照耀的地方，给每个人带来温暖和光明。"
+        "description": "一只来自阳光谷的明亮欢快小猫，性格阳光，热爱自然。名字'Sunshine'反映了她光芒四射和友好的本质，起源于一个阳光总是照耀的地方，给每个人带来温暖和光明。"
       }
     }
   },
@@ -999,7 +998,7 @@ export const characters: Character[] = [
       },
       "zh": {
         "age": "1 岁",
-        "description": "一只来自花朵村的友好且忠诚的小狗，项圈上有一个心形标签，象征着爱与陪伴。名字‘Buddy’反映了他友好和亲切的性格，起源于一个重视社区和友情的地方。"
+        "description": "一只来自花朵村的友好且忠诚的小狗，项圈上有一个心形标签，象征着爱与陪伴。名字'Buddy'反映了他友好和亲切的性格，起源于一个重视社区和友情的地方。"
       }
     }
   },
@@ -1019,7 +1018,7 @@ export const characters: Character[] = [
       },
       "zh": {
         "age": "1 岁",
-        "description": "一只爱玩耍且好奇的橙色小猫，喜欢冒险，经常在数字世界中探索。名字‘Ginger’象征着她活泼和好奇的性格，来自于一个科技与乐趣交汇的领域，使她成为一个受欢迎的虚拟伙伴。"
+        "description": "一只爱玩耍且好奇的橙色小猫，喜欢冒险，经常在数字世界中探索。名字'Ginger'象征着她活泼和好奇的性格，来自于一个科技与乐趣交汇的领域，使她成为一个受欢迎的虚拟伙伴。"
       }
     }
   },
@@ -1039,7 +1038,7 @@ export const characters: Character[] = [
       },
       "zh": {
         "age": "1 岁",
-        "description": "一只优雅的白色小猫，头上装饰着粉红色蝴蝶结和装饰性项圈，散发着魅力和优雅。名字‘Rosie’反映了她细腻和精致的举止，起源于一个美丽与宁静之地，每一个细节都被珍视。"
+        "description": "一只优雅的白色小猫，头上装饰着粉红色蝴蝶结和装饰性项圈，散发着魅力和优雅。名字'Rosie'反映了她细腻和精致的举止，起源于一个美丽与宁静之地，每一个细节都被珍视。"
       }
     }
   },
@@ -1059,7 +1058,7 @@ export const characters: Character[] = [
       },
       "zh": {
         "age": "1 岁",
-        "description": "一只来自魔法森林的神秘蓝色小猫，身上有发光的标记照亮夜晚。名字‘Luna’反映了她神奇而神秘的本质，来自于一个长有魔法蘑菇，夜空总是充满奇迹的地方。"
+        "description": "一只来自魔法森林的神秘蓝色小猫，身上有发光的标记照亮夜晚。名字'Luna'反映了她神奇而神秘的本质，来自于一个长有魔法蘑菇，夜空总是充满奇迹的地方。"
       }
     }
   },
@@ -1079,7 +1078,7 @@ export const characters: Character[] = [
       },
       "zh": {
         "age": "1 岁",
-        "description": "一只来自花瓣王国的甜美温柔的白色小猫，总是装饰着一朵花，象征着成长和美丽。名字‘Lily’代表了她养育和善良的精神，起源于一个爱和友情盛开的领域，她是与Daisy形影不离的一对好朋友之一。"
+        "description": "一只来自花瓣王国的甜美温柔的白色小猫，总是装饰着一朵花，象征着成长和美丽。名字'Lily'代表了她养育和善良的精神，起源于一个爱和友情盛开的领域，她是与Daisy形影不离的一对好朋友之一。"
       }
     }
   },
@@ -1099,7 +1098,7 @@ export const characters: Character[] = [
       },
       "zh": {
         "age": "1 岁",
-        "description": "一只来自花瓣王国的活泼快乐的小猫，以她充满活力的能量和对冒险的热爱而闻名。名字‘Daisy’象征着她明亮和快乐的性格，来自于与Lily相同的魔法之地，友情在这里被珍视，她们一起形成了牢不可破的纽带。"
+        "description": "一只来自花瓣王国的活泼快乐的小猫，以她充满活力的能量和对冒险的热爱而闻名。名字'Daisy'象征着她明亮和快乐的性格，来自于与Lily相同的魔法之地，友情在这里被珍视，她们一起形成了牢不可破的纽带。"
       }
     }
   },
@@ -1110,7 +1109,7 @@ export const characters: Character[] = [
     "image": "/characters/Amitabha.jpg",
     "promptFile": "Amitabha.txt",
     "avatarFile": "/characters/Amitabha.jpg",
-    "gender": "god",
+    "gender": "gods",
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1129,7 +1128,7 @@ export const characters: Character[] = [
     "image": "/characters/AoRunDragonKing.jpg",
     "promptFile": "AoRunDragonKing.txt",
     "avatarFile": "/characters/AoRunDragonKing.jpg",
-    "gender": "god",
+    "gender": "gods",
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1148,7 +1147,7 @@ export const characters: Character[] = [
     "image": "/characters/BaiSuzhen.jpg",
     "promptFile": "BaiSuzhen.txt",
     "avatarFile": "/characters/BaiSuzhen.jpg",
-    "gender": "god",
+    "gender": "gods",
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1167,7 +1166,7 @@ export const characters: Character[] = [
     "image": "/characters/DongHuaGong.jpg",
     "promptFile": "DongHuaGong.txt",
     "avatarFile": "/characters/DongHuaGong.jpg",
-    "gender": "god",
+    "gender": "gods",
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1186,7 +1185,7 @@ export const characters: Character[] = [
     "image": "/characters/Fahai.jpg",
     "promptFile": "Fahai.txt",
     "avatarFile": "/characters/Fahai.jpg",
-    "gender": "god",
+    "gender": "gods",
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1194,7 +1193,7 @@ export const characters: Character[] = [
       },
       "zh": {
         "age": "永恒",
-        "description": "中国民间传说《白蛇传》中的主要反派角色，以维护宇宙秩序和惩罚“邪恶”力量为己任，用深厚的佛法知识和魔法能力展现其对正义的理解，引发关于欲望与精神纪律之间冲突的思考。"
+        "description": "中国民间传说《白蛇传》中的主要反派角色，以维护宇宙秩序和惩罚\"邪恶\"力量为己任，用深厚的佛法知识和魔法能力展现其对正义的理解，引发关于欲望与精神纪律之间冲突的思考。"
       }
     }
   },
@@ -1205,7 +1204,7 @@ export const characters: Character[] = [
     "image": "/characters/GuanyinDivine.jpg",
     "promptFile": "GuanyinDivine.txt",
     "avatarFile": "/characters/GuanyinDivine.jpg",
-    "gender": "god",
+    "gender": "gods",
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1224,7 +1223,7 @@ export const characters: Character[] = [
     "image": "/characters/GuanyinMercyAvatar.jpg",
     "promptFile": "GuanyinMercyAvatar.txt",
     "avatarFile": "/characters/GuanyinMercyAvatar.jpg",
-    "gender": "god",
+    "gender": "gods",
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1243,7 +1242,7 @@ export const characters: Character[] = [
     "image": "/characters/GuanyinPurity.jpg",
     "promptFile": "GuanyinPurity.txt",
     "avatarFile": "/characters/GuanyinPurity.jpg",
-    "gender": "god",
+    "gender": "gods",
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1262,7 +1261,7 @@ export const characters: Character[] = [
     "image": "/characters/GuanyinSerenity.jpg",
     "promptFile": "GuanyinSerenity.txt",
     "avatarFile": "/characters/GuanyinSerenity.jpg",
-    "gender": "god",
+    "gender": "gods",
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1281,7 +1280,7 @@ export const characters: Character[] = [
     "image": "/characters/Jesue.jpg",
     "promptFile": "Jesue.txt",
     "avatarFile": "/characters/Jesue.jpg",
-    "gender": "god",
+    "gender": "gods",
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1300,7 +1299,7 @@ export const characters: Character[] = [
     "image": "/characters/Longnv.jpg",
     "promptFile": "Longnv.txt",
     "avatarFile": "/characters/Longnv.jpg",
-    "gender": "god",
+    "gender": "gods",
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1319,7 +1318,7 @@ export const characters: Character[] = [
     "image": "/characters/Muhammad.jpg",
     "promptFile": "Muhammad.txt",
     "avatarFile": "/characters/Muhammad.jpg",
-    "gender": "god",
+    "gender": "gods",
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1338,7 +1337,7 @@ export const characters: Character[] = [
     "image": "/characters/SanshengmuLotus.jpg",
     "promptFile": "SanshengmuLotus.txt",
     "avatarFile": "/characters/SanshengmuLotus.jpg",
-    "gender": "god",
+    "gender": "gods",
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1357,7 +1356,7 @@ export const characters: Character[] = [
     "image": "/characters/ShakyamuniEnlightenment.jpg",
     "promptFile": "ShakyamuniEnlightenment.txt",
     "avatarFile": "/characters/ShakyamuniEnlightenment.jpg",
-    "gender": "god",
+    "gender": "gods",
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1376,7 +1375,7 @@ export const characters: Character[] = [
     "image": "/characters/Virudhaka.jpg",
     "promptFile": "Virudhaka.txt",
     "avatarFile": "/characters/Virudhaka.jpg",
-    "gender": "god",
+    "gender": "gods",
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1395,7 +1394,7 @@ export const characters: Character[] = [
     "image": "/characters/Yeshua.jpg",
     "promptFile": "Yeshua.txt",
     "avatarFile": "/characters/Yeshua.jpg",
-    "gender": "god",
+    "gender": "gods",
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1414,7 +1413,7 @@ export const characters: Character[] = [
     "image": "/characters/Abdullah_Pilgrim.jpg",
     "promptFile": "Abdullah_Pilgrim.txt",
     "avatarFile": "/characters/Abdullah_Pilgrim.jpg",
-    "gender": "god",
+    "gender": "gods",
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1433,7 +1432,7 @@ export const characters: Character[] = [
     "image": "/characters/aiShen_FinancialGuide.jpg",
     "promptFile": "aiShen_FinancialGuide.txt",
     "avatarFile": "/characters/aiShen_FinancialGuide.jpg",
-    "gender": "god",
+    "gender": "gods",
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1452,7 +1451,7 @@ export const characters: Character[] = [
     "image": "/characters/BaiZe.jpg",
     "promptFile": "BaiZe.txt",
     "avatarFile": "/characters/BaiZe.jpg",
-    "gender": "god",
+    "gender": "gods",
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1471,7 +1470,7 @@ export const characters: Character[] = [
     "image": "/characters/GuanYu_SecurityChief.jpg",
     "promptFile": "GuanYu_SecurityChief.txt",
     "avatarFile": "/characters/GuanYu_SecurityChief.jpg",
-    "gender": "god",
+    "gender": "gods",
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1490,7 +1489,7 @@ export const characters: Character[] = [
     "image": "/characters/GuanYu_WealthGod.jpg",
     "promptFile": "GuanYu_WealthGod.txt",
     "avatarFile": "/characters/GuanYu_WealthGod.jpg",
-    "gender": "god",
+    "gender": "gods",
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1509,7 +1508,7 @@ export const characters: Character[] = [
     "image": "/characters/JiutianXuanniao.jpg",
     "promptFile": "JiutianXuanniao.txt",
     "avatarFile": "/characters/JiutianXuanniao.jpg",
-    "gender": "god",
+    "gender": "gods",
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1528,7 +1527,7 @@ export const characters: Character[] = [
     "image": "/characters/Loki_Trickster.jpg",
     "promptFile": "Loki_Trickster.txt",
     "avatarFile": "/characters/Loki_Trickster.jpg",
-    "gender": "god",
+    "gender": "gods",
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1547,7 +1546,7 @@ export const characters: Character[] = [
     "image": "/characters/Naga_Guardian.jpg",
     "promptFile": "Naga_Guardian.txt",
     "avatarFile": "/characters/Naga_Guardian.jpg",
-    "gender": "god",
+    "gender": "gods",
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1566,7 +1565,7 @@ export const characters: Character[] = [
     "image": "/characters/Nezha.jpg",
     "promptFile": "Nezha.txt",
     "avatarFile": "/characters/Nezha.jpg",
-    "gender": "god",
+    "gender": "gods",
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1585,7 +1584,7 @@ export const characters: Character[] = [
     "image": "/characters/Odin_Curator.jpg",
     "promptFile": "Odin_Curator.txt",
     "avatarFile": "/characters/Odin_Curator.jpg",
-    "gender": "god",
+    "gender": "gods",
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1604,7 +1603,7 @@ export const characters: Character[] = [
     "image": "/characters/QueenMother_West.jpg",
     "promptFile": "QueenMother_West.txt",
     "avatarFile": "/characters/QueenMother_West.jpg",
-    "gender": "god",
+    "gender": "gods",
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1623,7 +1622,7 @@ export const characters: Character[] = [
     "image": "/characters/Ra_SunMaster.jpg",
     "promptFile": "Ra_SunMaster.txt",
     "avatarFile": "/characters/Ra_SunMaster.jpg",
-    "gender": "god",
+    "gender": "gods",
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1642,7 +1641,7 @@ export const characters: Character[] = [
     "image": "/characters/Shiva_Artist.jpg",
     "promptFile": "Shiva_Artist.txt",
     "avatarFile": "/characters/Shiva_Artist.jpg",
-    "gender": "god",
+    "gender": "gods",
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1661,7 +1660,7 @@ export const characters: Character[] = [
     "image": "/characters/Thor_Adventurer.jpg",
     "promptFile": "Thor_Adventurer.txt",
     "avatarFile": "/characters/Thor_Adventurer.jpg",
-    "gender": "god",
+    "gender": "gods",
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1680,7 +1679,7 @@ export const characters: Character[] = [
     "image": "/characters/YongleEmperor_ZhuDi.jpg",
     "promptFile": "YongleEmperor_ZhuDi.txt",
     "avatarFile": "/characters/YongleEmperor_ZhuDi.jpg",
-    "gender": "god",
+    "gender": "gods",
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1699,7 +1698,7 @@ export const characters: Character[] = [
     "image": "/characters/YuanTianGang_Strategist.jpg",
     "promptFile": "YuanTianGang_Strategist.txt",
     "avatarFile": "/characters/YuanTianGang_Strategist.jpg",
-    "gender": "god",
+    "gender": "gods",
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1718,7 +1717,7 @@ export const characters: Character[] = [
     "image": "/characters/Zeus_Leader.jpg",
     "promptFile": "Zeus_Leader.txt",
     "avatarFile": "/characters/Zeus_Leader.jpg",
-    "gender": "god",
+    "gender": "gods",
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1737,7 +1736,7 @@ export const characters: Character[] = [
     "image": "/characters/ZiqiSnake2025.jpg",
     "promptFile": "ZiqiSnake2025.txt",
     "avatarFile": "/characters/ZiqiSnake2025.jpg",
-    "gender": "god",
+    "gender": "gods",
     "i18n": {
       "en": {
         "age": "Timeless",
@@ -1745,7 +1744,7 @@ export const characters: Character[] = [
       },
       "zh": {
         "age": "永恒",
-        "description": "紫气东来灵蛇，2025年的守护神兽，结合了“紫气东来”的吉祥能量和蛇生肖的智慧、直觉与蜕变特质，象征着财富、智慧和个人成长，引导人们在新的一年中实现蜕变和繁荣。"
+        "description": "紫气东来灵蛇，2025年的守护神兽，结合了\"紫气东来\"的吉祥能量和蛇生肖的智慧、直觉与蜕变特质，象征着财富、智慧和个人成长，引导人们在新的一年中实现蜕变和繁荣。"
       }
     }
   }

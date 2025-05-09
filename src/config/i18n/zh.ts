@@ -296,7 +296,7 @@ export default {
         errorMessage: '对不起，我现在遇到了一些技术问题。让我们稍后再聊吧',
         retry: '重试',
         speaking: '正在播放语音...',
-        stopSpeaking: '停止播放',
+        stopPlaying: '停止播放',
         loadingHistory: '加载聊天记录中...',
         clearHistory: '清空聊天记录',
         confirmClear: '确定要清空所有聊天记录吗？',
@@ -306,7 +306,17 @@ export default {
         configError: '系统配置出现问题，请联系管理员。',
         networkError: '网络连接出现问题，请检查您的网络连接。',
         apiKeyError: 'API密钥无效，请联系管理员。',
-        emptyResponseError: 'AI 响应为空，请重试。'
+        emptyResponseError: 'AI 响应为空，请重试。',
+        limit: {
+            title: '今日剩余聊天次数',
+            remaining: {
+                prefix: '今日剩余: ',
+                suffix: '次对话'
+            },
+            exceeded: '您已用完今日所有聊天次数，请订阅以获得更多次数或明日再来。',
+            subscribe: '订阅会员，畅聊无限',
+            unlimited: '无限次数'
+        }
     },
     nav: {
         home: '首页',

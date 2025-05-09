@@ -29,7 +29,7 @@ export const GenderSelector: React.FC<GenderSelectorProps> = ({
   // 初始化每个按钮的颜色
   useEffect(() => {
     const colors: Record<string, string> = {};
-    ['popular', 'female', 'male', 'celebrity', 'pet', 'god'].forEach(key => {
+    ['popular', 'female', 'male', 'celebrity', 'pet', 'gods'].forEach(key => {
       colors[key] = generateAccessibleColor(true);
     });
     setButtonColors(colors);
@@ -88,7 +88,7 @@ export const GenderSelector: React.FC<GenderSelectorProps> = ({
         god: t('gender.god')
       });
     }
-  }, [currentLanguage]);
+  }, [currentLanguage, t]);
 
   const genderButtons = [
     { key: 'popular', label: t('gender.popular') },
@@ -96,7 +96,7 @@ export const GenderSelector: React.FC<GenderSelectorProps> = ({
     { key: 'male', label: t('gender.male') },
     { key: 'celebrity', label: t('gender.celebrity') },
     { key: 'pet', label: t('gender.pet') },
-    { key: 'god', label: t('gender.god') }
+    { key: 'gods', label: t('gender.god') }
   ];
 
   return (

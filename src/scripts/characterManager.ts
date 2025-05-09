@@ -9,7 +9,8 @@ import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { parse } from 'csv-parse/sync';
 import { stringify } from 'csv-stringify/sync';
-import { Character, characters } from '../types/character.js';
+import { type Character } from '../types/types.js';
+import { characters } from '../types/character.js';
 
 // 获取 __dirname 的 ES modules 替代方案
 const __filename = fileURLToPath(import.meta.url);

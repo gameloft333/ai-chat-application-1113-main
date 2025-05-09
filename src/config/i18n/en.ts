@@ -8,7 +8,10 @@ export default {
         welcomeDescription: 'Login to start chatting with companions',
         cancel: 'Cancel',
         submit: 'Submit',
-        submitting: 'Submitting...'
+        submitting: 'Submitting...',
+        show: 'Show',
+        hide: 'Hide',
+        copy: 'Copy'
     },
     gender: {
         all: 'All',
@@ -308,7 +311,17 @@ export default {
         configError: 'System configuration error, please contact administrator.',
         networkError: 'Network connection issue, please check your internet connection.',
         apiKeyError: 'Invalid API key, please contact administrator.',
-        emptyResponseError: 'AI response is empty, please try again.'
+        emptyResponseError: 'AI response is empty, please try again.',
+        limit: {
+            title: "Today's Remaining Chat Times",
+            remaining: {
+                prefix: "Remaining: ",
+                suffix: "chats today"
+            },
+            exceeded: "You have reached your daily chat limit. Subscribe for more or try again tomorrow.",
+            subscribe: "Subscribe for unlimited chats",
+            unlimited: "Unlimited"
+        }
     },
     nav: {
         home: 'Home',

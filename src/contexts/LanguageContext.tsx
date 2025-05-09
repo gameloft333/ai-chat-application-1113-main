@@ -9,6 +9,8 @@ type LanguageType = keyof typeof languages;
 // 从环境变量获取默认语言，如果未设置则使用 'en'
 const DEFAULT_LANGUAGE = import.meta.env.VITE_DEFAULT_LANGUAGE as LanguageType || 'en';
 
+const SHOW_DEBUG_LOGS = import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true';
+
 interface LanguageContextType {
     language: LanguageType;
     currentLanguage: LanguageType;
@@ -44,18 +46,25 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const t = (key: string) => {
         const keys = key.split('.');
         let value: any = languages[language];
-        
+
+        if (SHOW_DEBUG_LOGS) {
+            console.log(`[LanguageContext] Attempting to translate key: "${key}" for language: "${language}"`);
+        }
         try {
             for (const k of keys) {
                 value = value?.[k];
                 if (value === undefined) {
-                    console.warn(`Translation missing for key: ${key} in language: ${language}`);
-                    return ''; // 返回空字符串而不是 key
+                    if (SHOW_DEBUG_LOGS) {
+                        console.warn(`[LanguageContext] Translation missing for key: "${key}" (segment: "${k}") in language: "${language}"`);
+                    }
+                    return '';
                 }
             }
             return value;
         } catch (error) {
-            console.error(`Error getting translation for key: ${key}`, error);
+            if (SHOW_DEBUG_LOGS) {
+                console.error(`[LanguageContext] Error getting translation for key: "${key}"`, error);
+            }
             return '';
         }
     };

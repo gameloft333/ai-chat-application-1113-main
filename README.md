@@ -156,6 +156,8 @@
 - **前端所需 Supabase 配置:**
   - `VITE_SUPABASE_URL`: Supabase 项目 URL。
   - `VITE_SUPABASE_ANON_KEY`: Supabase 公共 Anon Key。
+  - `CHARACTER_CHAT_LIMIT`: 普通用户每日聊天次数上限 (例如: 10)。
+  - `CHARACTER_CHAT_LIMIT_SUBSCRIBER`: 订阅用户每日聊天次数上限 (例如: 100, 或 'unlimited' 表示无限制)。
 - **后端所需 Firebase/Supabase 配置:**
   - Firebase Admin SDK 凭证 (e.g., `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`)。
   - `PROJECT_URL`: Supabase 项目 URL (与 `VITE_SUPABASE_URL` 值相同)。
