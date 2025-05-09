@@ -31,7 +31,44 @@ if [ ! -f nginx_global_config/docker-compose.nginx-global_v06.yml ]; then
   exit 1
 fi
 
-green "[预处理] 进行可选的全局 Docker 资源清理 (仅针对未使用资源)..."
+green "[预处理-步骤A] 清理 Nginx 日志文件..."
+NGINX_LOG_DIR="./nginx_global_config/logs"
+
+if [ -d "$NGINX_LOG_DIR" ]; then
+    yellow "删除 $NGINX_LOG_DIR 目录下超过7天的旧日志文件..."
+    # -mtime +6 means files last modified more than 6*24 hours ago (i.e., 7 days or older)
+    find "$NGINX_LOG_DIR" -type f -mtime +6 -print -delete || yellow "[警告] 删除旧日志文件时出错，请检查权限或文件是否存在。"
+
+    # Define known current log files that can grow very large
+    # These will be truncated to free up space, even if modified recently
+    KNOWN_CURRENT_LOGS_TO_TRUNCATE=(
+        "${NGINX_LOG_DIR}/access.log"
+        "${NGINX_LOG_DIR}/error.log"
+        "${NGINX_LOG_DIR}/payment-ssl-error.log"
+        "${NGINX_LOG_DIR}/payment.error.log"
+        "${NGINX_LOG_DIR}/ssl-error.log"
+        "${NGINX_LOG_DIR}/play.access.log"
+        "${NGINX_LOG_DIR}/play.error.log"
+        "${NGINX_LOG_DIR}/kitty.error.log"
+        "${NGINX_LOG_DIR}/kitty.access.log"
+        "${NGINX_LOG_DIR}/payment.access.log"
+    )
+
+    yellow "截断当前主要的 Nginx 日志文件以释放空间..."
+    for log_file in "${KNOWN_CURRENT_LOGS_TO_TRUNCATE[@]}"; do
+        if [ -f "$log_file" ]; then
+            yellow "截断 $log_file..."
+            truncate -s 0 "$log_file" || yellow "[警告] 截断 $log_file 时出错，可能由于权限问题或文件不存在。"
+        else
+            yellow "当前日志文件 $log_file 未找到，跳过截断。"
+        fi
+    done
+    green "Nginx 日志文件清理完成。"
+else
+    yellow "[警告] Nginx 日志目录 $NGINX_LOG_DIR 未找到，跳过日志清理。"
+fi
+
+green "[预处理-步骤B] 进行可选的全局 Docker 资源清理 (仅针对未使用资源)..."
 
 yellow "清理全局未使用的 Docker 构建缓存..."
 # This removes build cache not associated with any specific image, which is generally safe and frees up space.
