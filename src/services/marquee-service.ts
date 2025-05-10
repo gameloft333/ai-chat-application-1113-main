@@ -1,9 +1,9 @@
-import { io } from 'socket.io-client';
+import { io, Socket } from 'socket.io-client';
 import { MarqueeMessage, MARQUEE_CONFIG } from '../config/marquee-config';
 import logger from '../utils/logger';
 
 class MarqueeService {
-  private socket;
+  private socket: Socket | undefined;
   private messages: MarqueeMessage[] = [];
   private listeners: ((messages: MarqueeMessage[]) => void)[] = [];
   private reconnectAttempts = 0;
@@ -23,6 +23,9 @@ class MarqueeService {
       return;
     }
 
+    let wsUrl: string | undefined;
+    let wsProtocol: string | undefined;
+
     try {
       this.isConnecting = true;
       logger.debug('Initializing WebSocket:', {
@@ -37,8 +40,8 @@ class MarqueeService {
         return;
       }
 
-      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = MARQUEE_CONFIG.websocketUrl.replace(/^https?:/, wsProtocol);
+      wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      wsUrl = MARQUEE_CONFIG.websocketUrl.replace(/^https?:/, wsProtocol);
 
       // Close existing socket if it exists
       if (this.socket) {
@@ -67,14 +70,13 @@ class MarqueeService {
       });
 
       this.setupSocketListeners();
-    } catch (error) {
+    } catch (error: unknown) {
       logger.error('WebSocket initialization error:', {
-        error,
-        stack: error.stack,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
         config: {
           wsUrl: wsUrl,
           protocol: wsProtocol,
-          socketConfig: this.socket?.io?.config,
           env: {
             VITE_SOCKET_URL: import.meta.env.VITE_SOCKET_URL,
             VITE_WEBSOCKET_PATH: import.meta.env.VITE_WEBSOCKET_PATH,
@@ -99,23 +101,23 @@ class MarqueeService {
       this.isConnecting = false;
     });
 
-    this.socket.on('connect_error', (error) => {
+    this.socket.on('connect_error', (error: Error) => {
       logger.error('Marquee connection error:', {
-        error,
+        error: error.message,
         socketState: this.socket?.connected,
         url: MARQUEE_CONFIG.websocketUrl,
-        readyState: this.socket?.io?.engine?.transport?.ws?.readyState
+        readyState: (this.socket?.io?.engine?.transport?.name === 'websocket' && (this.socket.io.engine.transport as any)?.ws) ? (this.socket.io.engine.transport as any).ws.readyState : 'N/A'
       });
       this.isConnecting = false;
       this.handleReconnect();
     });
 
-    this.socket.io.on('error', (error) => {
-      logger.error('Socket.IO error:', error);
+    this.socket.io.on('error', (error: Error) => {
+      logger.error('Socket.IO error:', error.message);
       this.isConnecting = false;
     });
 
-    this.socket.io.on('reconnect_attempt', (attempt) => {
+    this.socket.io.on('reconnect_attempt', (attempt: number) => {
       logger.debug(`Socket.IO reconnection attempt #${attempt}`, {
         attempt,
         maxAttempts: this.maxReconnectAttempts
@@ -130,7 +132,7 @@ class MarqueeService {
       this.notifyListeners();
     });
 
-    this.socket.on('disconnect', (reason) => {
+    this.socket.on('disconnect', (reason: Socket.DisconnectReason) => {
       logger.info('Socket disconnected:', { reason });
       this.isConnecting = false;
     });
