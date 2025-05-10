@@ -11,7 +11,7 @@ import { Modal } from 'antd';
 import { SUBSCRIPTION_PLANS } from '../config/subscription-config';
 import { useSubscription } from '../contexts/SubscriptionContext';
 import LoginModal from './LoginModal';
-import { logger } from '../utils/logger';
+import logger from '../utils/logger';
 import { getLoggerConfig, LogLevel } from '../config/logger-config';
 
 interface CharacterSelectorProps {
