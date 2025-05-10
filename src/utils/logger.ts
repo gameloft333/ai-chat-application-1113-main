@@ -7,6 +7,7 @@ interface Logger {
   warn: (...args: any[]) => void;
   error: (...args: any[]) => void;
   debug: (...args: any[]) => void; // Alias for log when VITE_SHOW_DEBUG_LOGS is true
+  info: (...args: any[]) => void; // Added info method
 }
 
 const logger: Logger = {
@@ -30,6 +31,11 @@ const logger: Logger = {
   debug: (...args: any[]) => {
     if (VITE_SHOW_DEBUG_LOGS) {
       console.log('[DEBUG]', ...args);
+    }
+  },
+  info: (...args: any[]) => { // Added info implementation
+    if (VITE_SHOW_DEBUG_LOGS) {
+      console.info('[INFO]', ...args);
     }
   },
 };

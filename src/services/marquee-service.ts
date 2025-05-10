@@ -1,6 +1,6 @@
 import { io } from 'socket.io-client';
 import { MarqueeMessage, MARQUEE_CONFIG } from '../config/marquee-config';
-import { logger } from '../utils/logger';
+import logger from '../utils/logger';
 
 class MarqueeService {
   private socket;
