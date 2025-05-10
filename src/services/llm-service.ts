@@ -6,6 +6,7 @@ import { AI_RESPONSE_MODE } from '../config/app-config'; // 确保导入配置
 import { AI_IDENTITY_FILTERS, CHARACTER_BASED_REPLACEMENTS } from '../config/ai-filter-config';
 import { useLanguage } from '../contexts/LanguageContext';
 import i18n from '../config/i18n-config';
+import logger from '../utils/logger'; // Added logger import
 
 // Helper to get a default model name if not provided
 function getModelName(type: LLMType, modelName?: string): string {
@@ -51,11 +52,11 @@ async function callLLMAPI(type: LLMType, prompt: string, apiKey: string, modelNa
 
       return { text: response };
     } catch (error) {
-      console.error(`Error with ${currentType} API (model: ${currentModelName}):`, error);
+      logger.error(`Error with ${currentType} API (model: ${currentModelName}):`, error);
       
       const backupLLM = getBackupLLM(currentType); // Pass currentType
       if (backupLLM && backupLLM.apiKey && retries < maxRetries - 1) {
-        console.log(`Switching to backup LLM: ${backupLLM.type}`);
+        logger.log(`Switching to backup LLM: ${backupLLM.type}`);
         currentType = backupLLM.type;
         currentApiKey = backupLLM.apiKey;
         currentModelName = getModelName(backupLLM.type, backupLLM.modelName); // Ensure modelName is string
@@ -90,7 +91,7 @@ async function callZhipuAPI(prompt: string, apiKey: string, modelName: string): 
       incremental: false
     });
 
-    console.log('Calling Zhipu API with body:', body);
+    logger.log('Calling Zhipu API with body:', body);
 
     const response = await fetch(url, {
       method: 'POST',
@@ -99,12 +100,12 @@ async function callZhipuAPI(prompt: string, apiKey: string, modelName: string): 
     });
 
     if (!response.ok) {
-      console.error('Zhipu API error:', response.status, await response.text());
+      logger.error('Zhipu API error:', response.status, await response.text());
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log('Zhipu API response:', data);
+    logger.log('Zhipu API response:', data);
 
     if (data.data && data.data.choices && data.data.choices[0] && data.data.choices[0].content) {
         return data.data.choices[0].content;
@@ -120,7 +121,7 @@ async function callZhipuAPI(prompt: string, apiKey: string, modelName: string): 
     throw new Error('Unsupported Zhipu API response structure');
 
   } catch (error) {
-    console.error('Error in callZhipuAPI:', error);
+    logger.error('Error in callZhipuAPI:', error);
     throw error;
   }
 }
@@ -144,7 +145,7 @@ async function callMoonshotAPI(prompt: string, apiKey: string, modelName: string
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error('Moonshot API error:', response.status, errorText);
+    logger.error('Moonshot API error:', response.status, errorText);
     throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
   }
 
@@ -175,7 +176,7 @@ async function callGeminiAPI(prompt: string, apiKey: string, modelName: string):
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: { message: response.statusText } }));
-      console.error('Detailed Gemini API error:', errorData);
+      logger.error('Detailed Gemini API error:', errorData);
       
       if (response.status === 401 || response.status === 403) {
         throw new Error('GEMINI_AUTH_ERROR');
@@ -188,12 +189,12 @@ async function callGeminiAPI(prompt: string, apiKey: string, modelName: string):
      if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text) {
       return data.candidates[0].content.parts[0].text;
     } else {
-      console.error('Unexpected Gemini API response structure:', data);
+      logger.error('Unexpected Gemini API response structure:', data);
       throw new Error('Unexpected Gemini API response structure');
     }
 
   } catch (error) {
-    console.error('Error in callGeminiAPI:', error);
+    logger.error('Error in callGeminiAPI:', error);
     throw error;
   }
 }
@@ -221,7 +222,7 @@ async function callGrokAPI(prompt: string, apiKey: string, modelName: string): P
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: { message: response.statusText } }));
-      console.error('Detailed Grok API error:', errorData);
+      logger.error('Detailed Grok API error:', errorData);
       
       if (response.status === 401) {
         throw new Error('GROK_AUTH_ERROR');
@@ -234,7 +235,7 @@ async function callGrokAPI(prompt: string, apiKey: string, modelName: string): P
     return data.choices[0].message.content;
 
   } catch (error) {
-    console.error('Error in callGrokAPI:', error);
+    logger.error('Error in callGrokAPI:', error);
     throw error;
   }
 }
@@ -244,7 +245,7 @@ async function callOpenRouterAPI(promptText: string, apiKey: string, modelIdenti
 
   try {
     if (modelIdentifier === 'openrouter/random-free') {
-      console.log('Fetching free models from OpenRouter...');
+      logger.log('Fetching free models from OpenRouter...');
       const modelsResponse = await fetch('https://openrouter.ai/api/v1/models');
       if (!modelsResponse.ok) {
         throw new Error(`Failed to fetch models from OpenRouter: ${modelsResponse.status}`);
@@ -258,11 +259,11 @@ async function callOpenRouterAPI(promptText: string, apiKey: string, modelIdenti
       if (freeModels.length > 0) {
         const randomIndex = Math.floor(Math.random() * freeModels.length);
         modelToUse = freeModels[randomIndex].id;
-        console.log(`Randomly selected free OpenRouter model: ${modelToUse}`);
+        logger.log(`Randomly selected free OpenRouter model: ${modelToUse}`);
       } else {
-        console.warn('No free models found on OpenRouter. Falling back to a default or throwing error.');
+        logger.warn('No free models found on OpenRouter. Falling back to a default or throwing error.');
         modelToUse = 'openai/gpt-3.5-turbo';
-        console.log(`Falling back to default OpenRouter model: ${modelToUse}`);
+        logger.log(`Falling back to default OpenRouter model: ${modelToUse}`);
       }
     }
 
@@ -285,7 +286,7 @@ async function callOpenRouterAPI(promptText: string, apiKey: string, modelIdenti
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('OpenRouter API error:', response.status, errorText);
+      logger.error('OpenRouter API error:', response.status, errorText);
       throw new Error(`OpenRouter API Error: ${response.status} - ${errorText}`);
     }
 
@@ -293,11 +294,11 @@ async function callOpenRouterAPI(promptText: string, apiKey: string, modelIdenti
     if (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
       return data.choices[0].message.content;
     } else {
-       console.error('Unexpected OpenRouter API response structure:', data);
+       logger.error('Unexpected OpenRouter API response structure:', data);
       throw new Error('Unexpected OpenRouter API response structure');
     }
   } catch (error) {
-    console.error(`Error in callOpenRouterAPI (model: ${modelToUse}):`, error);
+    logger.error(`Error in callOpenRouterAPI (model: ${modelToUse}):`, error);
     throw error;
   }
 }
@@ -315,7 +316,7 @@ async function getCharacterPrompt(characterId: string): Promise<{ prompt: string
 
     return { prompt: promptContent, voice };
   } catch (error) {
-    console.error(`Error loading prompt for character ${characterId}:`, error);
+    logger.error(`Error loading prompt for character ${characterId}:`, error);
     throw new Error(`Cannot load prompt for character ${characterId}.`);
   }
 }
@@ -327,14 +328,14 @@ async function updateCharacterStats(characterId: string) {
     localStorage.setItem('characterStats', JSON.stringify(stats));
     return stats;
   } catch (error) {
-    console.error('Error updating character stats:', error);
+    logger.error('Error updating character stats:', error);
     return {};
   }
 }
 
 function filterAIResponse(text: string, characterId: string): string {
-  console.log('Filtering AI response for character:', characterId);
-  console.log('Original text:', text);
+  logger.log('Filtering AI response for character:', characterId);
+  logger.log('Original text:', text);
   
   let filteredText = text;
   
@@ -343,25 +344,25 @@ function filterAIResponse(text: string, characterId: string): string {
 
     if (rule.pattern instanceof RegExp) {
       if (rule.pattern.test(filteredText)) {
-        console.log('Matched AI identity rule (RegExp):', rule.pattern);
+        logger.log('Matched AI identity rule (RegExp):', rule.pattern);
         if (typeof replacementValue === 'function') {
           filteredText = filteredText.replace(rule.pattern, replacementValue);
         } else {
           filteredText = filteredText.replace(rule.pattern, replacementValue || '');
         }
-        console.log('Text after AI identity rule (RegExp):', filteredText);
+        logger.log('Text after AI identity rule (RegExp):', filteredText);
       }
     } else if (typeof rule.pattern === 'string') {
         const escapedPattern = rule.pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const regex = new RegExp(escapedPattern, 'g'); 
         if (regex.test(filteredText)) {
-            console.log('Matched AI identity rule (string to RegExp):', regex);
+            logger.log('Matched AI identity rule (string to RegExp):', regex);
             if (typeof replacementValue === 'function') {
               filteredText = filteredText.replace(regex, replacementValue);
             } else {
               filteredText = filteredText.replace(regex, replacementValue || '');
             }
-            console.log('Text after AI identity rule (string to RegExp):', filteredText);
+            logger.log('Text after AI identity rule (string to RegExp):', filteredText);
         }
     }
   });
@@ -370,18 +371,18 @@ function filterAIResponse(text: string, characterId: string): string {
     Object.entries(CHARACTER_BASED_REPLACEMENTS).forEach(([phrase, replacements]) => {
       const pattern = new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
       if (pattern.test(filteredText)) {
-        console.log('Matched character-based replacement phrase:', phrase);
+        logger.log('Matched character-based replacement phrase:', phrase);
         filteredText = filteredText.replace(pattern, () => {
           const replacement = replacements[Math.floor(Math.random() * replacements.length)];
-          console.log(`Replacing "${phrase}" with "${replacement}"`);
+          logger.log(`Replacing "${phrase}" with "${replacement}"`);
           return replacement;
         });
-         console.log('Text after character-based replacement:', filteredText);
+         logger.log('Text after character-based replacement:', filteredText);
       }
     });
   }
   
-  console.log('Final filtered text:', filteredText);
+  logger.log('Final filtered text:', filteredText);
   return filteredText;
 }
 
@@ -398,7 +399,7 @@ export function getThinkingStatus(characterId: string): boolean {
 export async function getThinkingMessage(characterId: string, languageInput?: string): Promise<string> {
   let currentLanguage = languageInput || i18n.language;
   try {
-    console.log('=== Thinking Message Debug ===', { characterId, language: currentLanguage });
+    logger.log('=== Thinking Message Debug ===', { characterId, language: currentLanguage });
     
     const character = await getCharacterPrompt(characterId);
     const nameMatch = character.prompt.match(/Name:\s*(\S+)/i);
@@ -410,7 +411,7 @@ export async function getThinkingMessage(characterId: string, languageInput?: st
       ns: 'translation'
     });
     
-    console.log('Generated thinking message:', {
+    logger.log('Generated thinking message:', {
       characterId,
       name,
       language: currentLanguage,
@@ -419,7 +420,7 @@ export async function getThinkingMessage(characterId: string, languageInput?: st
     
     return message;
   } catch (error) {
-    console.error('Error in getThinkingMessage:', error);
+    logger.error('Error in getThinkingMessage:', error);
     return i18n.t('chat.thinking', { 
       lng: currentLanguage
     });
@@ -432,12 +433,12 @@ export async function getLLMResponse(characterId: string, userInput: string): Pr
     let config = await getCharacterLLM(characterId);
     
     if (!config || !config.apiKey) {
-      console.warn(`Missing LLM configuration or API key for character ${characterId}, attempting to get a backup.`);
+      logger.warn(`Missing LLM configuration or API key for character ${characterId}, attempting to get a backup.`);
       const backupConfig = getBackupLLM(config?.type || LLM_TYPES.OPENROUTER);
       if (!backupConfig || !backupConfig.apiKey) {
         throw new Error('No valid LLM configuration or backup API key available.');
       }
-      console.log(`Using backup LLM: ${backupConfig.type}`);
+      logger.log(`Using backup LLM: ${backupConfig.type}`);
       config = backupConfig;
     }
 
@@ -456,7 +457,7 @@ export async function getLLMResponse(characterId: string, userInput: string): Pr
     return { text: processedResponse };
 
   } catch (error) {
-    console.error(`Error in getLLMResponse for character ${characterId}:`, error);
+    logger.error(`Error in getLLMResponse for character ${characterId}:`, error);
     const errorMessage = error instanceof Error ? error.message : String(error);
     
     if (errorMessage.includes('_AUTH_ERROR')) {
@@ -476,15 +477,15 @@ export async function getLLMResponse(characterId: string, userInput: string): Pr
 }
 
 async function processLLMResponse(text: string, prompt: string, voice: string, characterId: string) {
-  console.log('Raw LLM response:', text);
+  logger.log('Raw LLM response:', text);
   const filteredText = filterAIResponse(text, characterId);
-  console.log('Filtered LLM response:', filteredText);
+  logger.log('Filtered LLM response:', filteredText);
   
   if ((AI_RESPONSE_MODE as string) === 'voice' && voice && filteredText) {
     try {
       await speak(filteredText, voice);
     } catch (speakError) {
-      console.error('Error during voice synthesis:', speakError);
+      logger.error('Error during voice synthesis:', speakError);
     }
   }
   return filteredText;

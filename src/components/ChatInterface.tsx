@@ -11,6 +11,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { ChatUsageService, ChatUsageInfo } from '../services/chatUsageService';
 import { Link } from 'react-router-dom';
+import logger from '../utils/logger';
 
 interface ChatInterfaceProps {
   selectedCharacter: Character;
@@ -40,7 +41,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     if (currentUser && typeof currentUser.getIdToken === 'function') {
         return await currentUser.getIdToken(true); // Force refresh for critical ops
     }
-    console.warn('[ChatInterface] Unable to get access token. User might not be fully authenticated or getIdToken is missing on user object.');
+    logger.warn('[ChatInterface] Unable to get access token. User might not be fully authenticated or getIdToken is missing on user object.');
     return null;
   }, [currentUser]);
 
@@ -56,7 +57,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     setChatLimitError(t('chat.limit.exceeded'));
                 }
             } catch (error) {
-                console.error('[ChatInterface] Failed to fetch chat usage:', error);
+                logger.error('[ChatInterface] Failed to fetch chat usage:', error);
                 setChatLimitError(t('chat.networkError')); 
                 setChatUsageInfo(null);
             }
@@ -111,7 +112,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     try {
       // Ensure selectedCharacter.id is valid before using it
       if (!selectedCharacter || !selectedCharacter.id) {
-        console.error("selectedCharacter or selectedCharacter.id is undefined in handleSendMessage");
+        logger.error("selectedCharacter or selectedCharacter.id is undefined in handleSendMessage");
         setMessages(prev => [...prev, { text: t('chat.configError'), isUser: false }]);
         return;
       }
@@ -127,7 +128,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 setChatLimitError(t('chat.limit.exceeded'));
             }
         } else if (!incrementResult.success) {
-            console.warn('[ChatInterface] Failed to increment chat usage on backend:', incrementResult.message, incrementResult.backendError);
+            logger.warn('[ChatInterface] Failed to increment chat usage on backend:', incrementResult.message, incrementResult.backendError);
             if (incrementResult.backendError === 'chat.limit.exceeded' && incrementResult.updatedUsage) {
                 setChatUsageInfo(incrementResult.updatedUsage);
                 setChatLimitError(t('chat.limit.exceeded'));
@@ -138,7 +139,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       }
 
     } catch (error) {
-      console.error('Error in handleSendMessage:', error);
+      logger.error('Error in handleSendMessage:', error);
       setMessages(prev => [...prev, {
         text: t('chat.errorMessage'),
         isUser: false
