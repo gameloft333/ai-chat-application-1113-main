@@ -38,16 +38,25 @@ const getTodaysChatUsage = async (getAccessToken: () => Promise<string | null>):
 
     if (!response.ok) {
         let errorResponseMessage = `Failed to fetch chat usage details. Status: ${response.status}`;
+        let errorDetails = null; // To store parsed error details
+
+        // Read the response body once as text
+        const responseText = await response.text();
+
         try {
-            // Try to parse potential JSON error from backend
-            const errorData = await response.json();
-            errorResponseMessage = errorData.message || errorResponseMessage;
-            console.error('[ChatUsageService] Error fetching chat usage (JSON parsed):', response.status, errorData);
+            // Try to parse the text as JSON
+            errorDetails = JSON.parse(responseText);
+            if (errorDetails && errorDetails.message) {
+                errorResponseMessage = errorDetails.message;
+            }
+            console.error('[ChatUsageService] Error fetching chat usage (JSON parsed from text):', response.status, errorDetails);
         } catch (e) {
-            // Could not parse JSON, likely an HTML error page
-            const textResponse = await response.text(); // Read the response as text
-            console.error('[ChatUsageService] Error fetching chat usage (non-JSON response):', response.status, textResponse.substring(0, 200));
-            // errorResponseMessage remains the generic one based on status
+            // Could not parse JSON, or no message field. Use the text response or default.
+            console.error('[ChatUsageService] Error fetching chat usage (non-JSON response or JSON parse failed):', response.status, responseText.substring(0, 200));
+            // If responseText is informative (e.g. HTML error page snippet), you might want to use it
+            // For now, errorResponseMessage remains the generic one if JSON parsing fails or lacks a message.
+            // If responseText itself is a good message (e.g. plain text error), consider using it:
+            // if (responseText) errorResponseMessage = responseText;
         }
         throw new Error(errorResponseMessage);
     }

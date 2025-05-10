@@ -39,7 +39,8 @@ export default {
         orDivider: 'Or',
         googleLogin: 'Sign in with Google',
         registerPrompt: 'No account? Register now',
-        loginPrompt: 'Have an account? Login now'
+        loginPrompt: 'Have an account? Login now',
+        loginToChat: 'Login to Chat'
     },
     subscription: {
         title: 'Choose Your Plan',
