@@ -12,6 +12,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { ChatUsageService, ChatUsageInfo } from '../services/chatUsageService';
 import { Link } from 'react-router-dom';
 import logger from '../utils/logger';
+import SubscriptionPlans from './SubscriptionPlans';
 
 interface ChatInterfaceProps {
   selectedCharacter: Character;
@@ -33,6 +34,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [thinkingMessage, setThinkingMessage] = useState<string | null>(null);
   const [chatUsageInfo, setChatUsageInfo] = useState<ChatUsageInfo | null>(null);
   const [chatLimitError, setChatLimitError] = useState<string | null>(null);
+  const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -151,6 +153,22 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   };
 
+  const handleOpenSubscriptionModal = () => {
+    setIsSubscriptionModalOpen(true);
+  };
+
+  const handleCloseSubscriptionModal = () => {
+    setIsSubscriptionModalOpen(false);
+  };
+
+  const handleSubscribe = (planId: string, duration: string, method: 'paypal' | 'stripe' | 'ton') => {
+    // Placeholder for subscription logic
+    logger.log('Subscribing to plan:', { planId, duration, method });
+    // You would typically call a service here to handle the subscription process
+    // and then potentially close the modal and refresh user status.
+    handleCloseSubscriptionModal();
+  };
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center space-x-4 p-4 border-b dark:border-gray-700">
@@ -180,9 +198,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 <div className="flex-grow">
                     <p className="font-semibold">{chatLimitError}</p>
                     {chatUsageInfo && chatUsageInfo.remaining === 0 && chatUsageInfo.limit !== 'unlimited' && (
-                         <Link to="/subscription" className="mt-1 text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
+                         <button 
+                            onClick={handleOpenSubscriptionModal}
+                            className="mt-1 text-sm text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer bg-transparent border-none p-0"
+                         >
                             {t('chat.limit.subscribe')}
-                        </Link>
+                        </button>
                     )}
                 </div>
             </div>
@@ -203,6 +224,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         )}
         <div ref={messagesEndRef} />
       </div>
+
+      {isSubscriptionModalOpen && (
+        <SubscriptionPlans
+          onClose={handleCloseSubscriptionModal}
+          onSubscribe={handleSubscribe} 
+          themeColor="#22DCA1"
+          userEmail={currentUser?.email || undefined}
+        />
+      )}
 
       <div className="p-4 border-t dark:border-gray-700">
         <div className="flex items-center space-x-2">

@@ -532,7 +532,9 @@ app.get('/api/chat-usage/today', authenticateUser, async (req, res) => {
             return res.status(500).json({ error: 'Failed to retrieve chat usage.' });
         }
 
-        const isSubscriber = subscription?.subscription_status && subscription.subscription_status !== 'normal' && 
+        const currentStatus = subscription?.subscription_status;
+        const isSubscriber = currentStatus &&
+                             currentStatus.toLowerCase() !== 'normal' &&
                              (subscription.subscription_expires_at ? new Date(subscription.subscription_expires_at) > new Date() : true);
         
         let limit;
@@ -548,6 +550,19 @@ app.get('/api/chat-usage/today', authenticateUser, async (req, res) => {
         }
 
         const remaining = limit === Infinity ? Infinity : Math.max(0, limit - usage.used_count);
+
+        // Added detailed logging before sending the response
+        console.log(`[API /api/chat-usage/today] Final calculation for firebase_uid ${firebaseUid} (Supabase ID ${supabaseUserId}): `,
+            JSON.stringify({
+                fetchedUsage: usage,
+                fetchedSubscription: subscription,
+                calculatedIsSubscriber: !!isSubscriber,
+                calculatedLimit: limit === Infinity ? 'unlimited' : limit,
+                calculatedRemaining: remaining === Infinity ? 'unlimited' : remaining,
+                envCharacterChatLimit: process.env.CHARACTER_CHAT_LIMIT,
+                envSubscriberChatLimit: process.env.CHARACTER_CHAT_LIMIT_SUBSCRIBER
+            }, null, 2)
+        );
 
         res.json({
             date: todayUTC,
@@ -594,7 +609,9 @@ app.post('/api/chat-usage/increment', authenticateUser, async (req, res) => {
             return res.status(500).json({ error: 'Failed to retrieve chat usage before increment.' });
         }
 
-        const isSubscriber = subscription?.subscription_status && subscription.subscription_status !== 'normal' && 
+        const currentStatus = subscription?.subscription_status;
+        const isSubscriber = currentStatus &&
+                             currentStatus.toLowerCase() !== 'normal' &&
                              (subscription.subscription_expires_at ? new Date(subscription.subscription_expires_at) > new Date() : true);
 
         let limit;

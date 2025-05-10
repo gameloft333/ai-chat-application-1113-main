@@ -137,6 +137,28 @@ class WebhookService {
                     console.log(`[WebhookService] Successfully inserted new Supabase subscription for user ${supabaseUserId}`);
                  }
               }
+
+              // ***** ADDED LOGIC TO UPDATE public.users table *****
+              if (planId && newExpiryDate && supabaseUserId) {
+                const { error: updateUserTableError } = await supabaseAdmin
+                  .from('users')
+                  .update({
+                    subscription_status: planId, // Use planId from metadata (e.g., 'pro', 'premium')
+                    subscription_expires_at: newExpiryDate.toISOString(),
+                    updated_at: new Date().toISOString()
+                  })
+                  .eq('id', supabaseUserId);
+
+                if (updateUserTableError) {
+                  console.error(`[WebhookService] Error updating public.users table for ${supabaseUserId} after subscription update:`, updateUserTableError);
+                } else {
+                  console.log(`[WebhookService] Successfully updated public.users table for ${supabaseUserId} with status ${planId}`);
+                }
+              } else {
+                console.warn('[WebhookService] Missing planId, newExpiryDate, or supabaseUserId for public.users table update.');
+              }
+              // ***** END OF ADDED LOGIC *****
+
             }
           }
         } catch (supabaseSyncError) {
