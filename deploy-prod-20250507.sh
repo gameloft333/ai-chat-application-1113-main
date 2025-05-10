@@ -64,6 +64,13 @@ if [ -d "$NGINX_LOG_DIR" ]; then
         fi
     done
     green "Nginx 日志文件清理完成。"
+
+    yellow "显示 nginx_global_config/ 目录的当前磁盘使用情况 (清理后):"
+    if [ -d "./nginx_global_config/" ]; then
+        du -ah ./nginx_global_config/ | sort -hr | head -n 20
+    else
+        yellow "[警告] ./nginx_global_config/ 目录未找到，无法显示磁盘使用情况。"
+    fi
 else
     yellow "[警告] Nginx 日志目录 $NGINX_LOG_DIR 未找到，跳过日志清理。"
 fi
