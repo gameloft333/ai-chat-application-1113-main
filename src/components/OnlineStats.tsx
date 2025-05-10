@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { getFirestore, collection, query, where, getCountFromServer } from 'firebase/firestore';
+import { useAuth } from '../contexts/AuthContext';
 
 interface OnlineStatsProps {
   className?: string;
@@ -26,6 +27,7 @@ const OnlineStats: React.FC<OnlineStatsProps> = ({
   firebaseMultiplier = 2.5, // 默认Firebase用户数倍数
 }) => {
   const { t, currentLanguage } = useLanguage();
+  const { currentUser } = useAuth();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [onlineCount, setOnlineCount] = useState(0);
   const [peakCount, setPeakCount] = useState(0);
@@ -96,19 +98,31 @@ const OnlineStats: React.FC<OnlineStatsProps> = ({
    * 4. 合并计算
    */
   const calculateOnlineCount = async () => {
-    // 1. 获取Firebase用户数
-    const firebaseUsers = await fetchRegisteredUsers();
-    setRegisteredUsers(firebaseUsers);
+    let firebaseUsers = 0;
+    if (currentUser) {
+      // 1. Get Firebase user count only if logged in
+      firebaseUsers = await fetchRegisteredUsers();
+    } else {
+      // For guest users, skip fetchRegisteredUsers and assume 0 for firebaseUsers
+      // Or, if you want to set a default or skip registeredUsers state update for guests:
+      setRegisteredUsers(0); // Explicitly set to 0 for guests if the state is used elsewhere for display
+    }
     
-    // 2. 计算原有算法的基础人数
+    // If currentUser is null, firebaseUsers remains 0 or the value from the else block
+    // The rest of the calculation proceeds with this firebaseUsers value.
+    if (currentUser) { // Only set registeredUsers state if user is logged in and we fetched
+      setRegisteredUsers(firebaseUsers);
+    }
+
+    // 2. Calculate original base count
     const baseCount = minOnlineCount + Math.floor(Math.random() * maxOnlineRange);
     
-    // 3. 计算时间影响因子
+    // 3. Calculate time multiplier
     const hourAngle = (currentTime.getHours() / 24) * Math.PI * 2;
     const timeMultiplier = Math.sin(hourAngle) * timeWaveFactor + baseTimeFactor;
     
-    // 4. 合并计算
-    const firebaseBonus = firebaseUsers * firebaseMultiplier; // Firebase用户数的贡献
+    // 4. Merge calculation
+    const firebaseBonus = firebaseUsers * firebaseMultiplier; // Firebase user contribution
     const finalCount = Math.floor((baseCount + firebaseBonus) * timeMultiplier);
     
     if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {

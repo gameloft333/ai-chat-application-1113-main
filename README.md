@@ -63,6 +63,7 @@
 - **react-query**（数据请求与缓存）
 - **socket.io-client**（实时通信）
 - **Stripe/PayPal/Ton**（多支付集成）
+- **OpenRouter** (LLM Aggregator, support for multiple models including free random selection)
 - **eslint/prettier**（代码规范）
 
 ### 后端
@@ -153,6 +154,14 @@
 
 - 所有敏感key、API地址、数据库凭证等均存储于 `.env` 文件。
 - 支持多环境（开发、测试、生产），分别对应 `.env.development`、`.env.test`、`.env.production`。
+- **前端所需 LLM API Keys (部分在 .env 中配置):**
+  - `VITE_ZHIPU_API_KEY`: 智谱AI API Key。
+  - `VITE_MOONSHOT_API_KEY`: 月之暗面 (Moonshot) API Key。
+  - `VITE_GEMINI_API_KEY`: Google Gemini API Key。
+  - `VITE_GROK_API_KEY`: Grok API Key。
+  - `VITE_OPENROUTER_API_KEY`: OpenRouter API Key.
+  - `VITE_OPENROUTER_SITE_URL`: (可选) 你的站点 URL，用于 OpenRouter 分析与排名。
+  - `VITE_OPENROUTER_SITE_NAME`: (可选) 你的站点名称，用于 OpenRouter 分析与排名。
 - **前端所需 Supabase 配置:**
   - `VITE_SUPABASE_URL`: Supabase 项目 URL。
   - `VITE_SUPABASE_ANON_KEY`: Supabase 公共 Anon Key。
@@ -180,6 +189,7 @@
 - **主题切换**：深色/浅色模式，动态主题色。
 - **数据统计**：角色热度、用户活跃度、订阅数据等。
 - **错误边界与日志**：全局错误捕获，详细debug日志，便于定位问题。
+- **在线人数统计优化**：未登录（游客）用户访问时，`OnlineStats` 组件将跳过 Firebase 注册用户数查询，仅显示在线人数和峰值，避免无权限报错。登录用户则完整显示注册用户数参与的统计。
 
 ---
 

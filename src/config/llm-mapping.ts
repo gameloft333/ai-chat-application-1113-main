@@ -1,31 +1,37 @@
 import { LLMType, LLMModuleType, LLMModelName } from '../types/llm';
 
 // LLM 类型映射
-export const LLM_TYPES: Record<string, LLMType> = {
+export const LLM_TYPES = {
   ZHIPU: 'zhipu',
   MOONSHOT: 'moonshot',
   GEMINI: 'gemini',
-  GROK: 'grok'
-};
+  GROK: 'grok',
+  OPENROUTER: 'openrouter'
+} as const;
 
 // LLM 模块映射
 export const LLM_MODULES: Record<LLMType, LLMModuleType> = {
-  [LLM_TYPES.ZHIPU]: 'zhipu-ai',
-  [LLM_TYPES.MOONSHOT]: 'moonshot-ai',
-  [LLM_TYPES.GEMINI]: '@google/generative-ai',
+  'zhipu': 'zhipu-ai',
+  'moonshot': 'moonshot-ai',
+  'gemini': '@google/generative-ai',
+  'grok': 'grok-api', // Placeholder for API based
+  'openrouter': 'openrouter-api' // Placeholder for API based
 };
 
 // LLM 模型名称映射
 export const LLM_MODEL_NAMES: Record<LLMType, LLMModelName[]> = {
-  [LLM_TYPES.ZHIPU]: ['chatglm_turbo', 'chatglm_pro', 'chatglm_std'],
-  [LLM_TYPES.MOONSHOT]: ['moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k'],
-  [LLM_TYPES.GEMINI]: ['gemini-pro', 'gemini-pro-vision'],
+  'zhipu': ['chatglm_turbo', 'chatglm_pro', 'chatglm_std'],
+  'moonshot': ['moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k'],
+  'gemini': ['gemini-pro', 'gemini-pro-vision'],
+  'grok': ['grok-beta'], 
+  'openrouter': [] // OpenRouter uses dynamic model fetching
 };
 
 // 默认模型名称
 export const DEFAULT_MODEL_NAMES: Record<LLMType, LLMModelName> = {
-  [LLM_TYPES.ZHIPU]: 'chatglm_turbo',
-  [LLM_TYPES.MOONSHOT]: 'moonshot-v1-8k',
-  [LLM_TYPES.GEMINI]: 'gemini-pro',
-  [LLM_TYPES.GROK]: 'grok-beta'
+  'zhipu': 'chatglm_turbo',
+  'moonshot': 'moonshot-v1-8k',
+  'gemini': 'gemini-pro',
+  'grok': 'grok-beta',
+  'openrouter': 'openrouter/random-free'
 };

@@ -1,55 +1,64 @@
 import { LLMType, LLMResponse, LLMConfig } from '../types/llm';
-import { characterLLMConfig, defaultLLMConfig, getBackupLLM, getCharacterLLM } from '../config/llm-config';
-import { LLM_MODULES } from '../config/llm-mapping';
+import { getBackupLLM, getCharacterLLM } from '../config/llm-config';
+import { LLM_MODULES, DEFAULT_MODEL_NAMES, LLM_TYPES } from '../config/llm-mapping';
 import { speak } from '../services/voice-service';
 import { AI_RESPONSE_MODE } from '../config/app-config'; // 确保导入配置
 import { AI_IDENTITY_FILTERS, CHARACTER_BASED_REPLACEMENTS } from '../config/ai-filter-config';
 import { useLanguage } from '../contexts/LanguageContext';
 import i18n from '../config/i18n-config';
 
-async function callLLMAPI(type: LLMType, prompt: string, apiKey: string, modelName: string): Promise<LLMResponse> {
+// Helper to get a default model name if not provided
+function getModelName(type: LLMType, modelName?: string): string {
+  return modelName || DEFAULT_MODEL_NAMES[type];
+}
+
+async function callLLMAPI(type: LLMType, prompt: string, apiKey: string, modelNameInput: string): Promise<LLMResponse> {
   const maxRetries = 3;
   let retries = 0;
   let currentType = type;
   let currentApiKey = apiKey;
-  let currentModelName = modelName;
+  let currentModelName = modelNameInput; // Already ensured to be string by callers like getLLMResponse
 
   while (retries < maxRetries) {
     try {
       let response: string;
       
       switch (currentType) {
-        case 'zhipu':
+        case LLM_TYPES.ZHIPU:
           response = await callZhipuAPI(prompt, currentApiKey, currentModelName);
           break;
-        case 'moonshot':
+        case LLM_TYPES.MOONSHOT:
           response = await callMoonshotAPI(prompt, currentApiKey, currentModelName);
           break;
-        case 'gemini':
+        case LLM_TYPES.GEMINI:
           response = await callGeminiAPI(prompt, currentApiKey, currentModelName);
           break;
-        case 'grok':
+        case LLM_TYPES.GROK: // Added Grok
           response = await callGrokAPI(prompt, currentApiKey, currentModelName);
           break;
+        case LLM_TYPES.OPENROUTER: // Added OpenRouter
+          response = await callOpenRouterAPI(prompt, currentApiKey, currentModelName);
+          break;
         default:
-          throw new Error(`不支持的 LLM 类型: ${currentType}`);
+          // Exhaustive check guard
+          const _exhaustiveCheck: never = currentType;
+          throw new Error(`Unsupported LLM type: ${_exhaustiveCheck}`);
       }
 
       if (!response) {
-        throw new Error('API 返回了空响应');
+        throw new Error('API returned an empty response');
       }
 
       return { text: response };
     } catch (error) {
-      console.error(`Error with ${currentType} API:`, error);
+      console.error(`Error with ${currentType} API (model: ${currentModelName}):`, error);
       
-      // 尝试获取备用 LLM
-      const backupLLM = getBackupLLM(currentType);
-      if (backupLLM && retries < maxRetries - 1) {
+      const backupLLM = getBackupLLM(currentType); // Pass currentType
+      if (backupLLM && backupLLM.apiKey && retries < maxRetries - 1) {
         console.log(`Switching to backup LLM: ${backupLLM.type}`);
         currentType = backupLLM.type;
         currentApiKey = backupLLM.apiKey;
-        currentModelName = backupLLM.modelName || DEFAULT_MODEL_NAMES[backupLLM.type];
+        currentModelName = getModelName(backupLLM.type, backupLLM.modelName); // Ensure modelName is string
         retries++;
         continue;
       }
@@ -64,7 +73,7 @@ async function callLLMAPI(type: LLMType, prompt: string, apiKey: string, modelNa
     }
   }
 
-  throw new Error(`达到最大重试次数 (${maxRetries})`);
+  throw new Error(`Reached maximum retries (${maxRetries})`);
 }
 
 async function callZhipuAPI(prompt: string, apiKey: string, modelName: string): Promise<string> {
@@ -97,7 +106,19 @@ async function callZhipuAPI(prompt: string, apiKey: string, modelName: string): 
     const data = await response.json();
     console.log('Zhipu API response:', data);
 
-    return data.data.choices[0].content;
+    if (data.data && data.data.choices && data.data.choices[0] && data.data.choices[0].content) {
+        return data.data.choices[0].content;
+    } else if (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
+        return data.choices[0].message.content;
+    }
+    else if (data.data && data.data.choices && data.data.choices[0] && data.data.choices[0].parts && data.data.choices[0].parts[0] && data.data.choices[0].parts[0].text ) {
+       return data.data.choices[0].parts[0].text;
+    }
+     else if (typeof data === 'string') {
+        throw new Error('Unsupported Zhipu API response structure');
+    }
+    throw new Error('Unsupported Zhipu API response structure');
+
   } catch (error) {
     console.error('Error in callZhipuAPI:', error);
     throw error;
@@ -122,7 +143,9 @@ async function callMoonshotAPI(prompt: string, apiKey: string, modelName: string
   });
 
   if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
+    const errorText = await response.text();
+    console.error('Moonshot API error:', response.status, errorText);
+    throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
   }
 
   const data = await response.json();
@@ -131,16 +154,15 @@ async function callMoonshotAPI(prompt: string, apiKey: string, modelName: string
 
 async function callGeminiAPI(prompt: string, apiKey: string, modelName: string): Promise<string> {
   try {
-    // 检查 API Key 是否存在
     if (!apiKey) {
       throw new Error('Missing Gemini API key');
     }
+    const geminiModelForAPI = modelName.includes('vision') ? 'gemini-pro-vision' : 'gemini-pro';
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModelForAPI}:generateContent?key=${apiKey}`;
 
-    const response = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent', {
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
         contents: [{
@@ -152,11 +174,10 @@ async function callGeminiAPI(prompt: string, apiKey: string, modelName: string):
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
+      const errorData = await response.json().catch(() => ({ error: { message: response.statusText } }));
       console.error('Detailed Gemini API error:', errorData);
       
-      // 如果是认证错误，抛出特定的错误
-      if (response.status === 401) {
+      if (response.status === 401 || response.status === 403) {
         throw new Error('GEMINI_AUTH_ERROR');
       }
       
@@ -164,11 +185,15 @@ async function callGeminiAPI(prompt: string, apiKey: string, modelName: string):
     }
 
     const data = await response.json();
-    return data.candidates[0].content.parts[0].text;
+     if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text) {
+      return data.candidates[0].content.parts[0].text;
+    } else {
+      console.error('Unexpected Gemini API response structure:', data);
+      throw new Error('Unexpected Gemini API response structure');
+    }
 
   } catch (error) {
     console.error('Error in callGeminiAPI:', error);
-    // 向上传递错误，保持错误处理链
     throw error;
   }
 }
@@ -195,7 +220,7 @@ async function callGrokAPI(prompt: string, apiKey: string, modelName: string): P
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
+      const errorData = await response.json().catch(() => ({ error: { message: response.statusText } }));
       console.error('Detailed Grok API error:', errorData);
       
       if (response.status === 401) {
@@ -214,20 +239,84 @@ async function callGrokAPI(prompt: string, apiKey: string, modelName: string): P
   }
 }
 
+async function callOpenRouterAPI(promptText: string, apiKey: string, modelIdentifier: string): Promise<string> {
+  let modelToUse = modelIdentifier;
+
+  try {
+    if (modelIdentifier === 'openrouter/random-free') {
+      console.log('Fetching free models from OpenRouter...');
+      const modelsResponse = await fetch('https://openrouter.ai/api/v1/models');
+      if (!modelsResponse.ok) {
+        throw new Error(`Failed to fetch models from OpenRouter: ${modelsResponse.status}`);
+      }
+      const modelsData = await modelsResponse.json();
+      const freeModels = modelsData.data.filter((model: any) => 
+        model.id.endsWith(':free') || 
+        (model.pricing && model.pricing.prompt === "0.000000" && model.pricing.completion === "0.000000")
+      );
+
+      if (freeModels.length > 0) {
+        const randomIndex = Math.floor(Math.random() * freeModels.length);
+        modelToUse = freeModels[randomIndex].id;
+        console.log(`Randomly selected free OpenRouter model: ${modelToUse}`);
+      } else {
+        console.warn('No free models found on OpenRouter. Falling back to a default or throwing error.');
+        modelToUse = 'openai/gpt-3.5-turbo';
+        console.log(`Falling back to default OpenRouter model: ${modelToUse}`);
+      }
+    }
+
+    const siteUrl = import.meta.env.VITE_OPENROUTER_SITE_URL || window.location.hostname || 'unknown_site';
+    const siteName = import.meta.env.VITE_OPENROUTER_SITE_NAME || 'AI Chat App';
+
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'HTTP-Referer': siteUrl,
+        'X-Title': siteName,
+      },
+      body: JSON.stringify({
+        model: modelToUse,
+        messages: [{ role: 'user', content: promptText }],
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('OpenRouter API error:', response.status, errorText);
+      throw new Error(`OpenRouter API Error: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    if (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
+      return data.choices[0].message.content;
+    } else {
+       console.error('Unexpected OpenRouter API response structure:', data);
+      throw new Error('Unexpected OpenRouter API response structure');
+    }
+  } catch (error) {
+    console.error(`Error in callOpenRouterAPI (model: ${modelToUse}):`, error);
+    throw error;
+  }
+}
+
 async function getCharacterPrompt(characterId: string): Promise<{ prompt: string; voice: string }> {
   try {
     const response = await fetch(`/prompts/${characterId}.txt`);
+    if (!response.ok) {
+        throw new Error(`Failed to fetch prompt for character ${characterId}: ${response.status}`);
+    }
     const promptContent = await response.text();
-
-    // 解析角色配置，提取语音风格
     const lines = promptContent.split('\n');
-    const voiceLine = lines.find(line => line.startsWith('Voice:'));
-    const voice = voiceLine ? voiceLine.split(':')[1].trim() : 'defaultVoice'; // 默认语音
+    const voiceLine = lines.find(line => line.toLowerCase().startsWith('voice:'));
+    const voice = voiceLine ? voiceLine.split(':')[1].trim() : 'defaultVoice';
 
     return { prompt: promptContent, voice };
   } catch (error) {
     console.error(`Error loading prompt for character ${characterId}:`, error);
-    throw new Error(`无法加载角色 ${characterId} 的提示`);
+    throw new Error(`Cannot load prompt for character ${characterId}.`);
   }
 }
 
@@ -244,35 +333,58 @@ async function updateCharacterStats(characterId: string) {
 }
 
 function filterAIResponse(text: string, characterId: string): string {
-  console.log('过滤前:', text);
+  console.log('Filtering AI response for character:', characterId);
+  console.log('Original text:', text);
   
-  // 应用过滤规则
   let filteredText = text;
   
-  // 应用AI身份过滤规则
   AI_IDENTITY_FILTERS.forEach(rule => {
-    if (rule.pattern.test(filteredText)) {
-      console.log('匹配到规则:', rule.pattern);
-      console.log('替换前文本:', filteredText);
-      filteredText = filteredText.replace(rule.pattern, rule.replacement || '');
-      console.log('替换后文本:', filteredText);
+    const replacementValue = rule.replacement;
+
+    if (rule.pattern instanceof RegExp) {
+      if (rule.pattern.test(filteredText)) {
+        console.log('Matched AI identity rule (RegExp):', rule.pattern);
+        if (typeof replacementValue === 'function') {
+          filteredText = filteredText.replace(rule.pattern, replacementValue);
+        } else {
+          filteredText = filteredText.replace(rule.pattern, replacementValue || '');
+        }
+        console.log('Text after AI identity rule (RegExp):', filteredText);
+      }
+    } else if (typeof rule.pattern === 'string') {
+        const escapedPattern = rule.pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(escapedPattern, 'g'); 
+        if (regex.test(filteredText)) {
+            console.log('Matched AI identity rule (string to RegExp):', regex);
+            if (typeof replacementValue === 'function') {
+              filteredText = filteredText.replace(regex, replacementValue);
+            } else {
+              filteredText = filteredText.replace(regex, replacementValue || '');
+            }
+            console.log('Text after AI identity rule (string to RegExp):', filteredText);
+        }
     }
   });
   
-  // 应用基于角色的替换
   if (CHARACTER_BASED_REPLACEMENTS) {
     Object.entries(CHARACTER_BASED_REPLACEMENTS).forEach(([phrase, replacements]) => {
-      const pattern = new RegExp(phrase, 'g');
-      filteredText = filteredText.replace(pattern, () => {
-        return replacements[Math.floor(Math.random() * replacements.length)];
-      });
+      const pattern = new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+      if (pattern.test(filteredText)) {
+        console.log('Matched character-based replacement phrase:', phrase);
+        filteredText = filteredText.replace(pattern, () => {
+          const replacement = replacements[Math.floor(Math.random() * replacements.length)];
+          console.log(`Replacing "${phrase}" with "${replacement}"`);
+          return replacement;
+        });
+         console.log('Text after character-based replacement:', filteredText);
+      }
     });
   }
   
+  console.log('Final filtered text:', filteredText);
   return filteredText;
 }
 
-// 添加思考状态管理
 let thinkingStatus = new Map<string, boolean>();
 
 export function setThinkingStatus(characterId: string, status: boolean) {
@@ -283,17 +395,15 @@ export function getThinkingStatus(characterId: string): boolean {
   return thinkingStatus.get(characterId) || false;
 }
 
-export async function getThinkingMessage(characterId: string, language: string): Promise<string> {
+export async function getThinkingMessage(characterId: string, languageInput?: string): Promise<string> {
+  let currentLanguage = languageInput || i18n.language;
   try {
-    console.log('=== Thinking Message Debug ===', { characterId, language });
-    
-    // 使用传入的语言参数，如果没有则从上下文获取
-    const currentLanguage = language || i18n.language;
+    console.log('=== Thinking Message Debug ===', { characterId, language: currentLanguage });
     
     const character = await getCharacterPrompt(characterId);
-    const name = character.prompt.match(/Name:\s*(\S+)/)?.[1] || characterId;
+    const nameMatch = character.prompt.match(/Name:\s*(\S+)/i);
+    const name = nameMatch && nameMatch[1] ? nameMatch[1] : characterId;
     
-    // 使用正确的语言参数和翻译键
     const message = i18n.t('chat.thinkingMessage', { 
       name,
       lng: currentLanguage,
@@ -310,7 +420,6 @@ export async function getThinkingMessage(characterId: string, language: string):
     return message;
   } catch (error) {
     console.error('Error in getThinkingMessage:', error);
-    // 错误情况下也要确保使用正确的语言
     return i18n.t('chat.thinking', { 
       lng: currentLanguage
     });
@@ -318,67 +427,65 @@ export async function getThinkingMessage(characterId: string, language: string):
 }
 
 export async function getLLMResponse(characterId: string, userInput: string): Promise<LLMResponse> {
+  setThinkingStatus(characterId, true);
   try {
     let config = await getCharacterLLM(characterId);
     
-    // 保持原有的配置检查逻辑
     if (!config || !config.apiKey) {
-      console.warn('Missing LLM configuration or API key, switching to backup');
-      const backupConfig = await getBackupLLM();
+      console.warn(`Missing LLM configuration or API key for character ${characterId}, attempting to get a backup.`);
+      const backupConfig = getBackupLLM(config?.type || LLM_TYPES.OPENROUTER);
       if (!backupConfig || !backupConfig.apiKey) {
-        throw new Error('No valid LLM configuration available');
+        throw new Error('No valid LLM configuration or backup API key available.');
       }
+      console.log(`Using backup LLM: ${backupConfig.type}`);
       config = backupConfig;
     }
 
-    // 获取角色提示和语音设置
     const { prompt: characterPrompt, voice } = await getCharacterPrompt(characterId);
+    const fullPrompt = `${characterPrompt}\n\nUser: ${userInput}\n\nYou:`;
     
-    // 构建完整提示
-    const fullPrompt = `${characterPrompt}\n\n用户: ${userInput}\n\n你:`;
-    
-    try {
-      // 首先尝试使用配置的 LLM
-      const response = await callLLMAPI(config.type, fullPrompt, config.apiKey, config.modelName);
-      
-      if (!response || !response.text) {
-        throw new Error('Empty response from API');
-      }
+    const modelToCall = getModelName(config.type, config.modelName);
 
-      // 处理响应文本（保持原有的处理逻辑）
-      const processedResponse = await processLLMResponse(response.text, characterPrompt, voice);
-      return { text: processedResponse };
-
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+    const response = await callLLMAPI(config.type, fullPrompt, config.apiKey, modelToCall);
       
-      // 如果是 Gemini 认证错误，直接切换到备用 LLM
-      if (errorMessage === 'GEMINI_AUTH_ERROR' || errorMessage.includes('401')) {
-        console.log('Authentication error with Gemini, switching to backup LLM');
-        const backupConfig = await getBackupLLM();
-        if (backupConfig && backupConfig.apiKey) {
-          return callLLMAPI(backupConfig.type, fullPrompt, backupConfig.apiKey, backupConfig.modelName);
-        }
-      }
-      
-      throw error; // 重新抛出错误，让外层错误处理来处理
+    if (!response || !response.text) {
+      throw new Error('Empty response from API');
     }
 
+    const processedResponse = await processLLMResponse(response.text, characterPrompt, voice, characterId);
+    return { text: processedResponse };
+
   } catch (error) {
-    console.error('Error in getLLMResponse:', error);
+    console.error(`Error in getLLMResponse for character ${characterId}:`, error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    if (errorMessage.includes('_AUTH_ERROR')) {
+         return {
+            text: i18n.t('chat.authErrorMesage', { llmType: errorMessage.split('_')[0] }),
+            error: errorMessage
+        };
+    }
+
     return {
       text: i18n.t('chat.errorMessage'),
-      error: error instanceof Error ? error.message : String(error)
+      error: errorMessage
     };
   } finally {
     setThinkingStatus(characterId, false);
   }
 }
 
-// 保持其他辅助函数不变
-async function processLLMResponse(text: string, prompt: string, voice: string) {
-  console.log('过滤前的回复:', text);
-  const filteredText = filterAIResponse(text, '');
-  console.log('过滤后的回复:', filteredText);
+async function processLLMResponse(text: string, prompt: string, voice: string, characterId: string) {
+  console.log('Raw LLM response:', text);
+  const filteredText = filterAIResponse(text, characterId);
+  console.log('Filtered LLM response:', filteredText);
+  
+  if ((AI_RESPONSE_MODE as string) === 'voice' && voice && filteredText) {
+    try {
+      await speak(filteredText, voice);
+    } catch (speakError) {
+      console.error('Error during voice synthesis:', speakError);
+    }
+  }
   return filteredText;
 }

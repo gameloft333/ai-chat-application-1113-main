@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - YYYY-MM-DD
 
+### Changed
+- `OnlineStats` 组件优化：未登录（游客）用户访问时，将跳过 Firebase 注册用户数查询，仅显示在线人数和峰值，避免无权限报错。登录用户则完整显示注册用户数参与的统计。
+
+### Fixed
+- 修复游客访问时因无 Firebase 权限导致的 403 报错和控制台警告。
+
 ## [1.286.705.27516] - 2025-05-05 
 
 ### Added

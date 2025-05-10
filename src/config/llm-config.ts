@@ -1,11 +1,12 @@
-import { LLMConfig } from '../types/llm';
+import { LLMConfig, LLMType } from '../types/llm';
 import { LLM_TYPES, DEFAULT_MODEL_NAMES } from './llm-mapping';
 
 // 获取所有可用的 LLM 配置
 const availableLLMs = [
-  { type: LLM_TYPES.ZHIPU, apiKey: import.meta.env.VITE_ZHIPU_API_KEY },
-  { type: LLM_TYPES.MOONSHOT, apiKey: import.meta.env.VITE_MOONSHOT_API_KEY },
-  { type: LLM_TYPES.GEMINI, apiKey: import.meta.env.VITE_GEMINI_API_KEY },
+  { type: 'zhipu' as LLMType, apiKey: import.meta.env.VITE_ZHIPU_API_KEY },
+  { type: 'moonshot' as LLMType, apiKey: import.meta.env.VITE_MOONSHOT_API_KEY },
+  { type: 'gemini' as LLMType, apiKey: import.meta.env.VITE_GEMINI_API_KEY },
+  { type: 'openrouter' as LLMType, apiKey: import.meta.env.VITE_OPENROUTER_API_KEY }
 ].filter(llm => llm.apiKey);
 
 // 获取随机 LLM 配置
@@ -23,7 +24,7 @@ function getRandomLLM(): LLMConfig | null {
 }
 
 // 获取备用 LLM
-function getBackupLLM(currentType: string): LLMConfig | null {
+function getBackupLLM(currentType: LLMType): LLMConfig | null {
   const backup = availableLLMs.find(llm => llm.type !== currentType && llm.apiKey);
   if (backup) {
     return {
@@ -39,10 +40,10 @@ function getBackupLLM(currentType: string): LLMConfig | null {
 function getCharacterLLM(characterId: string): LLMConfig {
   // 为 Elon Musk 指定使用 Grok
   if (characterId === 'elonmusk') {
-    const grokConfig = {
-      type: LLM_TYPES.GROK,
+    const grokConfig: LLMConfig = {
+      type: 'grok' as LLMType,
       apiKey: import.meta.env.VITE_GROK_API_KEY,
-      modelName: DEFAULT_MODEL_NAMES[LLM_TYPES.GROK]
+      modelName: DEFAULT_MODEL_NAMES['grok']
     };
     
     if (!grokConfig.apiKey) {
@@ -66,9 +67,9 @@ function getCharacterLLM(characterId: string): LLMConfig {
 }
 
 export const defaultLLMConfig: LLMConfig = {
-  type: LLM_TYPES.MOONSHOT,
+  type: 'moonshot' as LLMType,
   apiKey: import.meta.env.VITE_MOONSHOT_API_KEY,
-  modelName: DEFAULT_MODEL_NAMES.MOONSHOT
+  modelName: DEFAULT_MODEL_NAMES['moonshot']
 };
 
 export { getCharacterLLM, getBackupLLM };

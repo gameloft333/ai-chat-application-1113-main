@@ -1,4 +1,4 @@
-export type LLMType = 'zhipu' | 'moonshot' | 'gemini';
+export type LLMType = 'zhipu' | 'moonshot' | 'gemini' | 'grok' | 'openrouter';
 
 export type LLMModuleType = string;
 

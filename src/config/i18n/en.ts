@@ -13,6 +13,10 @@ export default {
         hide: 'Hide',
         copy: 'Copy'
     },
+    stats: {
+        online: 'Online',
+        peak: 'Peak'
+    },
     gender: {
         all: 'All',
         popular: 'Popular',
@@ -336,11 +340,6 @@ export default {
         toggle: 'Toggle Mobile Preview',
         mobile: 'Mobile Mode',
         desktop: 'Desktop Mode'
-    },
-    stats: {
-        online: 'Online',
-        peak: 'Peak',
-        date: 'Date'
     },
     character: {
         limitReached: {
