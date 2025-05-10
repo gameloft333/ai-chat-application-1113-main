@@ -44,7 +44,7 @@ import { MobileNavBar } from './components/MobileNavBar';
 import { MobilePreviewToggle } from './components/MobilePreviewToggle';
 import './styles/payment.css';
 import { THEME_CONFIG } from './config/theme-config';
-import { logger } from './utils/logger';
+import logger from './utils/logger';
 import { SocketService } from './services/socket-service';
 import { PAYMENT_CONFIG } from './config/payment-config';
 import { MARQUEE_CONFIG } from './config/marquee-config';
