@@ -2,7 +2,7 @@ import { db } from '../config/firebase-config';
 import { collection, doc, setDoc, getDoc, query, where, getDocs, updateDoc, addDoc, limit, orderBy } from 'firebase/firestore';
 import { PaymentRecord, PaymentChannel } from '../types/payment';
 import { auth } from '../config/firebase-config';
-import { logger } from '../utils/logger';
+import logger from '../utils/logger';
 
 interface SubscriptionStatus {
   isSubscribed: boolean;

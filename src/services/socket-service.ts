@@ -1,5 +1,6 @@
+import logger from '../utils/logger';
 import { io, Socket } from 'socket.io-client';
-import { logger } from '../utils/logger';
+import { CHAT_EVENTS } from '../config/chat-events';
 
 export class SocketService {
   private static socket: Socket | null = null;

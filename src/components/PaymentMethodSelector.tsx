@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { SocketService } from '../services/socket-service';
-import { logger } from '../utils/logger';
+import logger from '../utils/logger';
 import { PAYMENT_CONFIG } from '../config/payment-config';
+import { PaymentChannel } from '../types/payment';
+import { PaymentRecordService } from '../services/payment-record-service';
 
 interface PaymentMethodSelectorProps {
     onSelect: (method: 'stripe' | 'paypal') => void;

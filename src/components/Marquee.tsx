@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
-import { MarqueeMessage } from '../config/marquee-config';
+import { marqueeService } from '../services/marquee-service';
+import logger from '../utils/logger';
+import { MARQUEE_CONFIG, MarqueeMessage } from '../config/marquee-config';
 import { io, Socket } from 'socket.io-client';
-import { logger } from '../utils/logger';
 
 interface MarqueeProps {
   websocketUrl: string;
