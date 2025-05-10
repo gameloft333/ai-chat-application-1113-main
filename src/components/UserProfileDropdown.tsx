@@ -7,9 +7,12 @@ import { useSubscription } from '../contexts/SubscriptionContext';
 import { useTranslation } from 'react-i18next';
 // import { Crown } from 'lucide-react';
 
-interface UserProfileDropdownProps {
+export interface UserProfileDropdownProps {
+  firebaseUser: User; // Or whatever the prop is actually named and typed
+  onLogout: () => Promise<void>;
   themeColor: string;
   onOpenSubscription: () => void;
+  // any other props
 }
 
 interface SubscriptionStatus {

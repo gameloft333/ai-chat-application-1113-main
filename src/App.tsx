@@ -6,9 +6,9 @@ import ErrorBoundary from './components/ErrorBoundary';
 import ChatInterface from './components/ChatInterface';
 import CharacterSelector from './components/CharacterSelector';
 import { MessageCircle, ArrowLeft } from 'lucide-react';
-import { Character } from './types/character';
+import { type Character } from './types/types';
 import { CLEAR_MEMORY_ON_RESTART } from './config/app-config';
-import ChatMessage from './ChatMessage';
+import ChatMessage from './components/ChatMessage';
 import SubscriptionPlans from './components/SubscriptionPlans';
 import { PaymentService } from './services/payment-service';
 import { pricingPlans, currentCurrency } from './config/pricing-config';
@@ -16,7 +16,7 @@ import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import LanguageSwitch from './components/LanguageSwitch';
 import { AuthProvider } from './contexts/AuthContext';
 import { PaymentRecordService } from './services/payment-record-service';
-import { PaymentRecord } from './types/payment';
+import { type PaymentRecord } from './types/payment';
 import { PayPalService } from './services/paypal-service';
 import { PAYPAL_CONFIG } from './config/paypal-config';
 import PaymentResult from './components/PaymentResult';
@@ -24,14 +24,14 @@ import GenderSelector from './components/GenderSelector';
 import SubscriptionDropdown from './components/SubscriptionDropdown';
 import SubscriptionExpiry from './components/SubscriptionExpiry';
 import LoginModal from './components/LoginModal';
-import UserProfileDropdown from './components/UserProfileDropdown';
+import UserProfileDropdown, { type UserProfileDropdownProps } from './components/UserProfileDropdown';
 import { SubscriptionProvider, useSubscription } from './contexts/SubscriptionContext';
-import { SubscriptionModal } from './components/SubscriptionModal';
+import { SubscriptionModal, type SubscriptionModalProps } from './components/SubscriptionModal';
 import { PaymentCallback } from './components/PaymentCallback';
 import { StripeService } from './services/stripe-service';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
-import { StripePaymentForm } from './components/StripePaymentForm';
+import { StripePaymentForm, type StripePaymentFormProps } from './components/StripePaymentForm';
 import { CharacterStatsService } from './services/character-stats-service';
 import { characters } from './types/character';
 import FeedbackButton from './components/FeedbackButton';
@@ -48,9 +48,10 @@ import logger from './utils/logger';
 import { SocketService } from './services/socket-service';
 import { PAYMENT_CONFIG } from './config/payment-config';
 import { MARQUEE_CONFIG } from './config/marquee-config';
-import { Marquee } from './components/Marquee';
-import { getActiveMarqueeMessages } from './config/marquee-config';
+import { Marquee, type MarqueeProps } from './components/Marquee';
+import { getActiveMarqueeMessages, type MarqueeMessage } from './config/marquee-config';
 import { SocialButtons } from './components/SocialButtons';
+import { type Message } from './types/message';
 
 const API_KEY = import.meta.env.VITE_API_KEY || '';
 const API_URL = import.meta.env.VITE_APP_URL || import.meta.env.VITE_PAYMENT_API_URL;
@@ -103,22 +104,11 @@ const AppContent: React.FC<AppContentProps> = ({
   const [selectedGender, setSelectedGender] = useState<string | null>('popular');
   const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
-  const { openSubscriptionModal, subscriptionType } = useSubscription();
+  const { openSubscriptionModal } = useSubscription();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPlanInfo, setSelectedPlanInfo] = useState<{planId: string, duration: string} | null>(null);
   const [showStripePaymentModal, setShowStripePaymentModal] = useState(false);
-  const [stripePaymentData, setStripePaymentData] = useState<{
-    clientSecret: string;
-    amount: number;
-    currency: string;
-    planId: string;
-    duration: string;
-    userId: string;
-    userEmail: string;
-    price: number;
-    expiredAt: Date;
-    onClose: () => void;
-  } | null>(null);
+  const [stripePaymentData, setStripePaymentData] = useState<StripePaymentFormProps | null>(null);
   const [characterStats, setCharacterStats] = useState<Record<string, number>>({});
   const [popularCharacters, setPopularCharacters] = useState<string[]>([]);
   const [showTonPaymentModal, setShowTonPaymentModal] = useState(false);
@@ -262,10 +252,11 @@ const AppContent: React.FC<AppContentProps> = ({
 
       // PayPal 测试账户提示
       if (paymentMethod === 'paypal') {
-        alert(t('payment.paypal.testAccount', {
+        (t as any)('payment.paypal.testAccount', {
           email: 'sb-6vbqu34102045@personal.example.com',
           notes: t('payment.paypal.testNotes')
-        }));
+        });
+        alert(t('payment.paypal.testAccount', { email: 'sb-6vbqu34102045@personal.example.com', notes: t('payment.paypal.testNotes') }));
       }
 
       // 获取计划和定价信息
@@ -280,8 +271,7 @@ const AppContent: React.FC<AppContentProps> = ({
         throw new Error(t('alerts.error.invalidPlan'));
       }
 
-      // 确保计划有对应的价格
-      const pricing = plan.prices[duration];
+      const pricing = (plan.prices as any)[duration];
       if (!pricing) {
         console.error('未找到对应定价:', { 
           duration, 
@@ -298,7 +288,7 @@ const AppContent: React.FC<AppContentProps> = ({
         // PayPal 支付逻辑
         if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
           console.log('开始 PayPal 支付流程...', {
-            price: plan.prices[duration].price,
+            price: (plan.prices as any)[duration].price,
             currency: currentCurrency.code,
             description: plan.description || `订阅 ${plan.name}`
           });
@@ -306,21 +296,20 @@ const AppContent: React.FC<AppContentProps> = ({
         
         const paypalService = PayPalService.getInstance();
         const { orderId, approvalUrl } = await paypalService.createPaymentOrder({
-          price: plan.prices[duration].price,
+          price: (plan.prices as any)[duration].price,
           currency: currentCurrency.code,
           description: plan.description || `订阅 ${plan.name}`
         });
 
-        // 创建支付记录
-        const paymentRecord = {
+        const paymentRecord: PaymentRecord = {
           uid: currentUser.uid,
           userEmail: currentUser.email || '',
           planId: planId,
           duration: duration,
           orderId: orderId,
-          amount: plan.prices[duration].price,
+          amount: (plan.prices as any)[duration].price,
           currency: currentCurrency.code,
-          status: 'pending',
+          status: 'pending' as const,
           createdAt: new Date(),
           expiredAt: expiredAt,
           paymentChannel: 'paypal'
@@ -348,15 +337,14 @@ const AppContent: React.FC<AppContentProps> = ({
           }
           const stripeService = StripeService.getInstance();
           
-          // 确保金额符合最小支付要求（至少 400 cents HKD ≈ 0.51 USD
-          const minAmount = 0.55; // USD，设置为 1 USD 以确保足够支付
-          const amount = Math.max(plan.prices[duration].price, minAmount);
+          const minAmount = 0.55;
+          const amount = Math.max((plan.prices as any)[duration].price, minAmount);
           
           if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
             console.log('创建支付意向，参数:', {
               price: amount,
               currency: currentCurrency.code,
-              originalPrice: plan.prices[duration].price,
+              originalPrice: (plan.prices as any)[duration].price,
               minRequired: {
                 HKD: 4.00,
                 USD: 0.51
@@ -370,8 +358,7 @@ const AppContent: React.FC<AppContentProps> = ({
             currentUser.uid
           );
           
-          // 创建支付记录
-          const paymentRecord = {
+          const paymentRecord: PaymentRecord = {
             uid: currentUser.uid,
             userEmail: currentUser.email || '',
             planId: planId,
@@ -379,7 +366,7 @@ const AppContent: React.FC<AppContentProps> = ({
             orderId: clientSecret,
             amount: amount,
             currency: currentCurrency.code,
-            status: 'pending',
+            status: 'pending' as const,
             createdAt: new Date(),
             expiredAt: expiredAt,
             paymentChannel: 'stripe'
@@ -390,17 +377,20 @@ const AppContent: React.FC<AppContentProps> = ({
           if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
             console.log('支付意向创建成功，准备打开支付表单...');
           }
-          setShowStripePaymentModal(true);
+          
           setStripePaymentData({
             clientSecret,
-            amount: amount,
+            amount,
             currency: currentCurrency.code,
             planId,
             duration,
             userId: currentUser.uid,
             userEmail: currentUser.email || '',
-            price: plan.prices[duration].price,
+            price: (plan.prices as any)[duration].price,
             expiredAt: expiredAt,
+            themeColor: themeColor,
+            onSuccess: handlePaymentSuccess,
+            onError: handlePaymentError,
             onClose: () => {
               setShowStripePaymentModal(false); // 关闭支付模态框
               if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
@@ -408,6 +398,7 @@ const AppContent: React.FC<AppContentProps> = ({
               }
             }
           });
+          setShowStripePaymentModal(true);
         } catch (error) {
           console.error('Stripe 支付初始化失败:', {
             error,
@@ -419,9 +410,9 @@ const AppContent: React.FC<AppContentProps> = ({
           let errorMessage = t('payment.stripe.error.default');
           if (error instanceof Error) {
             if (error.message.includes('Amount must convert')) {
-              errorMessage = t('payment.stripe.error.minimumAmount', { 
+              errorMessage = (t as any)('payment.stripe.error.minimumAmount', { 
                 min: '0.51 USD (≈ 4.00 HKD)',
-                current: `${plan.prices[duration].price} ${currentCurrency.code}`
+                current: `${(plan.prices as any)[duration].price} ${currentCurrency.code}`
               });
             }
           }
@@ -436,21 +427,22 @@ const AppContent: React.FC<AppContentProps> = ({
           const tonService = TonService.getInstance();
           
           const paymentId = await tonService.createPaymentIntent(
-            plan.prices[duration].price,
+            (plan.prices as any)[duration].price,
             currentCurrency.code
           );
           
           setShowStripePaymentModal(false);
-          setShowTonPaymentModal(true);
+          
           setTonPaymentData({
             paymentId,
-            amount: plan.prices[duration].price,
+            amount: (plan.prices as any)[duration].price,
             currency: currentCurrency.code,
             planId,
             duration,
             userId: currentUser.uid,
             expiredAt: expiredAt
           });
+          setShowTonPaymentModal(true);
         } catch (error) {
           console.error('TON 支付初始化失败:', error);
           throw error;
@@ -548,7 +540,6 @@ const AppContent: React.FC<AppContentProps> = ({
     // 添加调试日志
     if (import.meta.env.VITE_SHOW_DEBUG_LOGS === 'true') {
       console.log('当前用户:', currentUser);
-      console.log('订阅状态:', subscriptionType);
     }
     
     if (currentUser) {
@@ -559,7 +550,7 @@ const AppContent: React.FC<AppContentProps> = ({
           }
         })
         .catch(error => {
-          console.error('获取角色统计失败:', error); // Keep error log
+          console.error('获取角色统计失败:', error);
         });
     }
   }, [currentUser]);
@@ -574,7 +565,7 @@ const AppContent: React.FC<AppContentProps> = ({
         }}
       >
         <Marquee 
-          messages={getActiveMarqueeMessages()}
+          messages={getActiveMarqueeMessages() as MarqueeMessage[]}
           themeColor={themeColor}
           className="h-full"
         />
@@ -634,7 +625,7 @@ const AppContent: React.FC<AppContentProps> = ({
               {/* 用户头像/登录按钮 */}
               {currentUser ? (
                 <UserProfileDropdown 
-                  user={currentUser}
+                  firebaseUser={currentUser}
                   onLogout={logout}
                   themeColor={themeColor}
                   onOpenSubscription={handleOpenSubscriptionModal}
@@ -677,7 +668,6 @@ const AppContent: React.FC<AppContentProps> = ({
                     selectedCharacter={selectedCharacter}
                     initialMessages={chatHistory[selectedCharacter.id] || []}
                     onUpdateHistory={(messages) => updateChatHistory(selectedCharacter.id, messages)}
-                    className="flex-grow h-full"
                   />
                 ) : (
                   <div className="flex items-center justify-center h-full">
@@ -696,7 +686,6 @@ const AppContent: React.FC<AppContentProps> = ({
             <CharacterSelector
               onSelectCharacter={handleSelectCharacter}
               selectedGender={selectedGender}
-              className="flex-grow"
             />
           )}
         </main>
@@ -727,31 +716,28 @@ const AppContent: React.FC<AppContentProps> = ({
           <SubscriptionPlans
             onClose={() => setShowSubscriptionModal(false)}
             onSubscribe={handleSubscribe}
-            currentPlanId={currentUser?.planId}
+            currentPlanId={user?.planId}
             themeColor={themeColor}
-            userEmail={currentUser?.email}
+            userEmail={currentUser?.email || undefined}
           />
         )}
         
         {showPaymentModal && selectedPlanInfo && (
           <SubscriptionModal 
-            themeColor={themeColor}
-            planId={selectedPlanInfo.planId}
-            duration={selectedPlanInfo.duration}
-            onClose={() => setShowPaymentModal(false)}
+            modalThemeColor={themeColor}
+            selectedPlanId={selectedPlanInfo.planId}
+            selectedDuration={selectedPlanInfo.duration}
+            onModalClose={() => setShowPaymentModal(false)}
           />
         )}
 
-        {showStripePaymentModal && (
+        {showStripePaymentModal && stripePaymentData && stripePaymentData.clientSecret && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className="bg-white dark:bg-gray-800 p-6 rounded-lg w-full max-w-md">
               <h2 className="text-xl font-semibold mb-4">支付确认</h2>
               <Elements stripe={stripePromise}>
                 <StripePaymentForm
                   {...stripePaymentData}
-                  onSuccess={handlePaymentSuccess}
-                  onError={handlePaymentError}
-                  themeColor={themeColor}
                 />
               </Elements>
             </div>
@@ -765,7 +751,6 @@ const AppContent: React.FC<AppContentProps> = ({
                 id: tonPaymentData.paymentId,
                 amount: tonPaymentData.amount
               }}
-              tonAmount={tonPaymentData.tonAmount || 0}
               walletAddress={import.meta.env.VITE_TON_TEST_WALLET_ADDRESS}
               onCancel={() => setShowTonPaymentModal(false)}
               onClose={() => setShowTonPaymentModal(false)}

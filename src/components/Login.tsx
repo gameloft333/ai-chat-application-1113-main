@@ -33,7 +33,7 @@ const Login: React.FC = () => {
             } else if (err.code === 'auth/weak-password') {
                 setError(t('alerts.error.weakPassword'));
             } else {
-                setError(err instanceof Error ? err.message : t('alerts.error.registerFailed'));
+                setError(err instanceof Error ? err.message : (isLogin ? t('alerts.error.loginFailed') : t('alerts.error.registerFailed')));
             }
         }
     };
