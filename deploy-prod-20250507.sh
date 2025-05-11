@@ -99,7 +99,10 @@ docker-compose --env-file .env.production -f docker-compose-20250507.yml down -v
 green "[步骤2] 构建并启动主服务（前端/后端/支付）..."
 docker-compose --env-file .env.production -f docker-compose-20250507.yml up -d --build
 
-green "[步骤3] 启动/重启 Nginx 反向代理..."
+green "[步骤3] 停止并移除旧的 Nginx 反向代理 (如果存在)..."
+docker-compose -f nginx_global_config/docker-compose.nginx-global_v06.yml down -v || yellow "[警告] Nginx 服务清理时出现警告，可能由于服务未运行或已移除。"
+
+green "[步骤4] 构建并启动/重启 Nginx 反向代理..."
 docker-compose -f nginx_global_config/docker-compose.nginx-global_v06.yml up -d --build
 
 green "[完成] 所有服务已启动。请访问 love.saga4v.com 进行 Web 测试。" 
