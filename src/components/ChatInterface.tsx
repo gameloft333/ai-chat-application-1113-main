@@ -103,53 +103,73 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         return;
     }
     setChatLimitError(null);
-    
+
     const userMessage = { text: inputMessage, isUser: true };
     setMessages(prev => [...prev, userMessage]);
     const currentInput = inputMessage;
     setInputMessage('');
     setIsSending(true);
     setIsLoading(true);
-    
+
+    let llmRespondedOrSetOwnMessage = false;
+
     try {
       // Ensure selectedCharacter.id is valid before using it
       if (!selectedCharacter || !selectedCharacter.id) {
         logger.error("selectedCharacter or selectedCharacter.id is undefined in handleSendMessage");
         setMessages(prev => [...prev, { text: t('chat.configError'), isUser: false }]);
+        llmRespondedOrSetOwnMessage = true;
+        setIsLoading(false);
+        setThinkingMessage(null);
+        setIsSending(false);
         return;
       }
+
       await CharacterStatsService.incrementCharacterChat(selectedCharacter.id);
       const response = await getLLMResponse(selectedCharacter.id, currentInput);
+
       setMessages(prev => [...prev, { text: response.text, isUser: false }]);
+      llmRespondedOrSetOwnMessage = true;
+
+      setIsLoading(false);
+      setThinkingMessage(null);
 
       if (currentUser) {
-        const incrementResult = await ChatUsageService.incrementChatUsage(getAccessToken);
-        if (incrementResult.success && incrementResult.updatedUsage) {
-            setChatUsageInfo(incrementResult.updatedUsage);
-            if (incrementResult.updatedUsage.remaining === 0 && incrementResult.updatedUsage.limit !== 'unlimited') {
-                setChatLimitError(t('chat.limit.exceeded'));
-            }
-        } else if (!incrementResult.success) {
-            logger.warn('[ChatInterface] Failed to increment chat usage on backend:', incrementResult.message, incrementResult.backendError);
-            if (incrementResult.backendError === 'chat.limit.exceeded' && incrementResult.updatedUsage) {
-                setChatUsageInfo(incrementResult.updatedUsage);
-                setChatLimitError(t('chat.limit.exceeded'));
-            } else if (incrementResult.backendError === 'AUTH_REQUIRED') {
-                 setChatLimitError(t('alerts.error.loginRequired')); // Or a more specific message
-            }
+        try {
+          const incrementResult = await ChatUsageService.incrementChatUsage(getAccessToken);
+          if (incrementResult.success && incrementResult.updatedUsage) {
+              setChatUsageInfo(incrementResult.updatedUsage);
+              if (incrementResult.updatedUsage.remaining === 0 && incrementResult.updatedUsage.limit !== 'unlimited') {
+                  setChatLimitError(t('chat.limit.exceeded'));
+              }
+          } else if (!incrementResult.success) {
+              logger.warn('[ChatInterface] Failed to increment chat usage on backend:', incrementResult.message, incrementResult.backendError);
+              if (incrementResult.backendError === 'chat.limit.exceeded' && incrementResult.updatedUsage) {
+                  setChatUsageInfo(incrementResult.updatedUsage);
+                  setChatLimitError(t('chat.limit.exceeded'));
+              } else if (incrementResult.backendError === 'AUTH_REQUIRED') {
+                   setChatLimitError(t('alerts.error.loginRequired'));
+              }
+          }
+        } catch (usageError) {
+          logger.error('Thrown error during chat usage increment:', usageError);
         }
       }
 
     } catch (error) {
-      logger.error('Error in handleSendMessage:', error);
-      setMessages(prev => [...prev, {
-        text: t('chat.errorMessage'),
-        isUser: false
-      }]);
+      logger.error('Error in handleSendMessage (likely from LLM or character stats):', error);
+      if (!llmRespondedOrSetOwnMessage) {
+          setMessages(prev => [...prev, {
+            text: t('chat.errorMessage'),
+            isUser: false
+          }]);
+      }
+      setIsLoading(false);
+      setThinkingMessage(null);
     } finally {
       setIsLoading(false);
-      setIsSending(false);
       setThinkingMessage(null);
+      setIsSending(false);
     }
   };
 
