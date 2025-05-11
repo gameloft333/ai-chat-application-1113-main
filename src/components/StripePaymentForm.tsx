@@ -1,12 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { CardElement, useStripe, useElements, /* StripeError */ } from '@stripe/react-stripe-js'; // StripeError can be imported if needed for more specific typing
 import { useLanguage } from '../contexts/LanguageContext';
 import { StripeService } from '../services/stripe-service';
-import { PaymentRecord } from '../types/payment';
+import { PaymentRecord, SubscriptionDuration } from '../types/payment'; // Imported SubscriptionDuration
 import { PaymentRecordService } from '../services/payment-record-service';
 import { calculateExpiryDate } from '../utils/payment-utils';
 import { useTranslation } from 'react-i18next';
 import { PAYMENT_CONFIG } from '../config/payment-config';
+
+// Helper function to map pricing plan durations to SubscriptionDuration type
+// Duplicated from App.tsx for now, consider moving to a shared util
+const mapToSubscriptionDuration = (pricingDuration: string): SubscriptionDuration => {
+  switch (pricingDuration) {
+    case '1month':
+      return 'monthly';
+    case '12months':
+      return 'yearly';
+    case '24months':
+      return 'yearly'; 
+    case '1week':
+      return 'monthly'; 
+    default:
+      return 'monthly';
+  }
+};
 
 interface StripePaymentFormProps {
   /** Stripe支付意向密钥，用于确认支付 */
@@ -82,15 +99,31 @@ export const StripePaymentForm: React.FC<StripePaymentFormProps> = ({
   const showTestInfo = !isProduction && isTestMode;
 
   useEffect(() => {
-    console.log('StripePaymentForm mounted with:', { clientSecret, amount, currency });
-  }, [clientSecret, amount, currency]);
+    // Extended logging
+    console.log('StripePaymentForm mounted with props:', { clientSecret, amount, currency, planId, duration, userId, userEmail });
+    if (!stripe) {
+      console.error('Stripe.js has not loaded yet.');
+    }
+    if (!elements) {
+      console.error('Stripe Elements has not loaded yet.');
+    }
+    if (!clientSecret) {
+      console.error('ClientSecret is missing in StripePaymentForm.');
+    }
+  }, [clientSecret, amount, currency, planId, duration, userId, userEmail, stripe, elements]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
+    console.log('StripePaymentForm handleSubmit triggered.'); // Log submission attempt
+
     if (!stripe || !elements || !clientSecret) {
-      console.error('Stripe 未初始化或缺少必要参数:', { stripe, elements, clientSecret });
-      onError('支付服务初始化失败');
+      console.error('Stripe 未初始化或缺少必要参数 (handleSubmit):', { 
+        stripe: !!stripe,
+        elements: !!elements,
+        clientSecret: !!clientSecret 
+      });
+      onError(t('payment.errors.initializationFailed')); // Use translated message
       return;
     }
 
@@ -162,7 +195,7 @@ export const StripePaymentForm: React.FC<StripePaymentFormProps> = ({
               uid: userId,
               userEmail,
               planId,
-              duration,
+              duration: mapToSubscriptionDuration(duration), // Mapped duration
               orderId: paymentIntent.id,
               amount,
               currency,
@@ -193,7 +226,7 @@ export const StripePaymentForm: React.FC<StripePaymentFormProps> = ({
                   uid: userId,
                   userEmail,
                   planId,
-                  duration,
+                  duration: mapToSubscriptionDuration(duration), // Mapped duration
                   orderId: paymentIntent.id,
                   amount,
                   currency,
@@ -222,12 +255,13 @@ export const StripePaymentForm: React.FC<StripePaymentFormProps> = ({
         } else {
           throw new Error('支付未完成');
         }
-      } catch (error) {
+      } catch (error: any) { // Typed error as any for now
         if (retryCount === maxRetries - 1) {
           console.error('支付处理错误:', error);
-          const errorMessage = error.type === 'api_connection_error' 
-            ? '支付服务连接失败，请检查网络连接后重试'
-            : (error instanceof Error ? error.message : '支付处理失败');
+          const specificError = error as { type?: string; message?: string }; // Type assertion for more specific error properties
+          const errorMessage = specificError.type === 'api_connection_error' 
+            ? t('payment.errors.connectionFailed') // Use translated message
+            : (specificError.message || t('payment.errors.processingFailed')); // Use translated message
           setErrorMessage(errorMessage);
           onError(errorMessage);
         }

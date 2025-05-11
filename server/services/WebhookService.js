@@ -13,30 +13,38 @@ class WebhookService {
       
       // 2. 如果支付成功，更新用户信息 (Firebase)
       if (paymentRecord.status === 'completed') {
-        const { userId: firebaseUid, planId, duration } = paymentIntent.metadata;
+        // USE paymentRecord as the source of truth for userId, planId, duration
+        const firebaseUid = paymentRecord.userId; 
+        const planIdFromRecord = paymentRecord.planId;
+        const durationFromRecord = paymentRecord.duration;
         
         if (!firebaseUid) {
-          console.error('[WebhookService] Firebase UID (userId) missing in paymentIntent metadata. Skipping Firebase user update and Supabase sync.');
+          console.error('[WebhookService] Firebase UID (userId) missing in paymentRecord. Skipping Firebase user update and Supabase sync.');
           // Still return success to Stripe as the payment itself was recorded in Firebase paymentRecords
-          return { success: true, orderId: paymentIntent.id, message: 'Firebase UID missing, partial success.' };
+          return { success: true, orderId: paymentIntent.id, message: 'Firebase UID missing in paymentRecord, partial success.' };
         }
 
         const userRef = db.collection('users').doc(firebaseUid);
-        const newExpiryDate = calculateExpiredAt(duration);
-        await userRef.update({
-          planLevel: planId,
-          planDuration: duration,
-          expiredAt: newExpiryDate,
-          updatedAt: new Date().toISOString()
-        });
-        console.log(`[WebhookService] Firebase user ${firebaseUid} updated with plan: ${planId}, duration: ${duration}, expires: ${newExpiryDate}`);
+        const newExpiryDate = calculateExpiredAt(durationFromRecord); // Use durationFromRecord
+        try {
+          await userRef.set({ 
+            planLevel: planIdFromRecord,       // Use value from paymentRecord
+            planDuration: durationFromRecord,  // Use value from paymentRecord
+            expiredAt: newExpiryDate, 
+            updatedAt: new Date().toISOString()
+          }, { merge: true }); 
+          console.log(`[WebhookService] Firebase user ${firebaseUid} upserted with plan: ${planIdFromRecord}, duration: ${durationFromRecord}, expires: ${newExpiryDate.toISOString()}`);
+        } catch (userProfileUpdateError) {
+          console.error(`[WebhookService] Error upserting Firebase user profile for ${firebaseUid} (UID: ${firebaseUid}):`, userProfileUpdateError);
+          // Log error but continue to allow Supabase sync and WebSocket emission
+        }
         
         // 3. 发送 WebSocket 消息通知前端 (Firebase related)
         if (global.io) {
             global.io.to(firebaseUid).emit('payment:success', {
                 orderId: paymentIntent.id,
-                planId,
-                duration
+                planId: planIdFromRecord,
+                duration: durationFromRecord
             });
             console.log(`[WebhookService] WebSocket event 'payment:success' emitted to ${firebaseUid}`);
         } else {
@@ -87,14 +95,11 @@ class WebhookService {
               // If a plan_id changes, this will update it.
               const subscriptionData = {
                 user_id: supabaseUserId,
-                plan_id: planId,
+                plan_id: planIdFromRecord, // Use value from paymentRecord
                 status: 'active',
                 started_at: new Date().toISOString(),
                 expires_at: newExpiryDate.toISOString(), 
-                current_period_started_at: new Date().toISOString(), // For simplicity, same as started_at
-                current_period_expires_at: newExpiryDate.toISOString(), // For simplicity, same as expires_at
                 last_payment_id: supabasePayment?.id || null, // Link to the Supabase payment record
-                // provider_subscription_id: null, // If not using Stripe Subscriptions API directly
                 updated_at: new Date().toISOString() // Ensure updated_at is set
               };
 
@@ -139,11 +144,11 @@ class WebhookService {
               }
 
               // ***** ADDED LOGIC TO UPDATE public.users table *****
-              if (planId && newExpiryDate && supabaseUserId) {
+              if (planIdFromRecord && newExpiryDate && supabaseUserId) { // Use planIdFromRecord
                 const { error: updateUserTableError } = await supabaseAdmin
                   .from('users')
                   .update({
-                    subscription_status: planId, // Use planId from metadata (e.g., 'pro', 'premium')
+                    subscription_status: planIdFromRecord, // Use planIdFromRecord
                     subscription_expires_at: newExpiryDate.toISOString(),
                     updated_at: new Date().toISOString()
                   })
@@ -152,7 +157,7 @@ class WebhookService {
                 if (updateUserTableError) {
                   console.error(`[WebhookService] Error updating public.users table for ${supabaseUserId} after subscription update:`, updateUserTableError);
                 } else {
-                  console.log(`[WebhookService] Successfully updated public.users table for ${supabaseUserId} with status ${planId}`);
+                  console.log(`[WebhookService] Successfully updated public.users table for ${supabaseUserId} with status ${planIdFromRecord}`);
                 }
               } else {
                 console.warn('[WebhookService] Missing planId, newExpiryDate, or supabaseUserId for public.users table update.');
