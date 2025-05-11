@@ -1,5 +1,7 @@
 import { supabaseAdmin } from '../index.js';
 
+const showDebugLogs = process.env.VITE_SHOW_DEBUG_LOGS === 'true';
+
 /**
  * Retrieves or creates a chat usage record for a user on a specific date.
  * @param {string} userId - The UUID of the user.
@@ -22,7 +24,7 @@ const getOrCreateChatUsage = async (userId, date) => {
             .single();
 
         if (selectError && selectError.code !== 'PGRST116') { // PGRST116: Row not found
-            console.error('[ChatUsageService] Error selecting chat usage:', selectError);
+            if (showDebugLogs) console.error('[ChatUsageService] Error selecting chat usage:', selectError);
             throw selectError;
         }
 
@@ -37,13 +39,13 @@ const getOrCreateChatUsage = async (userId, date) => {
                 .single();
 
             if (insertError) {
-                console.error('[ChatUsageService] Error inserting new chat usage record:', insertError);
+                if (showDebugLogs) console.error('[ChatUsageService] Error inserting new chat usage record:', insertError);
                 throw insertError;
             }
             return newRecord;
         }
     } catch (error) {
-        console.error('[ChatUsageService] Exception in getOrCreateChatUsage:', error);
+        if (showDebugLogs) console.error('[ChatUsageService] Exception in getOrCreateChatUsage:', error);
         throw error; // Re-throw the error to be handled by the caller
     }
 };
@@ -64,7 +66,7 @@ const incrementChatUsage = async (userId, date) => {
         const currentUsageRecord = await getOrCreateChatUsage(userId, date);
         if (!currentUsageRecord) {
             // This case should ideally be handled by getOrCreateChatUsage throwing an error
-            console.error(`[ChatUsageService] Failed to get or create usage record for user ${userId}, date ${date} before increment.`);
+            if (showDebugLogs) console.error(`[ChatUsageService] Failed to get or create usage record for user ${userId}, date ${date} before increment.`);
             throw new Error('Failed to retrieve chat usage record before increment.');
         }
 
@@ -80,17 +82,17 @@ const incrementChatUsage = async (userId, date) => {
             .single();
 
         if (error) {
-            console.error('[ChatUsageService] Error incrementing chat usage:', error);
+            if (showDebugLogs) console.error('[ChatUsageService] Error incrementing chat usage:', error);
             throw error;
         }
         if (!updatedRecord) {
             // This should ideally not happen if getOrCreateChatUsage was successful
-            console.error('[ChatUsageService] Failed to get updated record after increment for user:', userId, 'date:', date);
+            if (showDebugLogs) console.error('[ChatUsageService] Failed to get updated record after increment for user:', userId, 'date:', date);
             throw new Error('Failed to update chat usage record after increment.');
         }
         return updatedRecord;
     } catch (error) {
-        console.error('[ChatUsageService] Exception in incrementChatUsage:', error);
+        if (showDebugLogs) console.error('[ChatUsageService] Exception in incrementChatUsage:', error);
         throw error;
     }
 };
@@ -104,7 +106,7 @@ const incrementChatUsage = async (userId, date) => {
  */
 const getUserSubscriptionStatus = async (userId) => {
     if (!userId) {
-        console.warn('[ChatUsageService] getUserSubscriptionStatus called without userId.');
+        if (showDebugLogs) console.warn('[ChatUsageService] getUserSubscriptionStatus called without userId.');
         return null;
     }
     try {
@@ -116,15 +118,15 @@ const getUserSubscriptionStatus = async (userId) => {
 
         if (error) {
             if (error.code === 'PGRST116') { // User not found in public.users
-                console.warn(`[ChatUsageService] User not found in public.users for id: ${userId}`);
+                if (showDebugLogs) console.warn(`[ChatUsageService] User not found in public.users for id: ${userId}`);
                 return null; 
             }
-            console.error('[ChatUsageService] Error fetching user subscription status:', error);
+            if (showDebugLogs) console.error('[ChatUsageService] Error fetching user subscription status:', error);
             return null; // Or throw error, depending on how critical this info is for the caller
         }
         return user;
     } catch (error) {
-        console.error('[ChatUsageService] Exception in getUserSubscriptionStatus:', error);
+        if (showDebugLogs) console.error('[ChatUsageService] Exception in getUserSubscriptionStatus:', error);
         return null; // Or throw
     }
 };

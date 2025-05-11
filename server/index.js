@@ -14,6 +14,8 @@ import { getOrCreateChatUsage, incrementChatUsage, getUserSubscriptionStatus } f
 import admin from 'firebase-admin';
 import { createClient } from '@supabase/supabase-js';
 
+const showDebugLogs = process.env.VITE_SHOW_DEBUG_LOGS === 'true';
+
 // --- Firebase Admin SDK Initialization ---
 if (admin.apps.length === 0) { // Check if already initialized
   if (process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PROJECT_ID) {
@@ -27,23 +29,23 @@ if (admin.apps.length === 0) { // Check if already initialized
         }),
         databaseURL: process.env.FIREBASE_DATABASE_URL // Optional: if you use Realtime Database features
       });
-      console.log('Firebase Admin SDK initialized successfully.');
+      if (showDebugLogs) console.log('Firebase Admin SDK initialized successfully.');
     } catch (error) {
-      console.error('Firebase Admin SDK initialization error:', error);
+      if (showDebugLogs) console.error('Firebase Admin SDK initialization error:', error);
       // Depending on your app's needs, you might want to throw this error or handle it
     }
   } else {
-    console.warn('Firebase Admin SDK not initialized due to missing environment variables (PROJECT_ID, CLIENT_EMAIL, PRIVATE_KEY).');
+    if (showDebugLogs) console.warn('Firebase Admin SDK not initialized due to missing environment variables (PROJECT_ID, CLIENT_EMAIL, PRIVATE_KEY).');
     // Attempt to initialize with default credentials (e.g., for Google Cloud environments)
     try {
       admin.initializeApp();
-      console.log('Firebase Admin SDK initialized with default credentials.');
+      if (showDebugLogs) console.log('Firebase Admin SDK initialized with default credentials.');
     } catch (defaultInitError) {
-        console.error('Firebase Admin SDK default initialization failed:', defaultInitError);
+        if (showDebugLogs) console.error('Firebase Admin SDK default initialization failed:', defaultInitError);
     }
   }
 } else {
-  console.log('Firebase Admin SDK already initialized.');
+  if (showDebugLogs) console.log('Firebase Admin SDK already initialized.');
 }
 // --- End Firebase Admin SDK Initialization ---
 
@@ -61,14 +63,15 @@ dotenv.config({ path: envPath });
 const app = express();
 const port = process.env.SERVER_PORT || 4242;
 
-console.log('当前环境:', process.env.NODE_ENV);
-console.log('环境文件路径:', envPath);
-console.log('Stripe密钥配置:', !!process.env.STRIPE_SECRET_KEY);
-console.log('Webhook密钥配置:', !!process.env.STRIPE_WEBHOOK_SECRET);
-// Add console log for the intended Stripe Webhook URL
-console.log('Stripe Webhook URL:', process.env.VITE_STRIPE_WEBHOOK_URL || '未配置');
+if (showDebugLogs) console.log('当前环境:', process.env.NODE_ENV);
+if (showDebugLogs) console.log('环境文件路径:', envPath);
+if (showDebugLogs) console.log('Stripe密钥配置:', !!process.env.STRIPE_SECRET_KEY);
+if (showDebugLogs) console.log('Webhook密钥配置:', !!process.env.STRIPE_WEBHOOK_SECRET);
+if (showDebugLogs) console.log('Stripe Webhook URL:', process.env.VITE_STRIPE_WEBHOOK_URL || '未配置');
 
 if (!process.env.STRIPE_SECRET_KEY) {
+  // This is a critical error, should probably always throw or log regardless of debug flag
+  console.error('CRITICAL: 未设置 STRIPE_SECRET_KEY 环境变量'); 
   throw new Error('未设置 STRIPE_SECRET_KEY 环境变量');
 }
 
@@ -105,7 +108,7 @@ app.post('/webhook/stripe', express.raw({type: 'application/json'}), async (req,
 
     // Asynchronously handle the verified event
     setImmediate(async () => {
-      console.log('开始异步处理已验证的 Stripe Webhook 事件:', {
+      if (showDebugLogs) console.log('开始异步处理已验证的 Stripe Webhook 事件:', {
         type: event.type,
         id: event.id,
         timestamp: new Date().toISOString()
@@ -121,10 +124,10 @@ app.post('/webhook/stripe', express.raw({type: 'application/json'}), async (req,
             break;
           // Add other event types as needed
           default:
-            console.log(`未处理的事件类型: ${event.type}`);
+            if (showDebugLogs) console.log(`未处理的事件类型: ${event.type}`);
         }
       } catch (err) {
-        console.error('异步处理 Webhook 事件失败:', {
+        if (showDebugLogs) console.error('异步处理 Webhook 事件失败:', {
           error: err.message,
           stack: err.stack,
           eventId: event.id,
@@ -135,8 +138,7 @@ app.post('/webhook/stripe', express.raw({type: 'application/json'}), async (req,
     });
 
   } catch (err) {
-    // Signature verification failed
-    console.error('Webhook 签名验证失败:', {
+    if (showDebugLogs) console.error('Webhook 签名验证失败:', {
       error: err.message,
       headers: req.headers, // Log headers for debugging signature issues
       timestamp: new Date().toISOString()
@@ -153,7 +155,7 @@ app.options('*', cors());
 app.post('/api/stripe/create-payment-intent', async (req, res) => {
   try {
     const { amount, currency, userId } = req.body;
-    console.log('创建支付意向:', { amount, currency });
+    if (showDebugLogs) console.log('创建支付意向:', { amount, currency });
     
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(amount * 100),
@@ -163,10 +165,10 @@ app.post('/api/stripe/create-payment-intent', async (req, res) => {
       }
     });
 
-    console.log('支付意向创建成功:', paymentIntent.client_secret);
+    if (showDebugLogs) console.log('支付意向创建成功:', paymentIntent.client_secret);
     res.json({ clientSecret: paymentIntent.client_secret });
   } catch (error) {
-    console.error('创建支付意向失败:', error);
+    if (showDebugLogs) console.error('创建支付意向失败:', error);
     res.status(500).json({ 
       error: '支付服务出错',
       details: error.message 
@@ -245,7 +247,7 @@ const marqueeMessages = [
 
 // 跑马灯 WebSocket 处理
 io.on('connection', (socket) => {
-  console.log('跑马灯客户端已连接');
+  if (showDebugLogs) console.log('跑马灯客户端已连接');
   socket.emit('marquee:update', marqueeMessages);
   
   const messageInterval = setInterval(() => {
@@ -253,23 +255,23 @@ io.on('connection', (socket) => {
   }, Number(process.env.VITE_MARQUEE_REFRESH_INTERVAL) || 5000);
 
   socket.on('disconnect', () => {
-    console.log('跑马灯客户端已断开连接');
+    if (showDebugLogs) console.log('跑马灯客户端已断开连接');
     clearInterval(messageInterval);
   });
 });
 
 // 错误处理
 io.engine.on('connection_error', (err) => {
-  console.error('Socket.IO连接错误:', err);
+  if (showDebugLogs) console.error('Socket.IO连接错误:', err);
 });
 
 server.listen(port, () => {
-  console.log(`服务器运行在 http://localhost:${port}`);
+  if (showDebugLogs) console.log(`服务器运行在 http://localhost:${port}`);
 });
 
 // 在服务器启动后记录健康状态
 server.on('listening', () => {
-  console.log(`服务器健康检查就绪，运行在 http://localhost:${port}/health`);
+  if (showDebugLogs) console.log(`服务器健康检查就绪，运行在 http://localhost:${port}/health`);
 });
 
 // --- Initialize Supabase Admin Client --- 
@@ -277,27 +279,28 @@ const supabaseUrl = process.env.PROJECT_URL;
 const supabaseServiceKey = process.env.FUNC_SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseServiceKey) {
-    console.error('Missing Supabase URL or Service Role Key in environment variables!');
+    if (showDebugLogs) console.error('Missing Supabase URL or Service Role Key in environment variables!');
+    // Consider if this is a critical error that should always log/throw
 }
 
 // Create a single instance of the Supabase client for the server
 // IMPORTANT: Use the Service Role Key here for admin privileges
 // Remove non-null assertions for JS
 const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey); 
-console.log('Supabase Admin Client initialized (or attempted).');
+if (showDebugLogs) console.log('Supabase Admin Client initialized (or attempted).');
 // --- End Supabase Admin Init --- 
 
 // Middleware to verify Firebase ID token from Authorization header
 const authenticateUser = async (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        console.warn('[AuthMiddleware] No Bearer token found in Authorization header.');
+        if (showDebugLogs) console.warn('[AuthMiddleware] No Bearer token found in Authorization header.');
         return res.status(401).json({ error: 'Unauthorized', message: 'No token provided.' });
     }
 
     const idToken = authHeader.split('Bearer ')[1];
     if (!idToken) {
-        console.warn('[AuthMiddleware] Bearer token is empty.');
+        if (showDebugLogs) console.warn('[AuthMiddleware] Bearer token is empty.');
         return res.status(401).json({ error: 'Unauthorized', message: 'Malformed token.' });
     }
 
@@ -307,7 +310,7 @@ const authenticateUser = async (req, res, next) => {
         // console.log(`[AuthMiddleware] Token verified for UID: ${decodedToken.uid}`);
         next();
     } catch (error) {
-        console.error('[AuthMiddleware] Error verifying Firebase ID token:', error.message);
+        if (showDebugLogs) console.error('[AuthMiddleware] Error verifying Firebase ID token:', error.message);
         if (error.code === 'auth/id-token-expired') {
             return res.status(401).json({ error: 'Unauthorized', message: 'Token expired.', code: 'TOKEN_EXPIRED' });
         }
@@ -319,26 +322,26 @@ export { supabaseAdmin };
 
 // --- Add API Route for User Sync --- 
 app.post('/api/sync-user', async (req, res) => {
-    console.log('[API /api/sync-user] Received request');
+    if (showDebugLogs) console.log('[API /api/sync-user] Received request');
     const { idToken } = req.body;
 
     if (!idToken) {
-        console.error('[API /api/sync-user] Missing idToken');
+        if (showDebugLogs) console.error('[API /api/sync-user] Missing idToken');
         return res.status(400).json({ error: 'Missing idToken' });
     }
 
     try {
         // 1. Verify Firebase ID Token
-        console.log('[API /api/sync-user] Verifying Firebase token...');
+        if (showDebugLogs) console.log('[API /api/sync-user] Verifying Firebase token...');
         const decodedToken = await admin.auth().verifyIdToken(idToken);
         const firebaseUid = decodedToken.uid;
         const email = decodedToken.email;
         const displayName = decodedToken.name;
         const photoURL = decodedToken.picture;
-        console.log(`[API /api/sync-user] Token verified for Firebase UID: ${firebaseUid}`);
+        if (showDebugLogs) console.log(`[API /api/sync-user] Token verified for Firebase UID: ${firebaseUid}`);
 
         // 2. Check if user exists in public.users by firebase_uid
-        console.log(`[API /api/sync-user] Checking Supabase public.users for firebase_uid: ${firebaseUid}`);
+        if (showDebugLogs) console.log(`[API /api/sync-user] Checking Supabase public.users for firebase_uid: ${firebaseUid}`);
         const { data: existingPublicUser, error: selectError } = await supabaseAdmin
             .from('users')
             .select('*') // Select all columns needed for update/return
@@ -346,7 +349,7 @@ app.post('/api/sync-user', async (req, res) => {
             .maybeSingle();
 
         if (selectError) {
-            console.error('[API /api/sync-user] Error selecting user by firebase_uid:', selectError);
+            if (showDebugLogs) console.error('[API /api/sync-user] Error selecting user by firebase_uid:', selectError);
             throw selectError;
         }
 
@@ -354,7 +357,7 @@ app.post('/api/sync-user', async (req, res) => {
 
         // 3. User Exists in public.users by firebase_uid - Update
         if (existingPublicUser) {
-            console.log(`[API /api/sync-user] Found existing user by firebase_uid (${existingPublicUser.id}). Updating...`);
+            if (showDebugLogs) console.log(`[API /api/sync-user] Found existing user by firebase_uid (${existingPublicUser.id}). Updating...`);
             const updateData = {
                 last_login_at: new Date().toISOString(),
                 email: email || existingPublicUser.email, // Update email if provided, otherwise keep existing
@@ -372,25 +375,25 @@ app.post('/api/sync-user', async (req, res) => {
                 .single();
 
             if (updateError) {
-                console.error(`[API /api/sync-user] Error updating user with firebase_uid ${firebaseUid}:`, updateError);
+                if (showDebugLogs) console.error(`[API /api/sync-user] Error updating user with firebase_uid ${firebaseUid}:`, updateError);
                 throw updateError;
             }
             finalSupabaseProfile = updatedUser;
-            console.log(`[API /api/sync-user] User ${updatedUser?.id} updated successfully.`);
+            if (showDebugLogs) console.log(`[API /api/sync-user] User ${updatedUser?.id} updated successfully.`);
 
         } else {
             // 4. User Does Not Exist in public.users by firebase_uid - Attempt Insert
-            console.log(`[API /api/sync-user] User with firebase_uid ${firebaseUid} not found in public.users. Proceeding.`);
+            if (showDebugLogs) console.log(`[API /api/sync-user] User with firebase_uid ${firebaseUid} not found in public.users. Proceeding.`);
 
             // 4a. Find Supabase Auth User ID by email
-            console.log(`[API /api/sync-user] Checking auth.users for email: ${email}`);
+            if (showDebugLogs) console.log(`[API /api/sync-user] Checking auth.users for email: ${email}`);
             const { data: { users: authUsers }, error: authListError } = await supabaseAdmin.auth.admin.listUsers({
                 filter: `email = "${email}"`, // Ensure email is quoted
                 limit: 1
             });
 
             if (authListError && authListError.message !== "No users found matching the provided criteria.") {
-                 console.error('[API /api/sync-user] Error searching Supabase auth users by email:', authListError);
+                 if (showDebugLogs) console.error('[API /api/sync-user] Error searching Supabase auth users by email:', authListError);
                  throw new Error('Failed to check Supabase auth users.');
             }
 
@@ -400,10 +403,10 @@ app.post('/api/sync-user', async (req, res) => {
 
             if (authUsers && authUsers.length > 0) {
                 const potentialAuthUserId = authUsers[0].id;
-                console.log(`[API /api/sync-user] Found potential Supabase auth user by email: ${potentialAuthUserId}`);
+                if (showDebugLogs) console.log(`[API /api/sync-user] Found potential Supabase auth user by email: ${potentialAuthUserId}`);
 
                 // <<<<------ CHECK FOR INCONSISTENCY ------>>>>
-                console.log(`[API /api/sync-user] Verifying if public.users ID ${potentialAuthUserId} is already linked correctly...`);
+                if (showDebugLogs) console.log(`[API /api/sync-user] Verifying if public.users ID ${potentialAuthUserId} is already linked correctly...`);
                 const { data: conflictingPublicUser, error: conflictCheckError } = await supabaseAdmin
                     .from('users')
                     .select('id, firebase_uid, email')
@@ -411,27 +414,27 @@ app.post('/api/sync-user', async (req, res) => {
                     .maybeSingle();
 
                 if (conflictCheckError) {
-                    console.error(`[API /api/sync-user] Error checking for conflicting public user ID ${potentialAuthUserId}:`, conflictCheckError);
+                    if (showDebugLogs) console.error(`[API /api/sync-user] Error checking for conflicting public user ID ${potentialAuthUserId}:`, conflictCheckError);
                     throw new Error('Failed to verify user consistency.');
                 }
 
                 if (conflictingPublicUser) {
                     if (conflictingPublicUser.firebase_uid !== firebaseUid) {
                         // DATA INCONSISTENCY DETECTED!
-                        console.warn(`[API /api/sync-user] DATA INCONSISTENCY DETECTED!`);
-                        console.warn(`  Supabase Auth ID ${potentialAuthUserId} (found via email ${email}) is linked in public.users to different Firebase UID: ${conflictingPublicUser.firebase_uid}`);
-                        console.warn(`  Forcing creation of a new Supabase Auth user for Firebase UID: ${firebaseUid}`);
+                        if (showDebugLogs) console.warn(`[API /api/sync-user] DATA INCONSISTENCY DETECTED!`);
+                        if (showDebugLogs) console.warn(`  Supabase Auth ID ${potentialAuthUserId} (found via email ${email}) is linked in public.users to different Firebase UID: ${conflictingPublicUser.firebase_uid}`);
+                        if (showDebugLogs) console.warn(`  Forcing creation of a new Supabase Auth user for Firebase UID: ${firebaseUid}`);
                         requiresNewAuthUser = true; // Set the flag
                     } else {
                         // ID and Firebase UID match - user already synced.
-                        console.log(`[API /api/sync-user] Found matching public user via Supabase ID ${potentialAuthUserId}. User already synced.`);
+                        if (showDebugLogs) console.log(`[API /api/sync-user] Found matching public user via Supabase ID ${potentialAuthUserId}. User already synced.`);
                         finalSupabaseProfile = conflictingPublicUser; // Assign the found profile
                         supabaseAuthUserId = potentialAuthUserId; // Assign the ID
                     }
                 } else {
                   // No public.users record found for this Auth ID.
                   // Safe to link the new Firebase user to this existing Supabase Auth ID.
-                  console.log(`[API /api/sync-user] No conflicting public user found for ID ${potentialAuthUserId}. Proceeding to link.`);
+                  if (showDebugLogs) console.log(`[API /api/sync-user] No conflicting public user found for ID ${potentialAuthUserId}. Proceeding to link.`);
                   supabaseAuthUserId = potentialAuthUserId; // Assign the ID
                 }
                 // <<<<------ END CHECK ------>>>>
@@ -443,26 +446,26 @@ app.post('/api/sync-user', async (req, res) => {
 
             // 4b. Create new Supabase Auth user if needed
             if (requiresNewAuthUser) {
-                 console.log(`[API /api/sync-user] Creating new Supabase auth user for email ${email}...`);
+                 if (showDebugLogs) console.log(`[API /api/sync-user] Creating new Supabase auth user for email ${email}...`);
                 const { data: { user: newAuthUser }, error: createAuthError } = await supabaseAdmin.auth.admin.createUser({
                     email: email,
                     // email_confirm: decodedToken.email_verified || false, // Optional
                 });
 
                 if (createAuthError) {
-                    console.error('[API /api/sync-user] Error creating Supabase auth user:', createAuthError);
+                    if (showDebugLogs) console.error('[API /api/sync-user] Error creating Supabase auth user:', createAuthError);
                     // Handle specific errors like email already existing if needed
                     throw createAuthError;
                 }
                 supabaseAuthUserId = newAuthUser.id; // Get the *new* ID
                 isNewSupabaseAuthUser = true;
-                console.log(`[API /api/sync-user] Created new Supabase auth user: ${supabaseAuthUserId}`);
+                if (showDebugLogs) console.log(`[API /api/sync-user] Created new Supabase auth user: ${supabaseAuthUserId}`);
                  finalSupabaseProfile = null; // Ensure we proceed to insert in public.users
             }
 
             // 4c. Insert into public.users if no complete profile was assigned yet
             if (!finalSupabaseProfile && supabaseAuthUserId) {
-                console.log(`[API /api/sync-user] Inserting into public.users for Supabase ID: ${supabaseAuthUserId} and Firebase UID: ${firebaseUid}`);
+                if (showDebugLogs) console.log(`[API /api/sync-user] Inserting into public.users for Supabase ID: ${supabaseAuthUserId} and Firebase UID: ${firebaseUid}`);
                 const insertData = {
                     id: supabaseAuthUserId, 
                     firebase_uid: firebaseUid,
@@ -483,21 +486,21 @@ app.post('/api/sync-user', async (req, res) => {
                     .single();
 
                 if (insertError) {
-                    console.error('[API /api/sync-user] Error inserting into public.users:', insertError);
+                    if (showDebugLogs) console.error('[API /api/sync-user] Error inserting into public.users:', insertError);
                     // Original error handling for insert (e.g., 23505 on firebase_uid constraint if added later)
                     if (insertError.code === '23505') { 
                         // Check if it's the firebase_uid constraint or the primary key constraint
                          if (insertError.message.includes('users_firebase_uid_key')) {
-                             console.warn(`[API /api/sync-user] Insert failed due to unique firebase_uid constraint (code: 23505). User ${firebaseUid} might have been created concurrently.`);
+                             if (showDebugLogs) console.warn(`[API /api/sync-user] Insert failed due to unique firebase_uid constraint (code: 23505). User ${firebaseUid} might have been created concurrently.`);
                              // Attempt to fetch the user again
                              const { data: concurrentUser, error: fetchError } = await supabaseAdmin.from('users').select('*').eq('firebase_uid', firebaseUid).single();
                              if (fetchError) {
-                                 console.error(`[API /api/sync-user] Error fetching user after firebase_uid unique constraint violation:`, fetchError);
+                                 if (showDebugLogs) console.error(`[API /api/sync-user] Error fetching user after firebase_uid unique constraint violation:`, fetchError);
                                  throw insertError;
                              }
                              finalSupabaseProfile = concurrentUser;
                          } else if (insertError.message.includes('users_pkey')) {
-                            console.error(`[API /api/sync-user] Insert failed due to primary key conflict (code: 23505) for ID ${supabaseAuthUserId}. This indicates a severe data inconsistency.`);
+                            if (showDebugLogs) console.error(`[API /api/sync-user] Insert failed due to primary key conflict (code: 23505) for ID ${supabaseAuthUserId}. This indicates a severe data inconsistency.`);
                              // We already checked for this, but handle defensively
                               return res.status(500).json({ error: 'Internal Server Error', message: 'Failed to insert user due to persistent data conflict.' });
                          } else {
@@ -508,7 +511,7 @@ app.post('/api/sync-user', async (req, res) => {
                     }
                 } else {
                     finalSupabaseProfile = insertedUser;
-                    console.log(`[API /api/sync-user] User ${insertedUser?.id} inserted into public.users successfully.`);
+                    if (showDebugLogs) console.log(`[API /api/sync-user] User ${insertedUser?.id} inserted into public.users successfully.`);
                 }
             }
         }
@@ -516,13 +519,13 @@ app.post('/api/sync-user', async (req, res) => {
         // 5. Return the final profile (either updated or newly inserted/fetched)
         if (!finalSupabaseProfile) {
             // This should ideally not happen if error handling is correct
-            console.error('[API /api/sync-user] Failed to obtain final user profile.');
+            if (showDebugLogs) console.error('[API /api/sync-user] Failed to obtain final user profile.');
             return res.status(500).json({ error: 'Internal server error processing user sync' });
         }
         res.status(200).json(finalSupabaseProfile);
 
     } catch (error) {
-        console.error('[API /api/sync-user] Error processing sync request:', { 
+        if (showDebugLogs) console.error('[API /api/sync-user] Error processing sync request:', { 
             message: error.message, 
             stack: error.stack, 
             code: error.code, 
@@ -548,7 +551,7 @@ app.get('/api/chat-usage/today', authenticateUser, async (req, res) => {
             .single();
 
         if (profileError || !userProfile) {
-            console.error(`[API /api/chat-usage/today] User profile not found for firebase_uid ${firebaseUid}:`, profileError);
+            if (showDebugLogs) console.error(`[API /api/chat-usage/today] User profile not found for firebase_uid ${firebaseUid}:`, profileError);
             return res.status(404).json({ error: 'User profile not found in Supabase.' });
         }
         const supabaseUserId = userProfile.id; // This is the Supabase UUID
@@ -560,7 +563,7 @@ app.get('/api/chat-usage/today', authenticateUser, async (req, res) => {
 
         if (!usage) {
             // This case should ideally be handled within getOrCreateChatUsage by throwing an error
-            console.error(`[API /api/chat-usage/today] Failed to get or create usage record for user: ${supabaseUserId}`);
+            if (showDebugLogs) console.error(`[API /api/chat-usage/today] Failed to get or create usage record for user: ${supabaseUserId}`);
             return res.status(500).json({ error: 'Failed to retrieve chat usage.' });
         }
 
@@ -584,7 +587,7 @@ app.get('/api/chat-usage/today', authenticateUser, async (req, res) => {
         const remaining = limit === Infinity ? Infinity : Math.max(0, limit - usage.used_count);
 
         // Added detailed logging before sending the response
-        console.log(`[API /api/chat-usage/today] Final calculation for firebase_uid ${firebaseUid} (Supabase ID ${supabaseUserId}): `,
+        if (showDebugLogs) console.log(`[API /api/chat-usage/today] Final calculation for firebase_uid ${firebaseUid} (Supabase ID ${supabaseUserId}): `,
             JSON.stringify({
                 fetchedUsage: usage,
                 fetchedSubscription: subscription,
@@ -605,7 +608,7 @@ app.get('/api/chat-usage/today', authenticateUser, async (req, res) => {
         });
 
     } catch (error) {
-        console.error(`[API /api/chat-usage/today] Error for firebase_uid ${firebaseUid} (Supabase ID ${supabaseUserId || 'unknown'}):`, error);
+        if (showDebugLogs) console.error(`[API /api/chat-usage/today] Error for firebase_uid ${firebaseUid} (Supabase ID ${supabaseUserId || 'unknown'}):`, error);
         res.status(500).json({ error: 'Internal server error while fetching chat usage.', details: error.message });
     }
 });
@@ -625,7 +628,7 @@ app.post('/api/chat-usage/increment', authenticateUser, async (req, res) => {
             .single();
 
         if (profileError || !userProfile) {
-            console.error(`[API /api/chat-usage/increment] User profile not found for firebase_uid ${firebaseUid}:`, profileError);
+            if (showDebugLogs) console.error(`[API /api/chat-usage/increment] User profile not found for firebase_uid ${firebaseUid}:`, profileError);
             return res.status(404).json({ error: 'User profile not found in Supabase.' });
         }
         supabaseUserId = userProfile.id; // This is the Supabase UUID
@@ -637,7 +640,7 @@ app.post('/api/chat-usage/increment', authenticateUser, async (req, res) => {
         ]);
 
         if (!usage) {
-            console.error(`[API /api/chat-usage/increment] Failed to get or create usage record for user: ${supabaseUserId} before increment.`);
+            if (showDebugLogs) console.error(`[API /api/chat-usage/increment] Failed to get or create usage record for user: ${supabaseUserId} before increment.`);
             return res.status(500).json({ error: 'Failed to retrieve chat usage before increment.' });
         }
 
@@ -659,7 +662,7 @@ app.post('/api/chat-usage/increment', authenticateUser, async (req, res) => {
         }
 
         if (limit !== Infinity && usage.used_count >= limit) {
-            console.warn(`[API /api/chat-usage/increment] User ${firebaseUid} attempted to increment chat usage beyond limit.`);
+            if (showDebugLogs) console.warn(`[API /api/chat-usage/increment] User ${firebaseUid} attempted to increment chat usage beyond limit.`);
             return res.status(403).json({ 
                 error: 'chat.limit.exceeded', // For i18n on client
                 message: 'Chat limit exceeded for today.',
@@ -690,7 +693,7 @@ app.post('/api/chat-usage/increment', authenticateUser, async (req, res) => {
         });
 
     } catch (error) {
-        console.error(`[API /api/chat-usage/increment] Error for firebase_uid ${firebaseUid} (Supabase ID ${supabaseUserId || 'unknown'}):`, error);
+        if (showDebugLogs) console.error(`[API /api/chat-usage/increment] Error for firebase_uid ${firebaseUid} (Supabase ID ${supabaseUserId || 'unknown'}):`, error);
         res.status(500).json({ error: 'Internal server error while incrementing chat usage.', details: error.message });
     }
 });

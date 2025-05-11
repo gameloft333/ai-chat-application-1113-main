@@ -1,3 +1,4 @@
+import logger from '../utils/logger';
 // Removed: import { AuthContextType, useAuth } from '../contexts/AuthContext'; 
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_APP_URL || '/api'; // Ensure this points to your backend server
@@ -24,7 +25,7 @@ export interface IncrementChatUsageResponse {
 const getTodaysChatUsage = async (getAccessToken: () => Promise<string | null>): Promise<ChatUsageInfo> => {
     const token = await getAccessToken();
     if (!token) {
-        console.error('[ChatUsageService] No access token provided to getTodaysChatUsage.');
+        logger.error('[ChatUsageService] No access token provided to getTodaysChatUsage.');
         throw new Error('User not authenticated. Cannot fetch chat usage.');
     }
 
@@ -49,10 +50,10 @@ const getTodaysChatUsage = async (getAccessToken: () => Promise<string | null>):
             if (errorDetails && errorDetails.message) {
                 errorResponseMessage = errorDetails.message;
             }
-            console.error('[ChatUsageService] Error fetching chat usage (JSON parsed from text):', response.status, errorDetails);
+            logger.error('[ChatUsageService] Error fetching chat usage (JSON parsed from text):', response.status, errorDetails);
         } catch (e) {
             // Could not parse JSON, or no message field. Use the text response or default.
-            console.error('[ChatUsageService] Error fetching chat usage (non-JSON response or JSON parse failed):', response.status, responseText.substring(0, 200));
+            logger.error('[ChatUsageService] Error fetching chat usage (non-JSON response or JSON parse failed):', response.status, responseText.substring(0, 200));
             // If responseText is informative (e.g. HTML error page snippet), you might want to use it
             // For now, errorResponseMessage remains the generic one if JSON parsing fails or lacks a message.
             // If responseText itself is a good message (e.g. plain text error), consider using it:
@@ -66,7 +67,7 @@ const getTodaysChatUsage = async (getAccessToken: () => Promise<string | null>):
         return await response.json();
     } catch (e) {
         const textResponse = await response.text();
-        console.error('[ChatUsageService] Failed to parse successful response as JSON for getTodaysChatUsage. Status:', response.status, 'Response text:', textResponse.substring(0,200));
+        logger.error('[ChatUsageService] Failed to parse successful response as JSON for getTodaysChatUsage. Status:', response.status, 'Response text:', textResponse.substring(0,200));
         throw new Error(`Received non-JSON response from server when fetching chat usage, though status was OK. Content: ${textResponse.substring(0,100)}`);
     }
 };
@@ -77,7 +78,7 @@ const getTodaysChatUsage = async (getAccessToken: () => Promise<string | null>):
 const incrementChatUsage = async (getAccessToken: () => Promise<string | null>): Promise<IncrementChatUsageResponse> => {
     const token = await getAccessToken();
     if (!token) {
-        console.error('[ChatUsageService] No access token provided to incrementChatUsage.');
+        logger.error('[ChatUsageService] No access token provided to incrementChatUsage.');
         return { success: false, message: 'User not authenticated. Cannot increment chat usage.', backendError: 'AUTH_REQUIRED' }; 
     }
 
@@ -100,11 +101,11 @@ const incrementChatUsage = async (getAccessToken: () => Promise<string | null>):
             errorResponseMessage = errorData.message || errorResponseMessage;
             backendErrorCode = errorData.error || backendErrorCode;
             currentUsageData = errorData.currentUsage; // if backend sends current state on 403/error
-            console.error('[ChatUsageService] Error incrementing chat usage (JSON parsed):', response.status, errorData);
+            logger.error('[ChatUsageService] Error incrementing chat usage (JSON parsed):', response.status, errorData);
         } catch (e) {
             // Could not parse JSON, likely an HTML error page
             const textResponse = await response.text(); // Read the response as text
-            console.error('[ChatUsageService] Error incrementing chat usage (non-JSON response):', response.status, textResponse.substring(0, 200));
+            logger.error('[ChatUsageService] Error incrementing chat usage (non-JSON response):', response.status, textResponse.substring(0, 200));
             // errorResponseMessage and backendErrorCode remain based on status and initial values
         }
         
@@ -123,7 +124,7 @@ const incrementChatUsage = async (getAccessToken: () => Promise<string | null>):
         return { ...responseData, success: true }; // Ensure success is true if response.ok
     } catch (e) {
         const textResponse = await response.text();
-        console.error('[ChatUsageService] Failed to parse successful response as JSON for incrementChatUsage. Status:', response.status, 'Response text:', textResponse.substring(0,200));
+        logger.error('[ChatUsageService] Failed to parse successful response as JSON for incrementChatUsage. Status:', response.status, 'Response text:', textResponse.substring(0,200));
         return {
             success: false,
             message: `Received non-JSON response from server after incrementing, though status was OK. Content: ${textResponse.substring(0,100)}`,
