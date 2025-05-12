@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import zh from '../config/i18n/zh';
 import en from '../config/i18n/en';
 import i18n from 'i18next';
+import logger from '../utils/logger';
 
 const languages = { zh, en };
 type LanguageType = keyof typeof languages;
@@ -49,21 +50,21 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
         if (SHOW_DEBUG_LOGS) {
             // Commenting out this verbose log to reduce console noise
-            // console.log(`[LanguageContext] Attempting to translate key: "${key}" for language: "${language}"`);
+            // logger.debug(`[LanguageContext] Attempting to translate key: "${key}" for language: "${language}"`);
         }
         try {
             for (const k of keys) {
                 // Check if value is an object before trying to access property k
                 if (typeof value !== 'object' || value === null) {
                     if (SHOW_DEBUG_LOGS) {
-                        console.warn(`[LanguageContext] Translation path broken for key: "${key}" (segment: "${k}") in language: "${language}". Current path value is not an object:`, value);
+                        logger.warn(`[LanguageContext] Translation path broken for key: "${key}" (segment: "${k}") in language: "${language}". Current path value is not an object:`, value);
                     }
                     return key; // Return key itself as fallback
                 }
                 value = value[k]; // Access property
                 if (value === undefined) {
                     if (SHOW_DEBUG_LOGS) {
-                        console.warn(`[LanguageContext] Translation missing for key: "${key}" (segment: "${k}") in language: "${language}"`);
+                        logger.warn(`[LanguageContext] Translation missing for key: "${key}" (segment: "${k}") in language: "${language}"`);
                     }
                     return key; // Return key itself as fallback
                 }
@@ -73,13 +74,13 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 return value;
             } else {
                 if (SHOW_DEBUG_LOGS) {
-                    console.warn(`[LanguageContext] Translation found for key: "${key}" in language: "${language}" but it is not a string. Value:`, value);
+                    logger.warn(`[LanguageContext] Translation found for key: "${key}" in language: "${language}" but it is not a string. Value:`, value);
                 }
                 return key; // Return key itself as fallback
             }
         } catch (error) {
             if (SHOW_DEBUG_LOGS) {
-                console.error(`[LanguageContext] Error getting translation for key: "${key}" in language: "${language}"`, error);
+                logger.error(`[LanguageContext] Error getting translation for key: "${key}" in language: "${language}"`, error);
             }
             return key; // Return key itself on error
         }
@@ -94,7 +95,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     useEffect(() => {
         // 添加调试日志
-        console.log('i18next 配置 (on mount):', {
+        logger.debug('i18next 配置 (on mount):', {
             interpolation: i18n.options.interpolation,
             resources: i18n.options.resources,
             debug: true

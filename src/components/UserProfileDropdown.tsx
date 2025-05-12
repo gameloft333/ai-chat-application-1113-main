@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { User, LogOut, Clock, Eye, EyeOff, Copy, Check, Mail, Key, Crown } from 'lucide-react';
+import { User as UserIcon, LogOut, Clock, Eye, EyeOff, Copy, Check, Mail, Key, Crown } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { PaymentRecordService } from '../services/payment-record-service';
 import { useSubscription } from '../contexts/SubscriptionContext';
 import { useTranslation } from 'react-i18next';
-// import { Crown } from 'lucide-react';
+import logger from '../utils/logger';
 
 export interface UserProfileDropdownProps {
-  firebaseUser: User; // Or whatever the prop is actually named and typed
+  firebaseUser: any;
   onLogout: () => Promise<void>;
   themeColor: string;
   onOpenSubscription: () => void;
@@ -42,7 +42,7 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({
   useEffect(() => {
     const updateSubscriptionStatus = async () => {
       if (!currentUser?.uid) {
-        console.log('未找到当前用户ID，跳过订阅状态更新');
+        logger.debug('未找到当前用户ID，跳过订阅状态更新');
         return;
       }
 
@@ -51,10 +51,10 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({
           currentUser.uid,
           currentUser.email || undefined
         );
-        console.log('订阅状态更新成功:', status);
+        logger.info('订阅状态更新成功:', status);
         setSubscriptionStatus(status);
       } catch (error) {
-        console.error('更新订阅状态失败:', error);
+        logger.error('更新订阅状态失败:', error);
         // 设置默认状态
         setSubscriptionStatus({ isSubscribed: false });
       }
@@ -64,7 +64,7 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({
     updateSubscriptionStatus();
 
     const handlePaymentUpdate = () => {
-      console.log('收到支付更新事件，延迟 1 秒更新状态');
+      logger.debug('收到支付更新事件，延迟 1 秒更新状态');
       setTimeout(updateSubscriptionStatus, 1000);
     };
 
@@ -94,7 +94,7 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({
     try {
       await logout();
     } catch (error) {
-      console.error('退出登录失败:', error);
+      logger.error('退出登录失败:', error);
       alert(t('alerts.error.logoutFailed'));
     }
   };
@@ -141,7 +141,7 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       } catch (error) {
-        console.error('复制失败:', error);
+        logger.error('复制失败:', error);
       }
     }
   };
@@ -160,59 +160,67 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({
     }
   };
 
-/**
- * 获取会员等级显示名称
- * @param planLevel 会员等级: normal(普通用户), trial(体验会员), basic(基础会员), pro(专业会员), premium(至尊会员)
- * @param duration 会员时长: 1month, 12months, 24months
- * @returns 会员等级的本地化显示名称
- */
-const getPlanLevelName = (planLevel?: string, duration?: string) => {
-  // 普通用户
-  if (!planLevel) return tTranslation('memberLevel.normal');
-  
-  // 体验会员
-  if (planLevel === 'trial') return tTranslation('memberLevel.trial');
-  
-  // 如果没有 duration，先尝试从剩余天数判断
-  if (!duration && subscriptionStatus?.remainingDays) {
-    if (subscriptionStatus.remainingDays > 365) {
-      duration = '24months';
-    } else if (subscriptionStatus.remainingDays > 180) {
-      duration = '12months';
-    } else {
-      duration = '1month';
-    }
-  }
-  
-  const currentDuration = duration || '1month';
-  console.log('当前会员信息:', { planLevel, duration: currentDuration, remainingDays: subscriptionStatus?.remainingDays });
+  // 定义会员等级和时长的具体类型
+  type PlanLevel = 'trial' | 'basic' | 'pro' | 'premium';
+  type PlanDuration = '1month' | '12months' | '24months';
 
-  // 根据会员时长和等级返回对应的显示名称
-  const durationMap = {
-    // 1个月会员
-    '1month': {
-      'basic': tTranslation('memberLevel.basic'),    // 基础会员
-      'pro': tTranslation('memberLevel.pro'),        // 专业会员
-      'premium': tTranslation('memberLevel.premium')  // 至尊会员
-    },
-    // 12个月会员
-    '12months': {
-      'basic': tTranslation('memberLevel.excellent'), // 卓越会员
-      'pro': tTranslation('memberLevel.flagship'),    // 旗舰会员
-      'premium': tTranslation('memberLevel.legendary')// 传奇会员
-    },
-    // 24个月会员
-    '24months': {
-      'basic': tTranslation('memberLevel.noble'),     // 尊贵会员
-      'pro': tTranslation('memberLevel.peak'),        // 巅峰会员
-      'premium': tTranslation('memberLevel.invincible')// 无敌会员
+  /**
+   * 获取会员等级显示名称
+   * @param planLevel 会员等级: normal(普通用户), trial(体验会员), basic(基础会员), pro(专业会员), premium(至尊会员)
+   * @param duration 会员时长: 1month, 12months, 24months
+   * @returns 会员等级的本地化显示名称
+   */
+  const getPlanLevelName = (planLevel?: PlanLevel, duration?: string) => {
+    // 普通用户
+    if (!planLevel) return tTranslation('memberLevel.normal');
+    
+    // 体验会员
+    if (planLevel === 'trial') return tTranslation('memberLevel.trial');
+    
+    let determinedDuration: PlanDuration = '1month'; // Default duration
+
+    // 如果没有 duration，先尝试从剩余天数判断
+    if (!duration && subscriptionStatus?.remainingDays) {
+      if (subscriptionStatus.remainingDays > 365) {
+        determinedDuration = '24months';
+      } else if (subscriptionStatus.remainingDays > 180) {
+        determinedDuration = '12months';
+      } else {
+        determinedDuration = '1month';
+      }
+    } else if (duration === '1month' || duration === '12months' || duration === '24months') {
+      determinedDuration = duration as PlanDuration;
     }
+    
+    logger.debug('当前会员信息:', { planLevel, duration: determinedDuration, remainingDays: subscriptionStatus?.remainingDays });
+
+    // 根据会员时长和等级返回对应的显示名称
+    const durationMap: Record<PlanDuration, Record<PlanLevel, string>> = {
+      // 1个月会员
+      '1month': {
+        'basic': tTranslation('memberLevel.basic'),    // 基础会员
+        'pro': tTranslation('memberLevel.pro'),        // 专业会员
+        'premium': tTranslation('memberLevel.premium'),  // 至尊会员
+        'trial': tTranslation('memberLevel.trial') // Added trial for completeness, though handled above
+      },
+      // 12个月会员
+      '12months': {
+        'basic': tTranslation('memberLevel.excellent'), // 卓越会员
+        'pro': tTranslation('memberLevel.flagship'),    // 旗舰会员
+        'premium': tTranslation('memberLevel.legendary'),// 传奇会员
+        'trial': tTranslation('memberLevel.trial') 
+      },
+      // 24个月会员
+      '24months': {
+        'basic': tTranslation('memberLevel.noble'),     // 尊贵会员
+        'pro': tTranslation('memberLevel.peak'),        // 巅峰会员
+        'premium': tTranslation('memberLevel.invincible'),// 无敌会员
+        'trial': tTranslation('memberLevel.trial')
+      }
+    };
+
+    return durationMap[determinedDuration]?.[planLevel] || tTranslation('memberLevel.normal');
   };
-
-  return durationMap[currentDuration]?.[planLevel] || tTranslation('memberLevel.normal');
-};
-
-  // console.log('当前订阅状态:', subscriptionStatus);
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -221,7 +229,7 @@ const getPlanLevelName = (planLevel?: string, duration?: string) => {
         className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center hover:opacity-80 transition-opacity"
         style={{ backgroundColor: themeColor }}
       >
-        <User className="w-5 h-5 text-white" />
+        <UserIcon className="w-5 h-5 text-white" />
       </button>
 
       {isOpen && (

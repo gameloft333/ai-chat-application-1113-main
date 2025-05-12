@@ -4,17 +4,18 @@ import App from './App'
 import './index.css'
 import './styles/payment.css'
 import 'antd/dist/reset.css'  // Antd 5.x 的新样式导入方式
+import logger from './utils/logger'; // Added logger import
 
 // 错误边界组件
-class ErrorBoundary extends React.Component {
+class ErrorBoundary extends React.Component<any, { hasError: boolean, error: Error | null }> { // Added types for props and state
   state = { hasError: false, error: null };
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError(error: Error) { // Added type for error
     return { hasError: true, error };
   }
 
-  componentDidCatch(error, errorInfo) {
-    console.error('React错误边界捕获到错误:', error, errorInfo);
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) { // Added types for error and errorInfo
+    logger.error('React错误边界捕获到错误:', error, errorInfo);
   }
 
   render() {
@@ -22,7 +23,7 @@ class ErrorBoundary extends React.Component {
       return (
         <div style={{ color: 'red', padding: '20px' }}>
           <h1>组件渲染错误</h1>
-          <pre>{this.state.error?.toString()}</pre>
+          <pre>{this.state.error ? (this.state.error as any).toString() : 'Unknown error'}</pre>
         </div>
       );
     }
@@ -31,7 +32,7 @@ class ErrorBoundary extends React.Component {
 }
 
 // 增加详细的调试信息
-console.log('环境变量检查:', {
+logger.debug('环境变量检查:', {
   NODE_ENV: process.env.NODE_ENV,
   VITE_API_URL: import.meta.env.VITE_API_URL,
   VITE_WS_URL: import.meta.env.VITE_WS_URL
@@ -51,7 +52,7 @@ document.body.innerHTML = `
 
 // 检查DOM挂载点
 const rootElement = document.getElementById('root');
-console.log('Root element:', rootElement);
+logger.debug('Root element:', rootElement);
 
 // 添加错误边界和详细日志
 try {
@@ -69,10 +70,10 @@ try {
     </React.StrictMode>
   );
 } catch (error) {
-  console.error('React渲染错误:', error);
+  logger.error('React渲染错误:', error);
   // 在页面上显示错误信息
   document.body.innerHTML = `
-    <div style="color: red; padding: 20px;">
+    <div style={{ color: 'red', padding: '20px' }}>
       <h1>应用加载失败</h1>
       <pre>${error instanceof Error ? error.message : '未知错误'}</pre>
     </div>

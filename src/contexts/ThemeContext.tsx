@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { THEME_CONFIG } from '../config/theme-config';
+import logger from '../utils/logger';
 
 type Theme = 'light' | 'dark';
 
@@ -18,7 +19,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // 2. If no saved theme, use the default from environment config
     const defaultTheme = savedTheme || THEME_CONFIG.defaultTheme as Theme;
     
-    console.log('Initial Theme Selection:', {
+    logger.debug('Initial Theme Selection:', {
       savedTheme, 
       configDefaultTheme: THEME_CONFIG.defaultTheme,
       finalTheme: defaultTheme
@@ -41,7 +42,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         document.documentElement.classList.remove('dark');
       }
       
-      console.log('Theme toggled:', { 
+      logger.debug('Theme toggled:', { 
         oldTheme: prevTheme, 
         newTheme: newTheme 
       });
@@ -55,7 +56,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Ensure the correct class is added on initial render
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
-      console.log('Added dark class to documentElement on initial render');
+      logger.debug('Added dark class to documentElement on initial render');
     } else {
       document.documentElement.classList.remove('dark');
     }

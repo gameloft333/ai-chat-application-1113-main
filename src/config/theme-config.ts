@@ -1,12 +1,14 @@
+import logger from '../utils/logger';
+
 export const THEME_CONFIG = {
   defaultTheme: (() => {
-    console.log('VITE_DEFAULT_THEME:', import.meta.env.VITE_DEFAULT_THEME);
-    console.log('Resolved Default Theme:', import.meta.env.VITE_DEFAULT_THEME || 'dark');
+    logger.debug('VITE_DEFAULT_THEME:', import.meta.env.VITE_DEFAULT_THEME);
+    logger.debug('Resolved Default Theme:', import.meta.env.VITE_DEFAULT_THEME || 'dark');
     return import.meta.env.VITE_DEFAULT_THEME || 'dark';
   })(),
   enableThemeSwitcher: (() => {
     const isEnabled = import.meta.env.VITE_THEME_SWITCHER_ENABLED === 'true';
-    console.log('Theme Switcher Enabled:', isEnabled);
+    logger.debug('Theme Switcher Enabled:', isEnabled);
     return isEnabled;
   })(),
   darkMode: {

@@ -18,22 +18,24 @@ export const PAYMENT_CONFIG = {
     }
   },
   enabledMethods: {
-    paypal: false,  // change to true to enable PayPal payment method during payment modal selection on choose your plan page
-    stripe: true,   // change to true to enable Stripe payment method during payment modal selection on choose your plan page
-    ton: false      // change to true to enable TON payment method during payment modal selection on choose your plan page
+    paypal: import.meta.env.VITE_ENABLE_PAYPAL === 'true',
+    stripe: import.meta.env.VITE_ENABLE_STRIPE === 'true',
+    ton: import.meta.env.VITE_ENABLE_TON === 'true'
   },
   
   // 获取支付环境状态的工具函数
   getEnvironmentStatus: (paymentMethod: 'paypal' | 'stripe' | 'ton') => {
-    const config = PAYMENT_CONFIG.environments[paymentMethod];
+    const environments = PAYMENT_CONFIG.environments;
     switch (paymentMethod) {
       case 'paypal':
-        return config.sandbox;
+        return environments.paypal.sandbox;
       case 'stripe':
-        return config.testMode;
+        return environments.stripe.testMode;
       case 'ton':
-        return config.testnet;
+        return environments.ton.testnet;
       default:
+        // Should not happen with the defined type, but as a fallback:
+        const exhaustiveCheck: never = paymentMethod;
         return true;
     }
   },
