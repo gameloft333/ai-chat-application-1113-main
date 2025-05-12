@@ -106,8 +106,9 @@ export default defineConfig(({ mode }) => {
       allowedHosts,
       hmr: {
         host: env.VITE_HMR_HOST || 'localhost',
-        protocol: 'wss',
-        clientPort: 443
+        protocol: env.VITE_HMR_PROTOCOL || 'ws',
+        port: Number(env.VITE_HMR_PORT) || 4173,
+        clientPort: Number(env.VITE_HMR_CLIENT_PORT || env.VITE_HMR_PORT) || 4173
       },
       proxy: {
         '/socket.io': {
