@@ -206,6 +206,13 @@ export default {
             paymentIntentSucceeded: 'Payment intent succeeded',
             paymentIntentFailed: 'Payment intent failed',
             paymentIntentCancelled: 'Payment intent cancelled'
+        },
+        testMode: {
+            notice: 'If you encounter payment issues, please use a stable IP network and the following test card:',
+            cardNumber: 'Test Card Number',
+            expiry: 'Expiry',
+            cvc: 'CVC',
+            postal: 'Postal Code'
         }
     },
     alerts: {
