@@ -197,10 +197,7 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
       if (usedCharacters >= maxCharactersForUser && maxCharactersForUser !== -1) {
          Modal.error({
             title: t('character.limitReached.title'),
-             // Retained original t function usage
-             content: t('character.limitReached.description', {
-               maxCount: maxCharactersForUser // Use the correct max characters for the user
-            }),
+            content: `${t('character.limitReached.description')} ${maxCharactersForUser}`,
             okText: t('subscription.choosePlan'),
             onOk: () => window.location.href = '/subscription'
           });
@@ -235,9 +232,7 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
           Modal.error({
             title: t('character.limitReached.title'),
              // Retained original t function usage
-            content: t('character.limitReached.description', {
-              maxCount: SUBSCRIPTION_PLANS.CHARACTER_LIMITS[subscriptionType as keyof typeof SUBSCRIPTION_PLANS.CHARACTER_LIMITS || 'normal'] // Use correct type
-            }),
+            content: `${t('character.limitReached.description')} ${SUBSCRIPTION_PLANS.CHARACTER_LIMITS[subscriptionType as keyof typeof SUBSCRIPTION_PLANS.CHARACTER_LIMITS || 'normal']}`,
             okText: t('subscription.choosePlan'),
             onOk: () => window.location.href = '/subscription'
           });

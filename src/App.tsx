@@ -1,16 +1,13 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation, createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import Login from './components/Login';
-import ErrorBoundary from './components/ErrorBoundary';
 import ChatInterface from './components/ChatInterface';
 import CharacterSelector from './components/CharacterSelector';
 import { MessageCircle, ArrowLeft } from 'lucide-react';
 import { type Character } from './types/types';
 import { CLEAR_MEMORY_ON_RESTART } from './config/app-config';
-import ChatMessage from './components/ChatMessage';
 import SubscriptionPlans from './components/SubscriptionPlans';
-import { PaymentService } from './services/payment-service';
 import { pricingPlans, currentCurrency } from './config/pricing-config';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import LanguageSwitch from './components/LanguageSwitch';
@@ -18,20 +15,17 @@ import { AuthProvider } from './contexts/AuthContext';
 import { PaymentRecordService } from './services/payment-record-service';
 import { type PaymentRecord } from './types/payment';
 import { PayPalService } from './services/paypal-service';
-import { PAYPAL_CONFIG } from './config/paypal-config';
 import PaymentResult from './components/PaymentResult';
 import GenderSelector from './components/GenderSelector';
-import SubscriptionDropdown from './components/SubscriptionDropdown';
-import SubscriptionExpiry from './components/SubscriptionExpiry';
 import LoginModal from './components/LoginModal';
-import UserProfileDropdown, { type UserProfileDropdownProps } from './components/UserProfileDropdown';
+import UserProfileDropdown from './components/UserProfileDropdown';
 import { SubscriptionProvider, useSubscription } from './contexts/SubscriptionContext';
-import { SubscriptionModal, type SubscriptionModalProps } from './components/SubscriptionModal';
+import { SubscriptionModal } from './components/SubscriptionModal';
 import { PaymentCallback } from './components/PaymentCallback';
 import { StripeService } from './services/stripe-service';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
-import { StripePaymentForm, type StripePaymentFormProps } from './components/StripePaymentForm';
+import { StripePaymentForm } from './components/StripePaymentForm';
 import { CharacterStatsService } from './services/character-stats-service';
 import { characters } from './types/character';
 import FeedbackButton from './components/FeedbackButton';
@@ -41,25 +35,16 @@ import { TonPayment } from './components/TonPayment';
 import { ThemeProvider } from './contexts/ThemeContext';
 import ThemeToggle from './components/ThemeToggle';
 import { MobileNavBar } from './components/MobileNavBar';
-import { MobilePreviewToggle } from './components/MobilePreviewToggle';
 import './styles/payment.css';
 import { THEME_CONFIG } from './config/theme-config';
 import logger from './utils/logger';
 import { SocketService } from './services/socket-service';
 import { PAYMENT_CONFIG } from './config/payment-config';
-import { MARQUEE_CONFIG } from './config/marquee-config';
-import { Marquee, type MarqueeProps } from './components/Marquee';
-import { getActiveMarqueeMessages, type MarqueeMessage } from './config/marquee-config';
+import { Marquee } from './components/Marquee';
 import { SocialButtons } from './components/SocialButtons';
 import { type Message } from './types/message';
 import Privacy from './pages/privacy';
 import Terms from './pages/terms';
-
-const API_KEY = import.meta.env.VITE_API_KEY || '';
-const API_URL = import.meta.env.VITE_APP_URL || import.meta.env.VITE_PAYMENT_API_URL;
-if (!API_URL) {
-    console.error('警告: 未配置 VITE_APP_URL 或 VITE_PAYMENT_API_URL');
-}
 
 interface AppRoutesProps {
   themeColor: string;
@@ -92,6 +77,26 @@ interface UserState {
   planId?: string;
 }
 
+const mapToSubscriptionDuration = (duration: string): 'monthly' | 'quarterly' | 'yearly' | 'lifetime' => {
+  switch (duration) {
+    case '1week':
+    case '1month':
+      return 'monthly';
+    case '12months':
+      return 'yearly';
+    case '24months':
+      return 'lifetime';
+    case 'quarterly':
+      return 'quarterly';
+    case 'yearly':
+      return 'yearly';
+    case 'lifetime':
+      return 'lifetime';
+    default:
+      return 'monthly';
+  }
+};
+
 const AppContent: React.FC<AppContentProps> = ({ 
   themeColor, 
   showThemeToggle = true,  // 默认显示
@@ -112,7 +117,7 @@ const AppContent: React.FC<AppContentProps> = ({
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPlanInfo, setSelectedPlanInfo] = useState<{planId: string, duration: string} | null>(null);
   const [showStripePaymentModal, setShowStripePaymentModal] = useState(false);
-  const [stripePaymentData, setStripePaymentData] = useState<StripePaymentFormProps | null>(null);
+  const [stripePaymentData, setStripePaymentData] = useState<any>(null);
   const [characterStats, setCharacterStats] = useState<Record<string, number>>({});
   const [popularCharacters, setPopularCharacters] = useState<string[]>([]);
   const [showTonPaymentModal, setShowTonPaymentModal] = useState(false);
@@ -256,11 +261,8 @@ const AppContent: React.FC<AppContentProps> = ({
 
       // PayPal 测试账户提示
       if (paymentMethod === 'paypal') {
-        (t as any)('payment.paypal.testAccount', {
-          email: 'sb-6vbqu34102045@personal.example.com',
-          notes: t('payment.paypal.testNotes')
-        });
-        alert(t('payment.paypal.testAccount', { email: 'sb-6vbqu34102045@personal.example.com', notes: t('payment.paypal.testNotes') }));
+        (t as any)('payment.paypal.testAccount');
+        alert(t('payment.paypal.testAccount'));
       }
 
       // 获取计划和定价信息
@@ -309,7 +311,7 @@ const AppContent: React.FC<AppContentProps> = ({
           uid: currentUser.uid,
           userEmail: currentUser.email || '',
           planId: planId,
-          duration: duration,
+          duration: mapToSubscriptionDuration(duration),
           orderId: orderId,
           amount: (plan.prices as any)[duration].price,
           currency: currentCurrency.code,
@@ -366,7 +368,7 @@ const AppContent: React.FC<AppContentProps> = ({
             uid: currentUser.uid,
             userEmail: currentUser.email || '',
             planId: planId,
-            duration: duration,
+            duration: mapToSubscriptionDuration(duration),
             orderId: clientSecret,
             amount: amount,
             currency: currentCurrency.code,
@@ -387,7 +389,7 @@ const AppContent: React.FC<AppContentProps> = ({
             amount,
             currency: currentCurrency.code,
             planId,
-            duration,
+            duration: mapToSubscriptionDuration(duration),
             userId: currentUser.uid,
             userEmail: currentUser.email || '',
             price: (plan.prices as any)[duration].price,
@@ -442,7 +444,7 @@ const AppContent: React.FC<AppContentProps> = ({
             amount: (plan.prices as any)[duration].price,
             currency: currentCurrency.code,
             planId,
-            duration,
+            duration: mapToSubscriptionDuration(duration),
             userId: currentUser.uid,
             expiredAt: expiredAt
           });
@@ -569,9 +571,7 @@ const AppContent: React.FC<AppContentProps> = ({
         }}
       >
         <Marquee 
-          messages={getActiveMarqueeMessages() as MarqueeMessage[]}
-          themeColor={themeColor}
-          className="h-full"
+          websocketUrl={import.meta.env.VITE_MARQUEE_WS_URL || ''}
         />
       </div>
 
@@ -612,16 +612,6 @@ const AppContent: React.FC<AppContentProps> = ({
                   {t('subscription.choosePlan')}
                 </button>
               )}
-              
-              {/* 主题暗色模式切换按钮已隐藏 */}
-              {/* <button 
-                className="p-2.5 rounded-full transition-all duration-300 hover:scale-110 bg-gray-700 hover:bg-gray-600"
-                onClick={() => document.documentElement.classList.toggle('dark')}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-6 w-6">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-11h-6m-3 4v-6m-7 8h6" />
-                </svg>
-              </button> */}
               
               {/* 语言切换按钮 */}
               <LanguageSwitch themeColor={themeColor} />
@@ -747,10 +737,7 @@ const AppContent: React.FC<AppContentProps> = ({
         
         {showPaymentModal && selectedPlanInfo && (
           <SubscriptionModal 
-            modalThemeColor={themeColor}
-            selectedPlanId={selectedPlanInfo.planId}
-            selectedDuration={selectedPlanInfo.duration}
-            onModalClose={() => setShowPaymentModal(false)}
+            themeColor={themeColor}
           />
         )}
 
@@ -771,6 +758,7 @@ const AppContent: React.FC<AppContentProps> = ({
                 id: tonPaymentData.paymentId,
                 amount: tonPaymentData.amount
               }}
+              tonAmount={tonPaymentData.amount}
               walletAddress={import.meta.env.VITE_TON_TEST_WALLET_ADDRESS}
               onCancel={() => setShowTonPaymentModal(false)}
               onClose={() => setShowTonPaymentModal(false)}

@@ -35,7 +35,7 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({
   const [copied, setCopied] = useState(false);
   const { currentUser, logout } = useAuth();
   const { t, language } = useLanguage();
-  const { openSubscriptionModal } = useSubscription();
+  useSubscription();
   const { t: tTranslation } = useTranslation();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -105,28 +105,6 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({
     setIsOpen(false); // 关闭下拉菜单
   };
 
-  const getSubscriptionDisplay = () => {
-    if (subscriptionStatus.isSubscribed && subscriptionStatus.expiredAt) {
-      return (
-        <>
-          <span className="text-sm">
-            {t('subscription.remainingTime')}：{subscriptionStatus.remainingDays} {t('subscription.days')}
-          </span>
-          <span className="text-xs text-gray-500">
-            {t('subscription.expiryDate')}：{subscriptionStatus.expiredAt.toLocaleDateString(language === 'zh' ? 'zh-CN' : 'en-US')}
-          </span>
-        </>
-      );
-    }
-    return (
-      <span 
-        className="text-sm z-40 text-blue-500 cursor-pointer hover:text-blue-600"
-        onClick={handleSubscriptionClick}
-      >
-        {t('subscription.subscribe')}
-      </span>
-    );
-  };
 
   const getMaskedUid = () => {
     if (!currentUser?.uid) return '********';
