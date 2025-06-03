@@ -203,3 +203,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 建议如需CORS或自定义header，逐步引入并测试。
 - 优化前端Nginx日志配置，便于后续排查。
 - 明确 `nginx/default.conf` 如未被include可删除，避免配置冲突。
+
+## [1.400.2025.0603] - 2025-06-03
+
+### Added
+- 新增隐私政策（/privacy）、用户协议（/terms）页面，内容参考 Stripe 风控合规建议，支持中英文多语言。
+- 角色选择页顶部新增产品专属免责声明，分两行、随机高对比度颜色，支持多语言。
+- 所有法律文本、免责声明内容均通过 i18next 多语言管理，严禁硬编码。
+- 更新 README.md、dev_stripe_clairifications_v039.md，详细说明实现方案与入口。

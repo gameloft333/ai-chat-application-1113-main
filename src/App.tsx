@@ -52,6 +52,8 @@ import { Marquee, type MarqueeProps } from './components/Marquee';
 import { getActiveMarqueeMessages, type MarqueeMessage } from './config/marquee-config';
 import { SocialButtons } from './components/SocialButtons';
 import { type Message } from './types/message';
+import Privacy from './pages/privacy';
+import Terms from './pages/terms';
 
 const API_KEY = import.meta.env.VITE_API_KEY || '';
 const API_URL = import.meta.env.VITE_APP_URL || import.meta.env.VITE_PAYMENT_API_URL;
@@ -73,6 +75,8 @@ const AppRoutes: React.FC<AppRoutesProps> = ({ themeColor }) => {
     <Routes>
       <Route path="/" element={<AppContent themeColor={themeColor} />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/privacy" element={<Privacy />} />
+      <Route path="/terms" element={<Terms />} />
       <Route path="/payment-success" element={<PaymentResult />} />
       <Route path="/payment-callback" element={<PaymentCallback />} />
       <Route path="/payment-cancel" element={<Navigate to="/" />} />
@@ -694,14 +698,33 @@ const AppContent: React.FC<AppContentProps> = ({
         <MobileNavBar />
 
         <footer className="bg-black bg-opacity-50 text-white p-4 text-center">
-          <p style={{ color: randomColor }}>
-            {t('common.copyright')}
-            {CLEAR_MEMORY_ON_RESTART && (
-              <span className="text-yellow-400 text-sm ml-8">
-                {t('common.testMode')}
-              </span>
-            )}
-          </p>
+          <div className="flex flex-wrap justify-center items-center gap-x-6 gap-y-2 text-sm">
+            <span style={{ color: randomColor }}>
+              2025 Companions. All rights reserved.
+            </span>
+            <span className="text-yellow-400">
+              注意: 现在处于测试模式，服务器重启时会清空聊天记录哦。
+            </span>
+            <span className="flex items-center">
+              <a
+                href="/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mx-2 text-blue-300 hover:underline"
+              >
+                {t('privacy.title')}
+              </a>
+              <span className="text-gray-400">|</span>
+              <a
+                href="/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mx-2 text-blue-300 hover:underline"
+              >
+                {t('terms.title')}
+              </a>
+            </span>
+          </div>
         </footer>
         
         {showLoginModal && (
@@ -780,7 +803,7 @@ const App: React.FC = () => {
         <ThemeProvider>
           <AuthProvider>
             <SubscriptionProvider>
-              <AppContent themeColor={themeColor} />
+              <AppRoutes themeColor={themeColor} />
             </SubscriptionProvider>
           </AuthProvider>
         </ThemeProvider>

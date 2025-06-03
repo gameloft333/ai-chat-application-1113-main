@@ -55,37 +55,78 @@
     c. 考虑亮度和饱和度范围，确保颜色的可读性
     d. 对于重要的UI元素，需要确保颜色的可访问性(WCAG标准)
     e. 在深色/浅色主题切换时，动态调整颜色生成的参数范围
-    f. 使用以下推荐的颜色生成方法：
+    f. 确保每一行免责声明的文字颜色和背景色有足够对比度（WCAG AA 标准，推荐对比度 > 4.5:1）。
+    g. 对比度检测：用 luminance 算法，确保生成的颜色与背景色对比度大于 4.5。
+    h. 使用以下推荐的颜色生成方法：
+      h1  适当考虑添加对比度检测函数
+      h2. 生成合格的随机颜色
+      h3. 在 JSX 中使用
+  参考代码：
 
-    ```typescript
-    const generateRandomColor = () => {
-      // 使用 HSL 颜色空间以便更好地控制亮度和饱和度
-      const hue = Math.floor(Math.random() * 360);
-      const saturation = 70 + Math.random() * 20; // 70-90%
-      const lightness = 45 + Math.random() * 10;  // 45-55%
-      return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
-    };
+  // 计算对比度
+  function contrastRatio(l1: number, l2: number) {
+    const lighter = Math.max(l1, l2);
+    const darker = Math.min(l1, l2);
+    return (lighter + 0.05) / (darker + 0.05);
+  }
 
-    const isColorSimilarToBackground = (color: string, backgroundColor: string) => {
-      // 将颜色转换为 RGB 值并计算对比度
-      const getRelativeLuminance = (r: number, g: number, b: number) => {
-        const [rs, gs, bs] = [r/255, g/255, b/255].map(c => 
-          c <= 0.03928 ? c/12.92 : Math.pow((c + 0.055)/1.055, 2.4)
-        );
-        return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
-      };
-      
-      // 计算对比度
-      const contrastRatio = (l1: number, l2: number) => {
-        const lighter = Math.max(l1, l2);
-        const darker = Math.min(l1, l2);
-        return (lighter + 0.05) / (darker + 0.05);
-      };
-      
-      // 对比度应大于 4.5:1 (WCAG AA标准)
-      return contrastRatio(
-        getRelativeLuminance(/* color RGB */), 
-        getRelativeLuminance(/* backgroundColor RGB */)
-      ) < 4.5;
-    };
-    ```
+  // HSL 转 RGB
+  function hslToRgb(h: number, s: number, l: number) {
+    s /= 100;
+    l /= 100;
+    const k = n => (n + h / 30) % 12;
+    const a = s * Math.min(l, 1 - l);
+    const f = n =>
+      l - a * Math.max(-1, Math.min(Math.min(k(n) - 3, 9 - k(n)), 1));
+    return [Math.round(255 * f(0)), Math.round(255 * f(8)), Math.round(255 * f(4))];
+  }
+
+  function generateAccessibleRandomColor(key: string, backgroundColor = '#181A20') {
+    // 解析背景色
+    const bg = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(backgroundColor);
+    const bgRgb = bg
+      ? [parseInt(bg[1], 16), parseInt(bg[2], 16), parseInt(bg[3], 16)]
+      : [24, 26, 32]; // 默认深色
+
+    const bgLum = getRelativeLuminance(bgRgb[0], bgRgb[1], bgRgb[2]);
+
+    let color, rgb, lum, ratio;
+    let tries = 0;
+    do {
+      // 用 key 做种子，保证每次渲染一致
+      const hash = Array.from(key).reduce((acc, c) => acc + c.charCodeAt(0), 0);
+      const hue = (Math.floor(Math.random() * 360) + hash * 13) % 360;
+      const saturation = 70 + (hash % 20); // 70-90%
+      const lightness = 55 + (hash % 20); // 55-75%，比原来更亮
+      color = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+      rgb = hslToRgb(hue, saturation, lightness);
+      lum = getRelativeLuminance(rgb[0], rgb[1], rgb[2]);
+      ratio = contrastRatio(lum, bgLum);
+      tries++;
+      // 最多尝试10次，防止死循环
+    } while (ratio < 4.5 && tries < 10);
+
+    return color;
+  }
+
+  return (
+    <>
+      <div className="container mx-auto px-4 py-8">
+        <OnlineStats className="mb-6" />
+        <h2 className="text-2xl font-bold text-center mb-8">
+          {t('common.selectCharacter')}
+        </h2>
+        <MarqueeNotice messages={marqueeMessages} />
+
+        <div className="text-center text-xs md:text-sm mb-6" style={{ letterSpacing: 0.5 }}>
+          <span
+            style={{ color: generateAccessibleRandomColor('disclaimer1'), display: 'block', marginBottom: 2 }}
+          >
+            {t('disclaimers.noSensitiveUse')}
+          </span>
+          <span
+            style={{ color: generateAccessibleRandomColor('disclaimer2'), display: 'block' }}
+          >
+            {t('disclaimers.nonMedicalAdvice')}
+          </span>
+        </div>

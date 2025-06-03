@@ -309,6 +309,23 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({
               <LogOut className="w-4 h-4" />
               <span>{t('auth.logout')}</span>
             </button>
+
+            {/* 
+              flex justify-between: 使子元素在容器中两端对齐
+              mt-3: margin-top 0.75rem (12px)
+              pt-2: padding-top 0.5rem (8px)
+              px-4: padding-left 和 padding-right 1rem (16px)
+              pb-3: padding-bottom 0.75rem (12px)
+              text-xs: 字体大小设为超小 (12px)
+              text-gray-400: 文字颜色为灰色 (中等亮度)
+              border-t: 顶部边框
+              border-gray-100: 边框颜色为浅灰色
+              dark:border-gray-700: 深色模式下边框颜色为深灰色
+            */}
+            <div className="flex justify-between mt-3 pt-2 px-4 pb-3 text-xs text-gray-400 border-t border-gray-100 dark:border-gray-700">
+              <a href="/privacy" target="_blank" rel="noopener noreferrer" className="hover:underline">{t('privacy.title')}</a>
+              <a href="/terms" target="_blank" rel="noopener noreferrer" className="hover:underline">{t('terms.title')}</a>
+            </div>
           </div>
         </div>
       )}
